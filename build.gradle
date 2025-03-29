@@ -61,7 +61,7 @@ tasks.named('asciidoctor') {
 	dependsOn test
 }
 
-tasks.withType<Test> {
+tasks.withType(Test) {
 	useJUnitPlatform()
-	systemProperty("user.timezone", "UTC")
+	systemProperty 'user.timezone', 'UTC'
 }
