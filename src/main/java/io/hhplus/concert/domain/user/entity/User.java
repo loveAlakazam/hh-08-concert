@@ -21,6 +21,7 @@ import lombok.Setter;
 
 
 @Entity
+@Getter
 @Table(name = "users")
 @RequiredArgsConstructor
 public class User extends BaseEntity {
@@ -32,7 +33,7 @@ public class User extends BaseEntity {
 	private String name; // 유저명
 
 	@Column(nullable = false)
-	private long point; // 유저 보유포인트
+	private long point = 0L; // 유저 보유포인트
 
 	// 연관관계
 	@OneToMany(mappedBy = "user")
@@ -42,6 +43,11 @@ public class User extends BaseEntity {
 	// 비즈니스 정책
 	public final static long CHARGE_POINT_MINIMUM = 1000;
 	public final static long CHARGE_POINT_MAXIMUM = 100000;
+
+	public static void validateAmount(long amount) {
+
+	}
+
 	/**
 	 * chargePoint: 포인트 충전
 	 * @param amount long : 충전금액
