@@ -28,8 +28,8 @@ public class ReservationController {
 		ReservationRequest request) {
 		ReservationResponse reservation = ReservationResponse.builder()
 			.reservationId(1001L)
-			.userId(request.getUserId())
-			.seatId(request.getSeatId())
+			.userId(request.userId())
+			.seatId(request.seatId())
 			.seatNo(10)
 			.price(15000)
 			.status(ReservationStatus.PENDING_PAYMENT)

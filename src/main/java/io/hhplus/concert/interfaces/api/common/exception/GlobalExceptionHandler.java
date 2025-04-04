@@ -3,15 +3,20 @@ package io.hhplus.concert.interfaces.api.common.exception;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import io.hhplus.concert.domain.common.exceptions.InvalidValidationException;
 import io.hhplus.concert.interfaces.api.common.dto.ErrorResponse;
+import io.hhplus.concert.interfaces.api.concert.controller.ConcertController;
+import io.hhplus.concert.interfaces.api.payment.controller.PaymentController;
+import io.hhplus.concert.interfaces.api.point.controller.PointController;
+import io.hhplus.concert.interfaces.api.reservation.controller.ReservationController;
+import io.hhplus.concert.interfaces.api.token.controller.TokenController;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 
-@RestControllerAdvice
 public class GlobalExceptionHandler {
 
 	// 유효성검사 실패로 발생한 예외처리: 400 에러반환

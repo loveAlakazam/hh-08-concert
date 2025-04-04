@@ -22,7 +22,7 @@ public class PaymentController {
 	@PostMapping()
 	public ResponseEntity<ApiResponse<PaymentResponse>> processPayment(@RequestBody PaymentRequest request) {
 		PaymentResponse response = PaymentResponse.builder()
-			.reservationId(request.getReservationId())
+			.reservationId(request.reservationId())
 			.userId(1L)
 			.concertId(1L)
 			.concertDate(LocalDate.of(2025,4,1))
