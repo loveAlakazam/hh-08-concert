@@ -16,5 +16,5 @@
 
 ## 4. API 명세서
 
-👉[API Swagger]()
+👉[API Swagger](https://app.swaggerhub.com/apis-docs/sampleswagger-f17/hh-08-concert/1.0.0)
 
