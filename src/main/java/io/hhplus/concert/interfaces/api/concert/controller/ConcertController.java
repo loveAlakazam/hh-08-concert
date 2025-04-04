@@ -25,8 +25,7 @@ public class ConcertController implements ConcertApiDocs {
 	@GetMapping("{id}/dates")
 	public ResponseEntity<ApiResponse<List<String>>> getAvailableConcertDate(@PathVariable("id") long id, @RequestHeader("token") String token) {
 		List<String> dates = List.of("2025-04-04", "2025-04-11");
-		ApiResponse<List<String>> response = ApiResponse.ok(dates);
-		return ResponseEntity.ok(response);
+		return ApiResponseEntity.ok(dates);
 	}
 
 	// 특정날짜에서 예약가능한 좌석정보조회
@@ -37,7 +36,6 @@ public class ConcertController implements ConcertApiDocs {
 			SeatResponse.of(52L, 2, true),
 			SeatResponse.of(53L, 3, true)
 		);
-		ApiResponse<List<SeatResponse>> response = ApiResponse.ok(availableSeats);
-		return ResponseEntity.ok(response);
+		return ApiResponseEntity.ok(availableSeats);
 	}
 }

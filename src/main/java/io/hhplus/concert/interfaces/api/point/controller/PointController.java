@@ -22,14 +22,14 @@ public class PointController implements PointApiDocs {
 	@PatchMapping()
 	public ResponseEntity<ApiResponse<PointResponse>> chargePoint(@RequestHeader("token") String token, @RequestBody
 		PointRequest request) {
-		PointResponse response = PointResponse.builder().id(1L).point(50000L).build();
+		PointResponse response = PointResponse.of(1L, 50000L);
 		return ApiResponseEntity.ok(response);
 	}
 
 	// 포인트 잔액 조회
 	@GetMapping()
 	public ResponseEntity<ApiResponse<PointResponse>> getPoint( @RequestHeader("token") String token){
-		PointResponse response = PointResponse.builder().id(1L).point(50000L).build();
+		PointResponse response = PointResponse.of(1L, 50000L);
 		return ApiResponseEntity.ok(response);
 	}
 }
