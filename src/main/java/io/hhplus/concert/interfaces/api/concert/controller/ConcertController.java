@@ -20,7 +20,7 @@ import lombok.RequiredArgsConstructor;
 @RestController
 @RequestMapping("concerts")
 @RequiredArgsConstructor
-public class ConcertController {
+public class ConcertController implements ConcertApiDocs {
 	// 예약가능 날짜 목록조회
 	@GetMapping("{id}/dates")
 	public ResponseEntity<ApiResponse<List<String>>> getAvailableConcertDate(@PathVariable("id") long id, @RequestHeader("token") String token) {
@@ -30,7 +30,7 @@ public class ConcertController {
 	}
 
 	// 특정날짜에서 예약가능한 좌석정보조회
-	@GetMapping("{id}/seats?date={date}")
+	@GetMapping("{id}/seats")
 	public ResponseEntity<ApiResponse<List<SeatResponse>>> getAvailableSeats(@PathVariable("id") long id, @RequestParam("date")LocalDate date,  @RequestHeader("token") String token) {
 		List<SeatResponse> availableSeats = List.of(
 			SeatResponse.of(51L, 1, true),

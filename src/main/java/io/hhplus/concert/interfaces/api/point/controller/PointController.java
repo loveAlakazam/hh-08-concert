@@ -17,7 +17,7 @@ import lombok.RequiredArgsConstructor;
 @RestController
 @RequestMapping("points")
 @RequiredArgsConstructor
-public class PointController {
+public class PointController implements PointApiDocs {
 	// 잔액 충전
 	@PatchMapping()
 	public ResponseEntity<ApiResponse<PointResponse>> chargePoint(@RequestHeader("token") String token, @RequestBody

@@ -19,7 +19,7 @@ import lombok.RequiredArgsConstructor;
 @RestController
 @RequestMapping("reservations")
 @RequiredArgsConstructor
-public class ReservationController {
+public class ReservationController implements  ReservationApiDocs {
 	private final ReservationService reservationService;
 
 	// 좌석 예약요청

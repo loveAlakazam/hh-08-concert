@@ -22,7 +22,7 @@ import lombok.RequiredArgsConstructor;
 @RestController
 @RequestMapping("tokens")
 @RequiredArgsConstructor
-public class TokenController {
+public class TokenController implements TokenApiDocs {
 	private final TokenService tokenService;
 
 	// 대기열 토큰 발급

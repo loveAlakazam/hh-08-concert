@@ -17,7 +17,7 @@ import lombok.RequiredArgsConstructor;
 @RestController
 @RequestMapping("payments")
 @RequiredArgsConstructor
-public class PaymentController {
+public class PaymentController implements PaymentApiDocs {
 	// 임시 예약 좌석 결제
 	@PostMapping()
 	public ResponseEntity<ApiResponse<PaymentResponse>> processPayment(@RequestBody PaymentRequest request) {
