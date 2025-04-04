@@ -1,5 +1,7 @@
 package io.hhplus.concert.interfaces.api.token.controller;
 
+import static io.hhplus.concert.domain.common.exceptions.CommonExceptionMessage.*;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -51,7 +53,22 @@ public interface TokenApiDocs {
 			)
 		)
 	)
-
+	@io.swagger.v3.oas.annotations.responses.ApiResponse(
+		responseCode = "500",
+		description = "INTERNAL_SERVER_ERROR",
+		content = @Content(
+			mediaType = "application/json",
+			schema = @Schema(
+				implementation = ErrorResponse.class),
+			examples= {
+				@ExampleObject(
+					name = INTERNAL_SERVER_ERROR,
+					summary = "서버내부 에러",
+					value= "{\"status\":500,\"message\":\"" + INTERNAL_SERVER_ERROR + ".\"}"
+				)
+			}
+		)
+	)
 	public ResponseEntity<ApiResponse<TokenResponse>> issueWaitingToken(@RequestBody TokenRequest request);
 
 	@Operation(summary = "대기열 순번 조회", description="대기열 통과까지 남은 순번을 조회")
@@ -74,6 +91,22 @@ public interface TokenApiDocs {
 				}
 				"""
 			)
+		)
+	)
+	@io.swagger.v3.oas.annotations.responses.ApiResponse(
+		responseCode = "500",
+		description = "INTERNAL_SERVER_ERROR",
+		content = @Content(
+			mediaType = "application/json",
+			schema = @Schema(
+				implementation = ErrorResponse.class),
+			examples= {
+				@ExampleObject(
+					name = INTERNAL_SERVER_ERROR,
+					summary = "서버내부 에러",
+					value= "{\"status\":500,\"message\":\"" + INTERNAL_SERVER_ERROR + ".\"}"
+				)
+			}
 		)
 	)
 	public ResponseEntity<ApiResponse<TokenSequenceResponse>> getWaitingTokenSequence(@RequestParam("token") String token);

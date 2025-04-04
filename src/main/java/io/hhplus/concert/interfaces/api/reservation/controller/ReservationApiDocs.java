@@ -1,5 +1,8 @@
 package io.hhplus.concert.interfaces.api.reservation.controller;
 
+import static io.hhplus.concert.domain.concert.exceptions.messages.ConcertExceptionMessage.*;
+import static io.hhplus.concert.domain.reservation.exceptions.messages.ReservationExceptionMessage.*;
+import static io.hhplus.concert.domain.token.service.exception.messages.TokenExceptionMessage.*;
 import static io.hhplus.concert.domain.user.entity.User.*;
 import static io.hhplus.concert.domain.user.exceptions.messages.UserExceptionMessage.*;
 
@@ -73,8 +76,40 @@ public interface ReservationApiDocs {
 			schema = @Schema(
 				implementation = ErrorResponse.class),
 				examples= @ExampleObject(
-					value= "{\"status\":401,\"message\":\"토큰의 유효기간이 만료되었습니다.\"}"
+					value= "{\"status\":401,\"message\":\""+EXPIRED_OR_UNAVAILABLE_TOKEN+"\"}"
 			)
+		)
+	)
+	@io.swagger.v3.oas.annotations.responses.ApiResponse(
+		responseCode = "409",
+		description = "CONFLICT",
+		content = @Content(
+			mediaType = "application/json",
+			schema = @Schema(
+				implementation = ErrorResponse.class),
+				examples= {
+				@ExampleObject(
+					name = ALREADY_RESERVED,
+					summary = "이미 결제가 완료되어 예약확정되거나 임시예약이 된 상태 좌석",
+					value= "{\"status\":409,\"message\":\"" + ALREADY_RESERVED + ".\"}"
+				)
+			}
+		)
+	)
+	@io.swagger.v3.oas.annotations.responses.ApiResponse(
+		responseCode = "500",
+		description = "INTERNAL_SERVER_ERROR",
+		content = @Content(
+			mediaType = "application/json",
+			schema = @Schema(
+				implementation = ErrorResponse.class),
+			examples= {
+				@ExampleObject(
+					name = INTERNAL_SERVER_ERROR,
+					summary = "서버내부 에러",
+					value= "{\"status\":500,\"message\":\"" + INTERNAL_SERVER_ERROR + ".\"}"
+				)
+			}
 		)
 	)
 	public ResponseEntity<ApiResponse<ReservationResponse>> reserveTemporarySeat(@RequestHeader("token") String token, @RequestBody

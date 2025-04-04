@@ -1,5 +1,6 @@
 package io.hhplus.concert.interfaces.api.point.controller;
 
+import static io.hhplus.concert.domain.token.service.exception.messages.TokenExceptionMessage.*;
 import static io.hhplus.concert.domain.user.entity.User.*;
 import static io.hhplus.concert.domain.user.exceptions.messages.UserExceptionMessage.*;
 
@@ -49,7 +50,7 @@ public interface PointApiDocs {
 			schema = @Schema(
 				implementation = ErrorResponse.class),
 			examples= @ExampleObject(
-				value= "{\"status\":401,\"message\":\"토큰의 유효기간이 만료되었습니다.\"}"
+				value= "{\"status\":401,\"message\":\""+EXPIRED_OR_UNAVAILABLE_TOKEN+"\"}"
 			)
 		)
 	)
@@ -81,6 +82,22 @@ public interface PointApiDocs {
 					summary = "최대 충전금액은 "+CHARGE_POINT_MAXIMUM+"원 이다",
 					value = "{\"statusCode\":400,\"message\":\"" + CHARGE_AMOUNT_SHOULD_BE_LESS_THAN_MAXIMUM + "\"}"
 				),
+			}
+		)
+	)
+	@io.swagger.v3.oas.annotations.responses.ApiResponse(
+		responseCode = "500",
+		description = "INTERNAL_SERVER_ERROR",
+		content = @Content(
+			mediaType = "application/json",
+			schema = @Schema(
+				implementation = ErrorResponse.class),
+			examples= {
+				@ExampleObject(
+					name = INTERNAL_SERVER_ERROR,
+					summary = "서버내부 에러",
+					value= "{\"status\":500,\"message\":\"" + INTERNAL_SERVER_ERROR + ".\"}"
+				)
 			}
 		)
 	)
@@ -118,8 +135,24 @@ public interface PointApiDocs {
 			schema = @Schema(
 				implementation = ErrorResponse.class),
 			examples= @ExampleObject(
-				value= "{\"status\":401,\"message\":\"토큰의 유효기간이 만료되었습니다.\"}"
+				value= "{\"status\":401,\"message\":\""+EXPIRED_OR_UNAVAILABLE_TOKEN+"\"}"
 			)
+		)
+	)
+	@io.swagger.v3.oas.annotations.responses.ApiResponse(
+		responseCode = "500",
+		description = "INTERNAL_SERVER_ERROR",
+		content = @Content(
+			mediaType = "application/json",
+			schema = @Schema(
+				implementation = ErrorResponse.class),
+			examples= {
+				@ExampleObject(
+					name = INTERNAL_SERVER_ERROR,
+					summary = "서버내부 에러",
+					value= "{\"status\":500,\"message\":\"" + INTERNAL_SERVER_ERROR + ".\"}"
+				)
+			}
 		)
 	)
 	public ResponseEntity<ApiResponse<PointResponse>> getPoint( @RequestHeader("token") String token);

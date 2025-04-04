@@ -1,6 +1,8 @@
 package io.hhplus.concert.interfaces.api.payment.controller;
 
 import static io.hhplus.concert.domain.common.exceptions.CommonExceptionMessage.*;
+import static io.hhplus.concert.domain.concert.exceptions.messages.ConcertExceptionMessage.*;
+import static io.hhplus.concert.domain.token.service.exception.messages.TokenExceptionMessage.*;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -68,7 +70,7 @@ public interface PaymentApiDocs {
 			schema = @Schema(
 				implementation = ErrorResponse.class),
 			examples= @ExampleObject(
-				value= "{\"status\":408,\"message\":\"임시배정된 좌석의 유효시간이 만료되었습니다.\"}"
+				value= "{\"status\":408,\"message\":\""+TEMPORARY_RESERVED_TIMEOUT+"\"}"
 			)
 		)
 	)
@@ -80,8 +82,24 @@ public interface PaymentApiDocs {
 			schema = @Schema(
 				implementation = ErrorResponse.class),
 			examples= @ExampleObject(
-				value= "{\"status\":401,\"message\":\"토큰의 유효기간이 만료되었습니다.\"}"
+				value= "{\"status\":401,\"message\":\""+EXPIRED_OR_UNAVAILABLE_TOKEN+"\"}"
 			)
+		)
+	)
+	@io.swagger.v3.oas.annotations.responses.ApiResponse(
+		responseCode = "500",
+		description = "INTERNAL_SERVER_ERROR",
+		content = @Content(
+			mediaType = "application/json",
+			schema = @Schema(
+				implementation = ErrorResponse.class),
+			examples= {
+				@ExampleObject(
+					name = INTERNAL_SERVER_ERROR,
+					summary = "서버내부 에러",
+					value= "{\"status\":500,\"message\":\"" + INTERNAL_SERVER_ERROR + ".\"}"
+				)
+			}
 		)
 	)
 	public ResponseEntity<ApiResponse<PaymentResponse>> processPayment(@RequestBody PaymentRequest request);

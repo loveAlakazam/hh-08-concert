@@ -1,6 +1,7 @@
 package io.hhplus.concert.interfaces.api.concert.controller;
 
 import static io.hhplus.concert.domain.common.exceptions.CommonExceptionMessage.*;
+import static io.hhplus.concert.domain.token.service.exception.messages.TokenExceptionMessage.*;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -69,8 +70,24 @@ public interface ConcertApiDocs {
 			schema = @Schema(
 				implementation = ErrorResponse.class),
 			examples= @ExampleObject(
-				value= "{\"status\":401,\"message\":\"토큰의 유효기간이 만료되었습니다.\"}"
+				value= "{\"status\":401,\"message\":\""+EXPIRED_OR_UNAVAILABLE_TOKEN+"\"}"
 			)
+		)
+	)
+	@io.swagger.v3.oas.annotations.responses.ApiResponse(
+		responseCode = "500",
+		description = "INTERNAL_SERVER_ERROR",
+		content = @Content(
+			mediaType = "application/json",
+			schema = @Schema(
+				implementation = ErrorResponse.class),
+			examples= {
+				@ExampleObject(
+					name = INTERNAL_SERVER_ERROR,
+					summary = "서버내부 에러",
+					value= "{\"status\":500,\"message\":\"" + INTERNAL_SERVER_ERROR + ".\"}"
+				)
+			}
 		)
 	)
 	public ResponseEntity<ApiResponse<List<String>>> getAvailableConcertDate(@PathVariable("id") long id, @RequestHeader("token") String token);
@@ -116,7 +133,7 @@ public interface ConcertApiDocs {
 			schema = @Schema(
 				implementation = ErrorResponse.class),
 			examples= @ExampleObject(
-				value= "{\"status\":401,\"message\":\"토큰의 유효기간이 만료되었습니다.\"}"
+				value= "{\"status\":401,\"message\":\""+EXPIRED_OR_UNAVAILABLE_TOKEN+"\"}"
 			)
 		)
 	)
@@ -133,6 +150,22 @@ public interface ConcertApiDocs {
 					summary = "id는 0보다 큰 양수이다",
 					value = "{\"statusCode\":400,\"message\":\"" + ID_SHOULD_BE_POSITIVE_NUMBER + "\"}"
 				),
+			}
+		)
+	)
+	@io.swagger.v3.oas.annotations.responses.ApiResponse(
+		responseCode = "500",
+		description = "INTERNAL_SERVER_ERROR",
+		content = @Content(
+			mediaType = "application/json",
+			schema = @Schema(
+				implementation = ErrorResponse.class),
+			examples= {
+				@ExampleObject(
+					name = INTERNAL_SERVER_ERROR,
+					summary = "서버내부 에러",
+					value= "{\"status\":500,\"message\":\"" + INTERNAL_SERVER_ERROR + ".\"}"
+				)
 			}
 		)
 	)
