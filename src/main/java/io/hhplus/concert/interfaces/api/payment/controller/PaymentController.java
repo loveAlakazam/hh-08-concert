@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import io.hhplus.concert.interfaces.api.common.dto.ApiResponse;
+import io.hhplus.concert.interfaces.api.common.dto.ApiResponseEntity;
 import io.hhplus.concert.interfaces.api.payment.dto.PaymentRequest;
 import io.hhplus.concert.interfaces.api.payment.dto.PaymentResponse;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +30,6 @@ public class PaymentController implements PaymentApiDocs {
 			.seatNo(4)
 			.price(15000)
 			.confirmedAt(LocalDateTime.now()).build();
-		return ResponseEntity.ok(ApiResponse.created(response));
+		return ApiResponseEntity.created(response);
 	}
 }

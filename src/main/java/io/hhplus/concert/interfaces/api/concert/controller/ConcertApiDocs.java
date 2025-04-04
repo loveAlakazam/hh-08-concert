@@ -1,5 +1,7 @@
 package io.hhplus.concert.interfaces.api.concert.controller;
 
+import static io.hhplus.concert.domain.common.exceptions.CommonExceptionMessage.*;
+
 import java.time.LocalDate;
 import java.util.List;
 
@@ -13,6 +15,7 @@ import io.hhplus.concert.interfaces.api.common.dto.ErrorResponse;
 import io.hhplus.concert.interfaces.api.concert.dto.SeatResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
@@ -20,21 +23,117 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 public interface ConcertApiDocs {
 
 	@Operation(summary = "예약가능한 날짜 조회", description="특정 콘서트 중 예약가능한 콘서트날짜 목록을 반환")
-	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "OK")
-	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "UNAUTHORIZED",
+	@io.swagger.v3.oas.annotations.responses.ApiResponse(
+		responseCode = "200",
+		description = "OK",
+		content= @Content(
+			mediaType = "application/json",
+			examples = @ExampleObject(
+				name = "예약 가능한 날짜 목록 조회 성공 응답 예시",
+				summary = "예약 가능한 날짜 목록 조회 성공 응답 데이터",
+				value= """
+					{
+					  "status": 200,
+					  "message": "OK",
+					  "data": [
+						"2025-04-04",
+						"2025-04-05",
+						"2025-04-11"
+					  ]
+					}
+					"""
+			)
+		)
+	)
+	@io.swagger.v3.oas.annotations.responses.ApiResponse(
+		responseCode = "400",
+		description = "BAD_REQUEST",
 		content = @Content(
-			schema = @Schema(implementation = ErrorResponse.class,
-				example= "{\"statusCode\":401,\"message\":\"토큰의 유효기간이 만료되었습니다.\"}")
+			mediaType = "application/json",
+			schema = @Schema(
+				implementation = ErrorResponse.class),
+			examples= {
+				@ExampleObject(
+					name=ID_SHOULD_BE_POSITIVE_NUMBER,
+					summary = "id는 0보다 큰 양수이다",
+					value = "{\"statusCode\":400,\"message\":\"" + ID_SHOULD_BE_POSITIVE_NUMBER + "\"}"
+				),
+			}
+		)
+	)
+	@io.swagger.v3.oas.annotations.responses.ApiResponse(
+		responseCode = "401",
+		description = "UNAUTHORIZED",
+		content = @Content(
+			mediaType = "application/json",
+			schema = @Schema(
+				implementation = ErrorResponse.class),
+			examples= @ExampleObject(
+				value= "{\"status\":401,\"message\":\"토큰의 유효기간이 만료되었습니다.\"}"
+			)
 		)
 	)
 	public ResponseEntity<ApiResponse<List<String>>> getAvailableConcertDate(@PathVariable("id") long id, @RequestHeader("token") String token);
 
 	@Operation(summary = "예약가능한 콘서트좌석 정보조회", description="특정 콘서트와 예약가능한 날짜에서 예약가능한 좌석목록을 반환 (최소 1개~최대 50개)")
-	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "OK")
-	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "UNAUTHORIZED",
+	@io.swagger.v3.oas.annotations.responses.ApiResponse(
+		responseCode = "200",
+		description = "OK",
+		content= @Content(
+			mediaType = "application/json",
+			examples = @ExampleObject(
+				name = "예약 가능한 콘서트 좌석 목록 조회 성공 응답 예시",
+				summary = "예약 가능한 콘서트 좌석 목록 조회 성공 응답 데이터",
+				value= """
+				{
+				  "status": 200,
+				  "message": "OK",
+				  "data": [
+						{
+							"id": 51,
+							"number": 1,
+							"isAvailable": true
+						},{
+							"id": 52,
+							"number": 2,
+							"isAvailable": true
+						},{
+							"id": 53,
+							"number": 3,
+							"isAvailable": false
+						}
+					]
+				}
+				"""
+			)
+		)
+	)
+	@io.swagger.v3.oas.annotations.responses.ApiResponse(
+		responseCode = "401",
+		description = "UNAUTHORIZED",
 		content = @Content(
-			schema = @Schema(implementation = ErrorResponse.class,
-				example= "{\"statusCode\":401,\"message\":\"토큰의 유효기간이 만료되었습니다.\"}")
+			mediaType = "application/json",
+			schema = @Schema(
+				implementation = ErrorResponse.class),
+			examples= @ExampleObject(
+				value= "{\"status\":401,\"message\":\"토큰의 유효기간이 만료되었습니다.\"}"
+			)
+		)
+	)
+	@io.swagger.v3.oas.annotations.responses.ApiResponse(
+		responseCode = "400",
+		description = "BAD_REQUEST",
+		content = @Content(
+			mediaType = "application/json",
+			schema = @Schema(
+				implementation = ErrorResponse.class),
+			examples= {
+				@ExampleObject(
+					name=ID_SHOULD_BE_POSITIVE_NUMBER,
+					summary = "id는 0보다 큰 양수이다",
+					value = "{\"statusCode\":400,\"message\":\"" + ID_SHOULD_BE_POSITIVE_NUMBER + "\"}"
+				),
+			}
 		)
 	)
 	public ResponseEntity<ApiResponse<List<SeatResponse>>> getAvailableSeats(@PathVariable("id") long id, @RequestParam("date") LocalDate date,  @RequestHeader("token") String token);

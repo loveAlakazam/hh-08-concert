@@ -4,11 +4,14 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import io.hhplus.concert.domain.reservation.entity.ReservationStatus;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 
 @Builder
 public record ReservationResponse(
+	@Schema(description="예약 ID", example= "1L")
 	long reservationId,
+	@Schema(description="유저 ID", example= "1L")
 	long userId,
 	long concertId,
 	LocalDate concertDate,
