@@ -1,0 +1,34 @@
+name: Deploy OpenAPI Spec to SwaggerHub
+
+on:
+  push:
+    branches: ["main", "step05", "step06"]
+
+jobs:
+  deploy-openapi:
+    runs-on: ubuntu-latest
+    env:
+      OWNER: sampleswagger-f17
+      API_NAME: hh-08-concert
+      VERSION: 1.0.0
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Build the application
+        uses: ./gradlew bootJar
+      - name: Run the application
+        run: |
+          java -jar build/libs/concert-0.0.1-SNAPSHOT.jar &
+          sleep 20
+      - name: Download OpenAPI spec
+        run: curl http://localhost:8080/v3/api-docs -o openapi.json
+
+      - name: Install SwaggerHub CLI
+        run: npm install -g swaggerhub-cli
+
+      - name: Push to swaggerHub
+        run: |
+          swaggerhub api:push <OWNER>/<API_NAME>/<VERSION> \
+            --file openapi.json \
+            --token ${{ secrets.SWAGGERHUB_API_KEY }} \
+            --visibility public
