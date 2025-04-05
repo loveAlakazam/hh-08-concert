@@ -17,14 +17,27 @@ jobs:
 
       - name: Give execute permission to gradlew
         run: chmod +x ./gradlew
-
+      # application 빌드
       - name: Build the application
         run: ./gradlew bootJar
 
-      - name: Run the application
+      # application 백그라운드에서 실행
+      - name: Run the application in background
         run: |
           java -jar build/libs/concert-0.0.1-SNAPSHOT.jar &
-          sleep 20
+          echo $! > pid.txt
+      # 스프링부트가 완전히 올라올때까지 대기
+      - name: Wait for server to be ready
+        run: |
+          for i in {1..30}; do
+            curl --silent http://localhost:8080/actuator/health && exit 0
+            echo "⏳ Waiting for server ..."
+            sleep 2
+          done
+          echo "❌ Server did not start in time"
+          cat pid.txt | xargs kill
+          exit 1
+      # 로컬호스트내 OpenAPI 스펙다운로드
       - name: Download OpenAPI spec
         run: curl http://localhost:8080/v3/api-docs -o openapi.json
 
