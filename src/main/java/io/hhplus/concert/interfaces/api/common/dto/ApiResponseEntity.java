@@ -7,7 +7,7 @@ import org.springframework.http.ResponseEntity;
 
 public class ApiResponseEntity {
 	public static <T>ResponseEntity<ApiResponse<T>> ok(T data) {
-		return ResponseEntity.ok(ApiResponse.success(data));
+		return ResponseEntity.ok(ApiResponse.ok(data));
 	}
 	public static<T>ResponseEntity<ApiResponse<T>> created(T data) {
 		return ResponseEntity
