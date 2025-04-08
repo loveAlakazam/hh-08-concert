@@ -1,4 +1,4 @@
-package io.hhplus.concert.interfaces.api.point.dto;
+package io.hhplus.concert.interfaces.api.user.dto;
 
 import lombok.Builder;
 

@@ -1,8 +1,7 @@
-package io.hhplus.concert.interfaces.api.point.dto;
+package io.hhplus.concert.interfaces.api.user.dto;
 
 import io.hhplus.concert.domain.user.entity.User;
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.Data;
 
 public record PointRequest(
 	@Schema(description = "유저 ID", example="1")
@@ -13,5 +12,6 @@ public record PointRequest(
 	public PointRequest {
 		// 유효성검사
 		User.validateId(userId);
+		User.validateAmount(amount);
 	}
 }
