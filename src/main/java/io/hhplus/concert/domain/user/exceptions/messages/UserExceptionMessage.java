@@ -13,4 +13,6 @@ public interface UserExceptionMessage extends CommonExceptionMessage {
 	String CHARGE_AMOUNT_SHOULD_BE_LESS_THAN_MAXIMUM="충전금액의 최대값("+CHARGE_POINT_MAXIMUM+"원)보다 작아야 합니다.";
 	String LACK_OF_YOUR_POINT ="잔액이 부족합니다.";
 
+	String NOT_EXIST_USER = "존재하지 않은 유저입니다.";
+
 }
