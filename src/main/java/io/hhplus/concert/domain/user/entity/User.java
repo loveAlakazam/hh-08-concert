@@ -8,13 +8,9 @@ import java.util.List;
 import io.hhplus.concert.domain.common.entity.BaseEntity;
 import io.hhplus.concert.domain.common.exceptions.InvalidValidationException;
 import io.hhplus.concert.domain.reservation.entity.Reservation;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.Table;
+import io.hhplus.concert.domain.token.entity.Token;
+import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
@@ -29,24 +25,62 @@ public class User extends BaseEntity {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private long id; // 유저 PK
 
-	@Column(nullable = false)
+	@Column(name="name", nullable = false)
 	private String name; // 유저명
 
-	@Column(nullable = false)
+	@Column(name="point", nullable = false)
 	private long point = 0L; // 유저 보유포인트
 
-	// 연관관계
+	/**
+	 * 생성자
+	 */
+	public User(long id, String name) {
+		super();
+		validateId(id);
+		validateName(name);
+
+		this.id = id;
+		this.name = name;
+	}
+	public User(long id, String name, long point) {
+		this(id, name);
+		validatePoint(point);
+		this.point = point;
+	}
+
+	/**
+	 * 연관관계
+	 */
+	// 유저:토큰 = 1:1
+	@OneToOne
+	@JoinColumn(name = "token_id")
+	private Token token;
+	// 유저:포인트내역 = 1:N
 	@OneToMany(mappedBy = "user")
-	private List<Reservation> reservations = new ArrayList<>(); // 유저:예약=1:N
+	private List<UserPointHistory> pointHistories = new ArrayList<>();
+	// 유저:예약 = 1:N
+	@OneToMany(mappedBy = "user")
+	private List<Reservation> reservations = new ArrayList<>();
 
 	// 비즈니스 책임
 	// 비즈니스 정책
 	public final static long CHARGE_POINT_MINIMUM = 1000;
 	public final static long CHARGE_POINT_MAXIMUM = 100000;
+	public final static int MINIMUM_LENGTH_OF_NAME = 1;
 
-	public static void validateAmount(long amount) {
-
+	public static void validatePoint(long point) {
+		// 보유 포인트 금액 검증
+		if(point < 0) throw new InvalidValidationException(POINT_SHOULD_BE_POSITIVE_NUMBER);
 	}
+	public static void validateAmount(long amount) {
+		// 충전/사용 금액 검증
+		if(amount <= 0) throw new InvalidValidationException(AMOUNT_SHOULD_BE_POSITIVE_NUMBER);
+	}
+	public static void validateName(String name) {
+		if(name == null) throw new InvalidValidationException(SHOULD_NOT_EMPTY);
+		if(name.trim().isEmpty()) throw new InvalidValidationException(LENGTH_OF_NAME_SHOULD_BE_MORE_THAN_MINIMUM_LENGTH);
+	}
+
 
 	/**
 	 * chargePoint: 포인트 충전
@@ -70,6 +104,13 @@ public class User extends BaseEntity {
 
 		this.point = this.point - amount; // 포인트 차감
 		return this.point; // 계산후 포인트를 반환
+	}
+	/**
+	 * getPoint: 보유 포인트 조회
+	 *
+	 */
+	public long getCurrentPoint() {
+		return this.point;
 	}
 
 }
