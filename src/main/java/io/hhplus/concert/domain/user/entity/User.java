@@ -78,7 +78,7 @@ public class User extends BaseEntity {
 	}
 	public static void validateName(String name) {
 		if(name == null) throw new InvalidValidationException(SHOULD_NOT_EMPTY);
-		if(name.trim().isEmpty()) throw new InvalidValidationException(LENGTH_OF_NAME_SHOULD_BE_MORE_THAN_MINIMUM_LENGTH);
+		if(BaseEntity.getRegexRemoveWhitespace(name).isEmpty()) throw new InvalidValidationException(LENGTH_OF_NAME_SHOULD_BE_MORE_THAN_MINIMUM_LENGTH);
 	}
 
 
