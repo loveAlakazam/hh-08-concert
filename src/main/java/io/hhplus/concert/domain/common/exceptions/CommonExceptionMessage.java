@@ -5,4 +5,6 @@ public interface CommonExceptionMessage {
 
 	String SHOULD_NOT_EMPTY = "필수 입력값 입니다.";
 	String INTERNAL_SERVER_ERROR = "서버 내부에서 발생한 오류입니다.";
+
+	String INVALID_PAGE = "잘못된 페이지 값입니다.";
 }
