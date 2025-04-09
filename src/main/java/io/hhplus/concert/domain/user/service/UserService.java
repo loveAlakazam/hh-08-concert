@@ -7,7 +7,6 @@ import org.springframework.stereotype.Service;
 import io.hhplus.concert.domain.common.exceptions.NotFoundException;
 import io.hhplus.concert.domain.user.entity.PointHistoryStatus;
 import io.hhplus.concert.domain.user.entity.User;
-import io.hhplus.concert.domain.user.entity.UserPointHistory;
 import io.hhplus.concert.domain.user.repository.UserPointHistoryRepository;
 import io.hhplus.concert.domain.user.repository.UserRepository;
 import io.hhplus.concert.interfaces.api.user.dto.PointResponse;
@@ -75,9 +74,10 @@ public class UserService {
      * @param id 유저 PK
      * @return PointResponse
      */
-    public PointResponse getCurrentPoint(long id) {
+    public PointResponse getCurrentPoint(long id) throws NotFoundException {
         // 유저 정보 조회
         User user = userRepository.findById(id);
+        if(user == null) throw new NotFoundException(NOT_EXIST_USER);
 
         // 현재 잔액 조회
         long currentPoint = user.getCurrentPoint();
