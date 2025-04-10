@@ -1,6 +1,7 @@
 package io.hhplus.concert.domain.concert.service;
 
 import static io.hhplus.concert.domain.common.entity.BaseEntity.*;
+import static io.hhplus.concert.domain.concert.exceptions.messages.ConcertExceptionMessage.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -21,15 +22,18 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
+import io.hhplus.concert.domain.common.exceptions.InvalidValidationException;
+import io.hhplus.concert.domain.common.exceptions.NotFoundException;
 import io.hhplus.concert.domain.concert.entity.Concert;
 import io.hhplus.concert.domain.concert.entity.ConcertDate;
-import io.hhplus.concert.domain.concert.entity.ConcertEntityTest;
 import io.hhplus.concert.domain.concert.entity.ConcertSeat;
 import io.hhplus.concert.domain.concert.repository.ConcertDateRepository;
 import io.hhplus.concert.domain.concert.repository.ConcertRepository;
 import io.hhplus.concert.domain.concert.repository.ConcertSeatRepository;
+import io.hhplus.concert.domain.user.entity.User;
 import io.hhplus.concert.interfaces.api.concert.dto.ConcertDateResponse;
 import io.hhplus.concert.interfaces.api.concert.dto.ConcertResponse;
+import io.hhplus.concert.interfaces.api.concert.dto.ConcertSeatDetailResponse;
 import io.hhplus.concert.interfaces.api.concert.dto.ConcertSeatResponse;
 
 @ExtendWith(MockitoExtension.class)
@@ -73,6 +77,18 @@ public class ConcertServiceTest {
 		assertEquals(2, concertResponse.get(1).id());
 		assertEquals("진달래와 함께하는 피아노 공연", concertResponse.get(1).name());
 		assertEquals("피아노 아티스트", concertResponse.get(1).artistName());
+	}
+	@Test
+	void 콘서트목록_조회시_페이지가_1미만의_정수이면_InvalidValidationException_예외발생() {
+		// given
+		int page = 0;
+
+		// when & then
+		InvalidValidationException ex = assertThrows(
+			InvalidValidationException.class,
+			() -> concertService.getConcertList(page)
+		);
+		assertEquals(INVALID_PAGE, ex.getMessage());
 	}
 	@Test
 	void 전체데이터는_12개이고_콘서트목록의_1페이지_조회하게되면_10개의_데이터가_존재시_성공한다() {
@@ -133,6 +149,19 @@ public class ConcertServiceTest {
 		assertEquals(12, result.get(1).id());
 		assertEquals("언제나 즐거운 TDD 테스트콘서트"+12, result.get(1).name());
 		assertEquals("아티스트"+12, result.get(1).artistName());
+	}
+	@Test
+	void 콘서트_날짜목록_조회시_페이지가_1미만의_정수이면_InvalidValidationException_예외발생() {
+		// given
+		int page = 0;
+		long concertId = 1L;
+
+		// when & then
+		InvalidValidationException ex = assertThrows(
+			InvalidValidationException.class,
+			() -> concertService.getConcertDateList(page, concertId)
+		);
+		assertEquals(INVALID_PAGE, ex.getMessage());
 	}
 	@Test
 	void 전체데이터는_19개이고_콘서트_날짜목록_1페이지_조회하게되면_10개의_데이터가_존재시_성공한다() {
@@ -248,7 +277,7 @@ public class ConcertServiceTest {
 			int number = i + 1;
 			long price = 1000 * ( i / 10 + 1);
 			boolean isAvailable = true;
-			if( number % 5 == 0) isAvailable = false; // 5의배수자리는 예약못하는 상태
+			if( number % 5 == 0) isAvailable = false; // 5의배수인 좌석번호는 예약불가능 상태
 
 			list.add(new ConcertSeat(id, number, price, isAvailable));
 		}
@@ -263,13 +292,65 @@ public class ConcertServiceTest {
 		assertEquals(51, concertSeatResponse.get(0).id());
 		assertEquals(1, concertSeatResponse.get(0).number());
 		assertEquals(1000, concertSeatResponse.get(0).price());
+		assertEquals(true, concertSeatResponse.get(0).isAvailable());
 		// 25번 좌석
 		assertEquals(75, concertSeatResponse.get(24).id());
 		assertEquals(25, concertSeatResponse.get(24).number());
 		assertEquals(3000, concertSeatResponse.get(24).price());
+		assertEquals(false, concertSeatResponse.get(24).isAvailable());
 		// 50번 좌석
 		assertEquals(100, concertSeatResponse.get(49).id());
 		assertEquals(50, concertSeatResponse.get(49).number());
 		assertEquals(5000, concertSeatResponse.get(49).price());
+		assertEquals(false, concertSeatResponse.get(49).isAvailable());
+	}
+	@Test
+	void 콘서트_좌석정보조회_요청시_콘서트좌석ID에_대응되는_콘서트좌석_정보가_존재하지않으면_NotFoundException_예외발생() {
+		// given
+		long concertSeatId = 1L;
+		when(concertSeatRepository.getConcertSeatInfo(concertSeatId)).thenReturn(null);
+
+		// when & then
+		NotFoundException ex = assertThrows(
+			NotFoundException.class,
+			() -> concertService.getConcertSeatInfo(concertSeatId)
+		);
+		assertEquals(CONCERT_SEAT_NOT_FOUND, ex.getMessage());
+	}
+	@Test
+	void 콘서트_좌석정보조회_요청시_콘서트좌석ID에_대응되는_콘서트좌석정보가_존재하면_정보조회를_성공한다() {
+		// given
+		long concertSeatId = 1L;
+		ConcertSeatDetailResponse expectedSeatInfo = new ConcertSeatDetailResponse(
+			1L,
+			1,
+			15000,
+			false,
+			1L,
+			1L
+		);
+		when(concertSeatRepository.getConcertSeatInfo(concertSeatId)).thenReturn(expectedSeatInfo);
+
+		// when & then
+		ConcertSeatDetailResponse result = assertDoesNotThrow(() -> concertService.getConcertSeatInfo(concertSeatId));
+		assertEquals(result.id(), expectedSeatInfo.id());
+		assertEquals(result.number(), expectedSeatInfo.number());
+		assertEquals(result.price(), expectedSeatInfo.price());
+		assertEquals(result.isAvailable(), expectedSeatInfo.isAvailable());
+		assertEquals(result.concertId(), expectedSeatInfo.concertId());
+		assertEquals(result.concertDateId(), expectedSeatInfo.concertDateId());
+	}
+	@Test
+	void 콘서트좌석ID에_일치하는_콘서트좌석정보가_없는경우_NotFoundException_예외발생() {
+		// given
+		long concertSeatId = 1L;
+		when(concertSeatRepository.findConcertSeatById(concertSeatId)).thenReturn(null);
+
+		// when & then
+		NotFoundException ex = assertThrows(
+			NotFoundException.class,
+			() -> concertService.getConcertSeatEntityById(concertSeatId)
+		);
+		assertEquals(CONCERT_SEAT_NOT_FOUND, ex.getMessage());
 	}
 }

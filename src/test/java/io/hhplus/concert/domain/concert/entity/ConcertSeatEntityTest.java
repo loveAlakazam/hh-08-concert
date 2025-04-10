@@ -87,4 +87,5 @@ public class ConcertSeatEntityTest {
 		assertEquals(seatPrice, concertSeat.getPrice());
 		assertEquals(true, concertSeat.isAvailable());
 	}
+
 }
