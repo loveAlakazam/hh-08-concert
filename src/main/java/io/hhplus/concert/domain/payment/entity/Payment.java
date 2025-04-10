@@ -25,7 +25,13 @@ public class Payment extends BaseEntity {
 	 * 생성자
 	 */
 	public Payment(long price) {
+		super();
 		this.price = price;
+	}
+	public Payment(long id, long price) {
+		this(price);
+		validateId(id);
+		this.id = id;
 	}
 
 	/**
