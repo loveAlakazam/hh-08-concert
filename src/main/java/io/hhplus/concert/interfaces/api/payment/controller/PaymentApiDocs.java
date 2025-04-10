@@ -2,7 +2,7 @@ package io.hhplus.concert.interfaces.api.payment.controller;
 
 import static io.hhplus.concert.domain.common.exceptions.CommonExceptionMessage.*;
 import static io.hhplus.concert.domain.concert.exceptions.messages.ConcertExceptionMessage.*;
-import static io.hhplus.concert.domain.token.service.exception.messages.TokenExceptionMessage.*;
+import static io.hhplus.concert.domain.token.exception.messages.TokenExceptionMessage.*;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestBody;

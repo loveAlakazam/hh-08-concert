@@ -1,4 +1,4 @@
-package io.hhplus.concert.domain.token.service.exception.messages;
+package io.hhplus.concert.domain.token.exception.messages;
 
 import io.hhplus.concert.domain.common.exceptions.CommonExceptionMessage;
 
