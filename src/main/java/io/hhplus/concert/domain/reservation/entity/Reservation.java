@@ -114,6 +114,14 @@ public class Reservation extends BaseEntity {
 
 		return this;
 	}
+	public Reservation updateConfirmedStatus() {
+		LocalDateTime now = LocalDateTime.now();
+		this.status = CONFIRMED; // 예약상태정보를 예약확정('CONFIRMED')로 변경
+		this.reservedAt = now;
+		this.tempReservationExpiredAt = null;
+
+		return this;
+	}
 
 	/**
 	 * 예약(reservation)이 '임시예약' 상태인지 확인 <br><br>

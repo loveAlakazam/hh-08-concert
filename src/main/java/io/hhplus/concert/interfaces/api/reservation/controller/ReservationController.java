@@ -14,7 +14,7 @@ import io.hhplus.concert.domain.reservation.entity.ReservationStatus;
 import io.hhplus.concert.domain.reservation.service.ReservationService;
 import io.hhplus.concert.interfaces.api.common.dto.ApiResponse;
 import io.hhplus.concert.interfaces.api.common.dto.ApiResponseEntity;
-import io.hhplus.concert.interfaces.api.reservation.dto.ReservationDetailResponse;
+import io.hhplus.concert.interfaces.api.reservation.dto.ReservationResponse;
 import io.hhplus.concert.interfaces.api.reservation.dto.ReservationRequest;
 
 import lombok.RequiredArgsConstructor;
@@ -27,11 +27,11 @@ public class ReservationController implements  ReservationApiDocs {
 
 	// 좌석 예약요청
 	@PostMapping()
-	public ResponseEntity<ApiResponse<ReservationDetailResponse>> reserveTemporarySeat(
+	public ResponseEntity<ApiResponse<ReservationResponse>> reserveTemporarySeat(
 		@RequestHeader("token") String token, @RequestBody
 		ReservationRequest request
 	) {
-		ReservationDetailResponse reservation = new ReservationDetailResponse(
+		ReservationResponse reservation = new ReservationResponse(
 			10001L,
 			"테스트",
 			request.userId(),

@@ -22,6 +22,13 @@ public class Payment extends BaseEntity {
 	private long price; // 결제 금액
 
 	/**
+	 * 생성자
+	 */
+	public Payment(long price) {
+		this.price = price;
+	}
+
+	/**
 	 * 연관관계
 	 */
 	// 결제:예약=1:1

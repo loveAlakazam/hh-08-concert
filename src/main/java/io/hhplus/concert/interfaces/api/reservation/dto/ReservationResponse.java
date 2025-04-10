@@ -24,7 +24,7 @@ import lombok.Builder;
  * @param tempReservationExpiredAt - 임시예약 만료일자
  */
 @Builder
-public record ReservationDetailResponse(
+public record ReservationResponse(
 	long reservationId,
 	String userName,
 	long userId,

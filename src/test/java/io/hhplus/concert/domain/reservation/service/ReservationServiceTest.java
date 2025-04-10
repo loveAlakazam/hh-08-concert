@@ -18,13 +18,14 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import io.hhplus.concert.domain.common.exceptions.NotFoundException;
 import io.hhplus.concert.domain.common.exceptions.RequestTimeOutException;
+import io.hhplus.concert.domain.concert.entity.Concert;
+import io.hhplus.concert.domain.concert.entity.ConcertDate;
 import io.hhplus.concert.domain.concert.entity.ConcertSeat;
 import io.hhplus.concert.domain.reservation.entity.Reservation;
 import io.hhplus.concert.domain.reservation.entity.ReservationStatus;
 import io.hhplus.concert.domain.reservation.repository.ReservationRepository;
 import io.hhplus.concert.domain.user.entity.User;
-import io.hhplus.concert.interfaces.api.reservation.dto.ReservationDetailResponse;
-
+import io.hhplus.concert.interfaces.api.reservation.dto.ReservationResponse;
 
 @ExtendWith(MockitoExtension.class)
 public class ReservationServiceTest {
@@ -65,7 +66,7 @@ public class ReservationServiceTest {
 		LocalDate concertDate = nowDate.plusWeeks(2);
 
 		// 임시로 예약된 상태
-		ReservationDetailResponse expected =  new ReservationDetailResponse(
+		ReservationResponse expected =  new ReservationResponse(
 			1L,
 			"예약자명",
 			1L,
@@ -82,7 +83,7 @@ public class ReservationServiceTest {
 		when(reservationRepository.getReservationDetailInfo(id)).thenReturn(expected);
 
 		// when & then
-		ReservationDetailResponse result = assertDoesNotThrow(() -> reservationService.getReservationDetailInfo(id));
+		ReservationResponse result = assertDoesNotThrow(() -> reservationService.getReservationDetailInfo(id));
 		assertEquals(expected.reservationId(), result.reservationId()); // 예약 아이디 검증
 		assertEquals(expected.userName(), result.userName()); // 예약자 이름 검증
 		assertEquals(expected.userId(), result.userId()); // 예약자 아이디 검증
@@ -126,6 +127,53 @@ public class ReservationServiceTest {
 
 		// 예외발생이후 로직은 수행하지 않는다
 		verify(reservationRepository,never()).saveOrUpdate(any());
+	}
+	@Test
+	void 신규_임시예약상태의_예약도메인_생성에_성공된다() {
+		// given
+		long userId = 1L;
+		long concertSeatId = 1L;
+		User user = new User(userId, "은강");
+
+		Concert concert = new Concert(1L, "항해와 함께하는 TDD 단위테스트 콘서트", "항해플러스");
+		ConcertDate concertDate = new ConcertDate(1L, LocalDate.now(), true, "뚝섬 한강공원");
+		ConcertSeat concertSeat = new ConcertSeat(concertSeatId, 5, 15000, true);
+		concertSeat.setConcert(concert);
+		concertSeat.setConcertDate(concertDate);
+
+		// when & then
+		Reservation result = assertDoesNotThrow(() -> reservationService.initTemporaryReservedStatus(user, concertSeat));
+		assertEquals(null, result.getReservedAt());
+		assertEquals(PENDING_PAYMENT, result.getStatus());
+		assertEquals(user, result.getUser());
+		assertEquals(concert, result.getConcert());
+		assertEquals(concertDate, result.getConcertDate());
+		assertEquals(concertSeat, result.getConcertSeat());
+	}
+	@Test
+	void 임시예약상태_데이터조건에_부합하여_좌석데이터_와_예약데이터상태_검증에_성공한다() {
+		// given
+		long userId = 1L;
+		long concertSeatId = 1L;
+		long reservationId = 1L;
+
+		LocalDateTime now = LocalDateTime.now();
+		User user = new User(userId, "은강");
+		ConcertSeat concertSeat = new ConcertSeat(concertSeatId, 5, 15000, false); // 임시예약된상태
+		Concert concert = new Concert(1L, "항해와 함께하는 TDD 단위테스트 콘서트", "항해플러스");
+		ConcertDate concertDate = new ConcertDate(1L, LocalDate.now(), true, "뚝섬 한강공원");
+		concertSeat.setConcert(concert);
+		concertSeat.setConcertDate(concertDate);
+
+		Reservation reservation = new Reservation(reservationId, PENDING_PAYMENT, null, now.plusMinutes(5));
+		reservation.setUser(user);
+		reservation.setConcert(concert);
+		reservation.setConcertDate(concertDate);
+		reservation.setConcertSeat(concertSeat);
+		when(reservationRepository.findById(reservationId)).thenReturn(reservation);
+
+		// when & then
+		assertDoesNotThrow(() -> reservationService.checkTemporaryReservedStatus(reservationId));
 	}
 
 }

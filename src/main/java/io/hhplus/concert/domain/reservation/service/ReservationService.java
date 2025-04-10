@@ -1,16 +1,17 @@
 package io.hhplus.concert.domain.reservation.service;
 
+import static io.hhplus.concert.domain.concert.exceptions.messages.ConcertExceptionMessage.*;
 import static io.hhplus.concert.domain.reservation.exceptions.messages.ReservationExceptionMessage.*;
 
-import io.hhplus.concert.domain.common.entity.BaseEntity;
 import io.hhplus.concert.domain.common.exceptions.InvalidValidationException;
 import io.hhplus.concert.domain.common.exceptions.NotFoundException;
 import io.hhplus.concert.domain.common.exceptions.RequestTimeOutException;
+import io.hhplus.concert.domain.common.exceptions.UnProcessableContentException;
 import io.hhplus.concert.domain.concert.entity.ConcertSeat;
 import io.hhplus.concert.domain.reservation.entity.Reservation;
 import io.hhplus.concert.domain.reservation.repository.ReservationRepository;
 import io.hhplus.concert.domain.user.entity.User;
-import io.hhplus.concert.interfaces.api.reservation.dto.ReservationDetailResponse;
+import io.hhplus.concert.interfaces.api.reservation.dto.ReservationResponse;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -25,11 +26,11 @@ public class ReservationService {
      *
      * - 예약 상세정보 API 비즈니스 로직
      * @param id - 예약 PK
-     * @return ReservationDetailResponse
+     * @return ReservationResponse
      * @throws NotFoundException
      */
-    public ReservationDetailResponse getReservationDetailInfo(long id) throws NotFoundException {
-        ReservationDetailResponse reservationDetailInfo =  reservationRepository.getReservationDetailInfo(id);
+    public ReservationResponse getReservationDetailInfo(long id) throws NotFoundException {
+        ReservationResponse reservationDetailInfo =  reservationRepository.getReservationDetailInfo(id);
         if(reservationDetailInfo == null) {
             throw new NotFoundException(NOT_FOUND_RESERVATION);
         }
@@ -84,7 +85,7 @@ public class ReservationService {
      * @param concertSeat
      * @return Reservation
      */
-    private Reservation initTemporaryReservedStatus(User user, ConcertSeat concertSeat) {
+    public Reservation initTemporaryReservedStatus(User user, ConcertSeat concertSeat) {
         // 기존 이력이 없으면 신규이력으로 등록
         Reservation reservation = new Reservation();
         reservation.setUser(user);
@@ -95,4 +96,36 @@ public class ReservationService {
 
         return reservation;
     }
+
+    /**
+     * 임시예약 상태를 위한 조건이 모두 일치하는지 확인 <br>
+     * 1. 예약좌석의 예약가능여부: 예약불가능(false)
+     * 2. 예약데이터의 상태는 임시예약(PENDING_PAYMENT)이고 임시예약만료일이 아직 유효함
+     *
+     * @param reservationId - 예약 PK
+     * @return Reservation
+     * @throws NotFoundException
+     * @throws RequestTimeOutException
+     * @throws InvalidValidationException
+     * @throws UnProcessableContentException
+     */
+    public Reservation checkTemporaryReservedStatus(long reservationId) {
+        Reservation reservation = reservationRepository.findById(reservationId);
+        if(reservation == null) throw new NotFoundException(NOT_FOUND_RESERVATION);
+
+        ConcertSeat concertSeat = reservation.getConcertSeat();
+        if(concertSeat == null) throw new NotFoundException(CONCERT_SEAT_NOT_FOUND);
+
+        // 예약 데이터 검증 - 임시예약 상태인지 검증
+        Reservation.validateTemporaryReservedStatus(reservation);
+
+        // 좌석 데이터 검증 - 임시예약으로 인해 예약좌석 이 예약불가능 상태인지 검증
+        if(concertSeat.isAvailable()) {
+            // 임시 예약상태인데 좌석은 예약가능 하게되면 비즈니스규칙에 깨지므로 절대나오면 안되는 에러.
+            throw new UnProcessableContentException(BUSINESS_RULE_VIOLATION);
+        }
+        return reservation;
+    }
+
+
 }

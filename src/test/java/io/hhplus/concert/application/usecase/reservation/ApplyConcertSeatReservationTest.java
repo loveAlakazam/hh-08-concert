@@ -3,7 +3,6 @@ package io.hhplus.concert.application.usecase.reservation;
 import static io.hhplus.concert.domain.concert.exceptions.messages.ConcertExceptionMessage.*;
 import static io.hhplus.concert.domain.reservation.entity.Reservation.*;
 import static io.hhplus.concert.domain.reservation.entity.ReservationStatus.*;
-import static io.hhplus.concert.domain.user.exceptions.messages.UserExceptionMessage.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -18,19 +17,15 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import io.hhplus.concert.domain.common.exceptions.ConflictException;
-import io.hhplus.concert.domain.common.exceptions.NotFoundException;
 import io.hhplus.concert.domain.concert.entity.Concert;
 import io.hhplus.concert.domain.concert.entity.ConcertDate;
 import io.hhplus.concert.domain.concert.entity.ConcertSeat;
-import io.hhplus.concert.domain.concert.repository.ConcertSeatRepository;
 import io.hhplus.concert.domain.concert.service.ConcertService;
 import io.hhplus.concert.domain.reservation.entity.Reservation;
-import io.hhplus.concert.domain.reservation.repository.ReservationRepository;
 import io.hhplus.concert.domain.reservation.service.ReservationService;
 import io.hhplus.concert.domain.user.entity.User;
-import io.hhplus.concert.domain.user.repository.UserRepository;
 import io.hhplus.concert.domain.user.service.UserService;
-import io.hhplus.concert.interfaces.api.reservation.dto.ReservationDetailResponse;
+import io.hhplus.concert.interfaces.api.reservation.dto.ReservationResponse;
 
 @ExtendWith(MockitoExtension.class)
 public class ApplyConcertSeatReservationTest {
@@ -105,7 +100,7 @@ public class ApplyConcertSeatReservationTest {
 		when(reservationService.reserveOrUpdateTemporaryReservedStatus(user, concertSeat)).thenReturn(reservation);
 
 		// expected
-		ReservationDetailResponse expected = new ReservationDetailResponse(
+		ReservationResponse expected = new ReservationResponse(
 			reservationId,
 			user.getName(),
 			userId,
@@ -123,7 +118,7 @@ public class ApplyConcertSeatReservationTest {
 		when(reservationService.getReservationDetailInfo(reservationId)).thenReturn(expected);
 
 		// when
-		ReservationDetailResponse result = reservationUsecase.applyConcertSeatReservation(userId, concertSeatId);
+		ReservationResponse result = reservationUsecase.applyConcertSeatReservation(userId, concertSeatId);
 
 		// then
 		assertEquals(expected.tempReservationExpiredAt(), result.tempReservationExpiredAt());

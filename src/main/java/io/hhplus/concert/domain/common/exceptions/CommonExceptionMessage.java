@@ -9,4 +9,5 @@ public interface CommonExceptionMessage {
 	String INVALID_PAGE = "잘못된 페이지 값입니다.";
 
 	String PAST_DATE_NOT_NOT_AVAILABLE = "이미 기간이 지난 날짜입니다";
+	String BUSINESS_RULE_VIOLATION = "도메인 규칙에 위반되었습니다";
 }

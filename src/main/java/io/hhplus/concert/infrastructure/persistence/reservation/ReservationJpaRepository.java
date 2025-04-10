@@ -3,7 +3,7 @@ package io.hhplus.concert.infrastructure.persistence.reservation;
 import java.util.Optional;
 
 import io.hhplus.concert.domain.reservation.entity.Reservation;
-import io.hhplus.concert.interfaces.api.reservation.dto.ReservationDetailResponse;
+import io.hhplus.concert.interfaces.api.reservation.dto.ReservationResponse;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -14,7 +14,7 @@ import org.springframework.stereotype.Repository;
 public interface ReservationJpaRepository extends JpaRepository<Reservation, Long> {
 
 	@Query("""
-		SELECT new io.hhplus.concert.interfaces.api.reservation.dto.ReservationDetailResponse(
+		SELECT new io.hhplus.concert.interfaces.api.reservation.dto.ReservationResponse(
 			r.id, 
 			u.name,
 			u.id,
@@ -37,10 +37,10 @@ public interface ReservationJpaRepository extends JpaRepository<Reservation, Lon
 			AND cd.isAvailable = true
 			AND r.id = :id
 	""")
-	Optional<ReservationDetailResponse> getReservationDetailInfo(@Param("id") long id);
+	Optional<ReservationResponse> getReservationDetailInfo(@Param("id") long id);
 
 	@Query("""
-		SELECT new io.hhplus.concert.interfaces.api.reservation.dto.ReservationDetailResponse(
+		SELECT new io.hhplus.concert.interfaces.api.reservation.dto.ReservationResponse(
 			r.id, 
 			u.name,
 			u.id,
@@ -65,7 +65,7 @@ public interface ReservationJpaRepository extends JpaRepository<Reservation, Lon
 			AND cd.id = :concertDateId
 			AND cs.id = :concertSeatId 
 	""")
-	Optional<ReservationDetailResponse> getReservationDetailInfo(
+	Optional<ReservationResponse> getReservationDetailInfo(
 		@Param("concertId") long concertId,
 		@Param("concertDateId") long concertDateId,
 		@Param("concertSeatId") long concertSeatId

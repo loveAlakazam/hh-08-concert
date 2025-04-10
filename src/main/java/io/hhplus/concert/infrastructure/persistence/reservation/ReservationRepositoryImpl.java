@@ -2,7 +2,7 @@ package io.hhplus.concert.infrastructure.persistence.reservation;
 
 import io.hhplus.concert.domain.reservation.entity.Reservation;
 import io.hhplus.concert.domain.reservation.repository.ReservationRepository;
-import io.hhplus.concert.interfaces.api.reservation.dto.ReservationDetailResponse;
+import io.hhplus.concert.interfaces.api.reservation.dto.ReservationResponse;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
@@ -15,10 +15,10 @@ public class ReservationRepositoryImpl implements ReservationRepository {
      * @param concertId - 콘서트 PK
      * @param concertDateId - 콘서트 날짜 PK
      * @param concertSeatId - 콘서트 좌석 PK
-     * @return ReservationDetailResponse | null
+     * @return ReservationResponse | null
      */
     @Override
-    public ReservationDetailResponse getReservationDetailInfo(long concertId, long concertDateId, long concertSeatId) {
+    public ReservationResponse getReservationDetailInfo(long concertId, long concertDateId, long concertSeatId) {
         return reservationJpaRepository.getReservationDetailInfo(
             concertId,
             concertDateId,
@@ -30,10 +30,10 @@ public class ReservationRepositoryImpl implements ReservationRepository {
      * getReservationDetailInfo
      *
      * @param id - 매개변수 PK
-     * @return ReservationDetailResponse | null
+     * @return ReservationResponse | null
      */
     @Override
-    public ReservationDetailResponse getReservationDetailInfo(long id) {
+    public ReservationResponse getReservationDetailInfo(long id) {
         return reservationJpaRepository.getReservationDetailInfo(id).orElse(null);
     }
 
