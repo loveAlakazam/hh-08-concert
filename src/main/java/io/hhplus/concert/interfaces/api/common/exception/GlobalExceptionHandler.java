@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 
 import io.hhplus.concert.domain.common.exceptions.InvalidValidationException;
 import io.hhplus.concert.domain.common.exceptions.NotFoundException;
+import io.hhplus.concert.domain.common.exceptions.RequestTimeOutException;
 import io.hhplus.concert.interfaces.api.common.dto.ErrorResponse;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -47,6 +48,15 @@ public class GlobalExceptionHandler {
 	/** 405 Method Not Allowed Exception **/
 	/** 406 Not Acceptable Exception **/
 	/** 408 Request timeout Exception **/
+	@ApiResponse(
+		responseCode = "408",
+		description = "REQUEST_TIMEOUT"
+	)
+	@ExceptionHandler(RequestTimeOutException.class)
+	@ResponseStatus(HttpStatus.REQUEST_TIMEOUT)
+	public ErrorResponse handleRequestTimeOutException(RequestTimeOutException e) {
+		return ErrorResponse.of(HttpStatus.REQUEST_TIMEOUT.value(), e.getMessage());
+	}
 	/** 409 Conflict Exception **/
 	/** 410 Gone Exception **/
 	/** 500 Internal Server Error **/

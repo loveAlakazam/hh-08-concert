@@ -7,4 +7,6 @@ public interface CommonExceptionMessage {
 	String INTERNAL_SERVER_ERROR = "서버 내부에서 발생한 오류입니다.";
 
 	String INVALID_PAGE = "잘못된 페이지 값입니다.";
+
+	String PAST_DATE_NOT_NOT_AVAILABLE = "이미 기간이 지난 날짜입니다";
 }
