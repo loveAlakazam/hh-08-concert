@@ -48,7 +48,7 @@ public class UserServiceTest {
 			NotFoundException.class,
 			() -> userService.chargePoint(id, amount)
 		);
-		
+
 		assertEquals( NOT_EXIST_USER, ex.getMessage()); // 메시지 검증
 		verify(userRepository, never()).save(null); // 정보 업데이트 0번
 		verify(userPointHistoryRepository, never()).save(amount, PointHistoryStatus.CHARGE, null); // 내역 생성 0번
@@ -105,7 +105,7 @@ public class UserServiceTest {
 		verify(userPointHistoryRepository, never()).save(invalidAmount, PointHistoryStatus.CHARGE, null); // 내역 생성 0번
 	}
 	@Test
-	void 포인트충전을_성공한다() throws NotFoundException {
+	void 포인트충전을_성공한다() {
 		// given
 		long id = 1L;
 		long chargeAmount = 5000L;
@@ -177,10 +177,9 @@ public class UserServiceTest {
 		assertEquals( LACK_OF_YOUR_POINT, ex.getMessage()); // 메시지 검증
 		verify(userRepository, never()).save(null); // 정보 업데이트 0번
 		verify(userPointHistoryRepository, never()).save(invalidAmount, PointHistoryStatus.USE, user); // 내역 생성 0번
-
 	}
 	@Test
-	void 포인트사용을_성공한다() throws NotFoundException {
+	void 포인트사용을_성공한다() {
 		// given
 		long id = 1L;
 		long useAmount = 1000L;
@@ -215,7 +214,7 @@ public class UserServiceTest {
 		assertEquals(NOT_EXIST_USER, ex.getMessage());
 	}
 	@Test
-	void 포인트조회에_성공한다() throws NotFoundException {
+	void 포인트조회에_성공한다() {
 		// given
 		long id = 1L;
 		User user = new User(id, "사용자", 5000L);
@@ -226,5 +225,18 @@ public class UserServiceTest {
 
 		// then
 		assertEquals(5000L, response.point());
+	}
+	@Test
+	void 유저ID에_일치하는_유저가_없는경우_NotFoundException_예외발생() {
+		// given
+		long userId = 1L;
+		when(userRepository.findById(userId)).thenReturn(null);
+
+		// when & then
+		NotFoundException ex = assertThrows(
+			NotFoundException.class,
+			() -> userService.getUserEntityById(userId)
+		);
+		assertEquals(NOT_EXIST_USER, ex.getMessage());
 	}
 }
