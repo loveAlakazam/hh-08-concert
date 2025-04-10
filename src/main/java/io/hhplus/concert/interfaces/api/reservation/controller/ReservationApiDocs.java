@@ -2,9 +2,7 @@ package io.hhplus.concert.interfaces.api.reservation.controller;
 
 import static io.hhplus.concert.domain.concert.exceptions.messages.ConcertExceptionMessage.*;
 import static io.hhplus.concert.domain.reservation.exceptions.messages.ReservationExceptionMessage.*;
-import static io.hhplus.concert.domain.token.service.exception.messages.TokenExceptionMessage.*;
-import static io.hhplus.concert.domain.user.entity.User.*;
-import static io.hhplus.concert.domain.user.exceptions.messages.UserExceptionMessage.*;
+import static io.hhplus.concert.domain.token.exception.messages.TokenExceptionMessage.*;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -12,8 +10,8 @@ import org.springframework.web.bind.annotation.RequestHeader;
 
 import io.hhplus.concert.interfaces.api.common.dto.ApiResponse;
 import io.hhplus.concert.interfaces.api.common.dto.ErrorResponse;
+import io.hhplus.concert.interfaces.api.reservation.dto.ReservationDetailResponse;
 import io.hhplus.concert.interfaces.api.reservation.dto.ReservationRequest;
-import io.hhplus.concert.interfaces.api.reservation.dto.ReservationResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
@@ -112,6 +110,6 @@ public interface ReservationApiDocs {
 			}
 		)
 	)
-	public ResponseEntity<ApiResponse<ReservationResponse>> reserveTemporarySeat(@RequestHeader("token") String token, @RequestBody
+	public ResponseEntity<ApiResponse<ReservationDetailResponse>> reserveTemporarySeat(@RequestHeader("token") String token, @RequestBody
 	ReservationRequest request);
 }
