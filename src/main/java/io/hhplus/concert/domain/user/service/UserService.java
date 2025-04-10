@@ -25,7 +25,7 @@ public class UserService {
      * @param amount 충전금액
      * @return PointResponse
      */
-    public PointResponse chargePoint(long id, long amount) throws NotFoundException {
+    public PointResponse chargePoint(long id, long amount) {
         // 유저 정보 조회
         User user = userRepository.findById(id);
         if(user == null) throw new NotFoundException(NOT_EXIST_USER);
@@ -50,7 +50,7 @@ public class UserService {
      * @param amount 사용금액
      * @return PointResponse
      */
-    public PointResponse usePoint(long id, long amount) throws NotFoundException {
+    public PointResponse usePoint(long id, long amount) {
         // 유저 정보 조회
         User user = userRepository.findById(id);
         if(user == null) throw new NotFoundException(NOT_EXIST_USER);
@@ -74,7 +74,7 @@ public class UserService {
      * @param id 유저 PK
      * @return PointResponse
      */
-    public PointResponse getCurrentPoint(long id) throws NotFoundException {
+    public PointResponse getCurrentPoint(long id) {
         // 유저 정보 조회
         User user = userRepository.findById(id);
         if(user == null) throw new NotFoundException(NOT_EXIST_USER);
@@ -84,5 +84,17 @@ public class UserService {
 
         // 현재 보유 포인트 정보를 리턴
         return PointResponse.of(id, currentPoint);
+    }
+
+    /**
+     * 식별자(id)로 유저 도메인 엔티티를 호출
+     *
+     * @param id - 유저 PK
+     * @return User | null
+     */
+    public User getUserEntityById(long id) {
+        User user =  userRepository.findById(id);
+        if(user == null) throw new NotFoundException(NOT_EXIST_USER);
+        return user;
     }
 }
