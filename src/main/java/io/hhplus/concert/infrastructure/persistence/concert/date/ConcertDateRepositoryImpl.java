@@ -17,4 +17,9 @@ public class ConcertDateRepositoryImpl implements ConcertDateRepository {
     public Page<ConcertDate> findAll(long concertId, Pageable pageable) {
         return concertDateJpaRepository.findUpcomingConcertDates(concertId, LocalDate.now(), pageable);
     }
+
+    @Override
+    public ConcertDate findConcertDateById(long id) {
+        return concertDateJpaRepository.findById(id).orElse(null);
+    }
 }

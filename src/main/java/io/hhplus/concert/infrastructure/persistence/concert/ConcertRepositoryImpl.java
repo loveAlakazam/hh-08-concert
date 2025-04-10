@@ -21,4 +21,9 @@ public class ConcertRepositoryImpl implements ConcertRepository {
     public Page<Concert> findAll(Pageable pageable) {
         return concertJpaRepository.findAll(pageable);
     }
+
+    @Override
+    public Concert findConcertById(long id) {
+        return concertJpaRepository.findById(id).orElse(null);
+    }
 }
