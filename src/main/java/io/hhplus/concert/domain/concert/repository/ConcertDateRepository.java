@@ -7,4 +7,5 @@ import io.hhplus.concert.domain.concert.entity.ConcertDate;
 
 public interface ConcertDateRepository {
 	Page<ConcertDate> findAll(long concertId, Pageable pageable);
+	ConcertDate findConcertDateById(long id);
 }

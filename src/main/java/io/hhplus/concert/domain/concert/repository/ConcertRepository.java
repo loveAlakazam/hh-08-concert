@@ -10,4 +10,6 @@ import io.hhplus.concert.domain.concert.entity.Concert;
 public interface ConcertRepository {
 	List<Concert> findAll();
 	Page<Concert> findAll(Pageable pageable);
+
+	Concert findConcertById(long id);
 }

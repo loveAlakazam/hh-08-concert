@@ -1,9 +1,14 @@
 package io.hhplus.concert.domain.concert.entity;
 
 import static io.hhplus.concert.domain.concert.exceptions.messages.ConcertExceptionMessage.*;
+import static io.hhplus.concert.domain.reservation.exceptions.messages.ReservationExceptionMessage.*;
+
+import java.time.LocalDateTime;
 
 import io.hhplus.concert.domain.common.entity.BaseEntity;
+import io.hhplus.concert.domain.common.exceptions.ConflictException;
 import io.hhplus.concert.domain.common.exceptions.InvalidValidationException;
+import io.hhplus.concert.domain.common.exceptions.RequestTimeOutException;
 import io.hhplus.concert.domain.reservation.entity.Reservation;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -101,14 +106,19 @@ public class ConcertSeat extends BaseEntity {
 		if(seatNumber < MIN_SEAT_NUMBER || seatNumber > MAX_SEAT_NUMBER)
 			throw new InvalidValidationException(INVALID_SEAT_NUMBER);
 	}
+
 	/**
-	 * 좌석 예약가능여부 변경 <br>
+	 * 좌석 예약
 	 *
-	 * 1. 임시예약 성공했을 때, 예약가능여부를 "예약가능(true)" -> "예약불가능(false)"로 변경 <br>
-	 * 2. 임시예약 기간이 만료되어 취소됐을 때, 예약가능여부를 "예약불가능(false)" -> "예약가능(true)" 으로 변경 <br>
+	 * @throws ConflictException
+	 * @throws RequestTimeOutException
 	 */
-	public void updateOppositeIsAvailable() {
-		this.isAvailable = !this.isAvailable;
+	public void reserve() {
+		// 좌석이 이미 예약 됐는지 확인
+		if( !isAvailable ) throw new ConflictException(ALREADY_RESERVED_SEAT);
+
+		// 예약가능 -> 예약불가능 으로 변경
+		this.isAvailable = false;
 	}
 
 }

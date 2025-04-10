@@ -26,8 +26,6 @@ public interface ConcertExceptionMessage extends CommonExceptionMessage {
 	// place
 	String LENGTH_OF_PLACE_SHOULD_BE_MORE_THAN_MINIMUM_LENGTH = "장소명은 최소 "+MINIMUM_LENGTH_OF_PLACE_NAME+"자 이상이어야 합니다.";
 	String LENGTH_OF_PLACE_SHOULD_BE_LESS_THAN_MAXIMUM_LENGTH = "장소명은 최대 "+MAXIMUM_LENGTH_OF_PLACE_NAME+"자 입니다.";
-	// progressDate
-	String PAST_DATE_NOT_NOT_AVAILABLE = "과거날짜는 적합하지 않습니다";
 	/**
 	 * ConcertSeat
 	 */
@@ -35,5 +33,7 @@ public interface ConcertExceptionMessage extends CommonExceptionMessage {
 	String INVALID_SEAT_NUMBER = "잘못된 좌석번호 입니다.";
 	String PRICE_SHOULD_BE_MORE_THAN_MINIMUM_PRICE="좌석가격은 최소 "+MINIMUM_SEAT_PRICE+"원 이상어야 합니다.";
 	String PRICE_SHOULD_BE_LESS_THAN_MAXIMUM_PRICE="좌석가격은 최대 "+MAXIMUM_SEAT_PRICE+"원 입니다.";
+	String CONCERT_SEAT_NOT_FOUND = "좌석정보가 존재하지 않습니다.";
+	String ALREADY_RESERVED_SEAT = "이미 예약된 좌석입니다."; // 임시예약+예약확정
 
 }

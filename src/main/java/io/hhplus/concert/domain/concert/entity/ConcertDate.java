@@ -109,7 +109,9 @@ public class ConcertDate extends BaseEntity {
 	 */
 	public static void validateProgressDate(LocalDate progressDate) {
 		if(progressDate == null) throw new InvalidValidationException(SHOULD_NOT_EMPTY);
-		if(progressDate.isBefore(LocalDate.now())) throw new InvalidValidationException(PAST_DATE_NOT_NOT_AVAILABLE);
+
+		// progressDate 가 과거의 날짜라면 예외발생
+		if(isPastDate(progressDate)) throw new InvalidValidationException(PAST_DATE_NOT_NOT_AVAILABLE);
 	}
 
 }
