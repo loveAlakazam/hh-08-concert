@@ -1,7 +1,7 @@
 package io.hhplus.concert.interfaces.api.concert.controller;
 
 import static io.hhplus.concert.domain.common.exceptions.CommonExceptionMessage.*;
-import static io.hhplus.concert.domain.token.service.exception.messages.TokenExceptionMessage.*;
+import static io.hhplus.concert.domain.token.exception.messages.TokenExceptionMessage.*;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import io.hhplus.concert.interfaces.api.common.dto.ApiResponse;
 import io.hhplus.concert.interfaces.api.common.dto.ErrorResponse;
-import io.hhplus.concert.interfaces.api.concert.dto.SeatResponse;
+import io.hhplus.concert.interfaces.api.concert.dto.ConcertSeatResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
@@ -90,7 +90,7 @@ public interface ConcertApiDocs {
 			}
 		)
 	)
-	public ResponseEntity<ApiResponse<List<String>>> getAvailableConcertDate(@PathVariable("id") long id, @RequestHeader("token") String token);
+	public ResponseEntity<ApiResponse<List<String>>> getAvailableConcertDates(@PathVariable("id") long id, @RequestHeader("token") String token);
 
 	@Operation(summary = "예약가능한 콘서트좌석 정보조회", description="특정 콘서트와 예약가능한 날짜에서 예약가능한 좌석목록을 반환 (최소 1개~최대 50개)")
 	@io.swagger.v3.oas.annotations.responses.ApiResponse(
@@ -169,6 +169,6 @@ public interface ConcertApiDocs {
 			}
 		)
 	)
-	public ResponseEntity<ApiResponse<List<SeatResponse>>> getAvailableSeats(@PathVariable("id") long id, @RequestParam("date") LocalDate date,  @RequestHeader("token") String token);
+	public ResponseEntity<ApiResponse<List<ConcertSeatResponse>>> getAvailableSeats(@PathVariable("id") long id, @RequestParam("date") LocalDate date,  @RequestHeader("token") String token);
 
 }
