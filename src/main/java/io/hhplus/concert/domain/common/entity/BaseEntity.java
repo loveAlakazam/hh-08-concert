@@ -33,6 +33,9 @@ public abstract class BaseEntity {
 	 */
 	public static final int PAGE_SIZE = 10; // 1페이지당 최대 10개의 항목을 갖는다.
 	public static final int MINIMUM_PAGE = 1; // 페이지는 1부터 시작한다.
+
+	public final static String REGEX_UUID = "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$";
+
 	/**
 	 * 페이지네이션 페이지 유효성 검증<br>
 	 *

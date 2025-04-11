@@ -21,24 +21,22 @@ public class Token extends BaseEntity {
     @Enumerated(EnumType.STRING)
     private TokenStatus status = TokenStatus.WAITING; // 토큰 상태
 
-    @Column(name = "valid_duration", nullable = false)
-    private long validDuration; // 토큰 유효 시간(초 단위)
-
     @Column(name = "expired_at", nullable = false)
-    private LocalDateTime expiredAt; // 토큰 만료시간
+    private LocalDateTime expiredAt; // 토큰 만료일자
 
-    @Column(name= "position", nullable = false)
-    private int position; // 대기 순서
 
     /**
      * 연관관계
      */
     // 토큰:유저=1:1
     @OneToOne
-    @JoinColumn(name = "user_id")
+    @JoinColumn(name = "user_id", referencedColumnName = "id", nullable = false, unique = true)
     private User user;
 
     // 비즈니스 정책
+    public static final int VALID_TOKEN_DURATION_MINUTE_UNIT = 30; // 30분 - 토큰 유효기간 분단위
+    public static final int VALID_TOKEN_DURATION_SECOND_UNIT = 60 * VALID_TOKEN_DURATION_MINUTE_UNIT; // 토큰 유효기간 초단위
+
     // 비즈니스 책임
 
 }
