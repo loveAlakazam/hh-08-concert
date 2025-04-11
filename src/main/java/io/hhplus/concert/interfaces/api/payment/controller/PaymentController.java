@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import io.hhplus.concert.domain.reservation.entity.ReservationStatus;
 import io.hhplus.concert.interfaces.api.common.dto.ApiResponse;
 import io.hhplus.concert.interfaces.api.common.dto.ApiResponseEntity;
 import io.hhplus.concert.interfaces.api.payment.dto.PaymentRequest;
@@ -23,13 +24,19 @@ public class PaymentController implements PaymentApiDocs {
 	@PostMapping()
 	public ResponseEntity<ApiResponse<PaymentResponse>> processPayment(@RequestBody PaymentRequest request) {
 		PaymentResponse response = PaymentResponse.builder()
+			.paymentId(1L)
 			.reservationId(request.reservationId())
-			.userId(1L)
-			.concertId(1L)
-			.concertDate(LocalDate.of(2025,4,1))
-			.seatNo(4)
+			.concertSeatId(1L)
+			.status(ReservationStatus.CONFIRMED)
+			.confirmedAt(LocalDateTime.now())
 			.price(15000)
-			.confirmedAt(LocalDateTime.now()).build();
+			.concertName("재즈캣의 테스트 콘서트 입니다")
+			.artistName("재즈캣")
+			.concertDate(LocalDate.of(2025,4,1))
+			.concertLocation("한강 뚝섬 공원")
+			.concertSeatNumber(5)
+			.userId(1L)
+			.build();
 		return ApiResponseEntity.created(response);
 	}
 }
