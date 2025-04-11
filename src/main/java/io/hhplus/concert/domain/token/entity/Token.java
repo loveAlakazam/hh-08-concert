@@ -26,6 +26,16 @@ public class Token extends BaseEntity {
     @Column(name = "expired_at", nullable = false)
     private LocalDateTime expiredAt; // 토큰 만료일자
 
+    public Token(TokenStatus status, LocalDateTime expiredAt) {
+        super();
+        this.status = status;
+        this.expiredAt = expiredAt;
+    }
+    public Token(long id, TokenStatus status, LocalDateTime expiredAt) {
+        this(status, expiredAt);
+        this.id = id;
+    }
+
 
     /**
      * 연관관계
