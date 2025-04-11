@@ -1,5 +1,6 @@
 package io.hhplus.concert.interfaces.queue;
 
+import java.util.List;
 import java.util.Queue;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -80,4 +81,13 @@ public class WaitingQueue {
 		}
 		return -1; // 대기열에 없음
 	}
+
+	/**
+	 * 현재 대기열큐를 리스트로 변환한다.
+	 * @return List
+	 */
+	public List<UUID> toList() {
+		return List.copyOf(queue);
+	}
+
 }
