@@ -9,6 +9,7 @@ import io.hhplus.concert.domain.common.exceptions.InvalidValidationException;
 import io.hhplus.concert.domain.common.exceptions.NotAcceptableException;
 import io.hhplus.concert.domain.common.exceptions.NotFoundException;
 import io.hhplus.concert.domain.common.exceptions.RequestTimeOutException;
+import io.hhplus.concert.domain.common.exceptions.UnAuthorizedException;
 import io.hhplus.concert.domain.common.exceptions.UnProcessableContentException;
 import io.hhplus.concert.interfaces.api.common.dto.ErrorResponse;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -37,6 +38,15 @@ public class GlobalExceptionHandler {
 		return ErrorResponse.of(HttpStatus.BAD_REQUEST.value(), e.getMessage());
 	}
 	/** 401 Unauthorized Exception**/
+	@ApiResponse(
+		responseCode = "401",
+		description = "UNAUTHORIZED"
+	)
+	@ExceptionHandler(UnAuthorizedException.class)
+	@ResponseStatus(HttpStatus.UNAUTHORIZED)
+	public ErrorResponse handleUnAuthorizedException(UnAuthorizedException e) {
+		return ErrorResponse.of(HttpStatus.UNAUTHORIZED.value(), e.getMessage());
+	}
 	/** 403 Forbidden Exception **/
 	/** 404 NotFound Exception **/
 	@ApiResponse(
