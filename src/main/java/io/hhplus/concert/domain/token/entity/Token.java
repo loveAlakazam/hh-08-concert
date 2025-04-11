@@ -81,12 +81,13 @@ public class Token extends BaseEntity {
     /**
      * 토큰 발급
      */
-    public Token issuerFor(User user) {
+    public static Token issuerFor(User user) {
+        Token token = new Token();
         LocalDateTime now = LocalDateTime.now();
-        this.user = user;
-        this.status = TokenStatus.WAITING;
-        this.expiredAt = now.plusMinutes(VALID_TOKEN_DURATION_MINUTE_UNIT);
-        return this;
+        token.setUser(user);
+        token.setStatus(TokenStatus.WAITING);
+        token.setExpiredAt(now.plusMinutes(VALID_TOKEN_DURATION_MINUTE_UNIT));
+        return token;
     }
 
 }

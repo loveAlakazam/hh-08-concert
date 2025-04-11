@@ -27,7 +27,7 @@ public class TokenService {
     private final WaitingQueue waitingQueue;
 
     // 대기상태 토큰 발급 요청
-    public void issueWaitingToken(UUID uuid) {
+    public Token issueWaitingToken(UUID uuid) {
         // 요청자
         User user = userRepository.findByUUID(uuid);
         if(user == null ) throw new NotFoundException(NOT_EXIST_USER);
@@ -41,10 +41,11 @@ public class TokenService {
 
         // 토큰이 없거나 만료되면 새로발급
         if(token == null || token.isExpiredToken()) {
-            Token newToken = token.issuerFor(user);
-            tokenRepository.saveOrUpdate(token); // 토큰을 생성한다.
+            Token newToken = Token.issuerFor(user); // 대기 상태 토큰 생성
             waitingQueue.enqueue(uuid); // 큐에 uuid 를 넣는다.
+            return tokenRepository.saveOrUpdate(newToken); // 토큰정보 저장
         }
+        throw new ConflictException(TOKEN_ALREADY_ISSUED);
     }
 
     /**
