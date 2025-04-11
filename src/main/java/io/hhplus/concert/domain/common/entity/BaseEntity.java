@@ -80,7 +80,6 @@ public abstract class BaseEntity {
 
 		// date 가 now 보다 과거일 경우
 		return date.isBefore(now);
-			// throw new InvalidValidationException(PAST_DATE_NOT_NOT_AVAILABLE);
 	}
 
 	/**
