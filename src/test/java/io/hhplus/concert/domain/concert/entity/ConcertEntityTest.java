@@ -1,15 +1,15 @@
 package io.hhplus.concert.domain.concert.entity;
 
-import static io.hhplus.concert.domain.concert.exceptions.messages.ConcertExceptionMessage.*;
+import static io.hhplus.concert.domain.concert.ConcertExceptionMessage.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.hhplus.concert.domain.common.entity.BaseEntity;
+import io.hhplus.concert.domain.common.BaseEntity;
 import io.hhplus.concert.domain.common.exceptions.InvalidValidationException;
-
+import io.hhplus.concert.domain.concert.Concert;
 
 public class ConcertEntityTest {
 	private static final Logger log = LoggerFactory.getLogger(ConcertEntityTest.class);

@@ -1,8 +1,8 @@
 package io.hhplus.concert.interfaces.api.user.controller;
 
-import static io.hhplus.concert.domain.token.exception.messages.TokenExceptionMessage.*;
-import static io.hhplus.concert.domain.user.entity.User.*;
-import static io.hhplus.concert.domain.user.exceptions.messages.UserExceptionMessage.*;
+import static io.hhplus.concert.domain.token.TokenExceptionMessage.*;
+import static io.hhplus.concert.domain.user.User.*;
+import static io.hhplus.concert.domain.user.UserExceptionMessage.*;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestBody;

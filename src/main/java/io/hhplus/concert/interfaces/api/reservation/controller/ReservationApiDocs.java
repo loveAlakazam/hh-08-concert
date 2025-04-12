@@ -1,8 +1,8 @@
 package io.hhplus.concert.interfaces.api.reservation.controller;
 
-import static io.hhplus.concert.domain.concert.exceptions.messages.ConcertExceptionMessage.*;
-import static io.hhplus.concert.domain.reservation.exceptions.messages.ReservationExceptionMessage.*;
-import static io.hhplus.concert.domain.token.exception.messages.TokenExceptionMessage.*;
+import static io.hhplus.concert.domain.concert.ConcertExceptionMessage.*;
+import static io.hhplus.concert.domain.reservation.ReservationExceptionMessage.*;
+import static io.hhplus.concert.domain.token.TokenExceptionMessage.*;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestBody;

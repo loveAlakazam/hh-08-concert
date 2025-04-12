@@ -1,8 +1,8 @@
 package io.hhplus.concert.domain.reservation.service;
 
-import static io.hhplus.concert.domain.reservation.entity.Reservation.*;
-import static io.hhplus.concert.domain.reservation.entity.ReservationStatus.*;
-import static io.hhplus.concert.domain.reservation.exceptions.messages.ReservationExceptionMessage.*;
+import static io.hhplus.concert.domain.reservation.Reservation.*;
+import static io.hhplus.concert.domain.reservation.ReservationStatus.*;
+import static io.hhplus.concert.domain.reservation.ReservationExceptionMessage.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -18,13 +18,14 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import io.hhplus.concert.domain.common.exceptions.NotFoundException;
 import io.hhplus.concert.domain.common.exceptions.RequestTimeOutException;
-import io.hhplus.concert.domain.concert.entity.Concert;
-import io.hhplus.concert.domain.concert.entity.ConcertDate;
-import io.hhplus.concert.domain.concert.entity.ConcertSeat;
-import io.hhplus.concert.domain.reservation.entity.Reservation;
-import io.hhplus.concert.domain.reservation.entity.ReservationStatus;
-import io.hhplus.concert.domain.reservation.repository.ReservationRepository;
-import io.hhplus.concert.domain.user.entity.User;
+import io.hhplus.concert.domain.concert.Concert;
+import io.hhplus.concert.domain.concert.ConcertDate;
+import io.hhplus.concert.domain.concert.ConcertSeat;
+import io.hhplus.concert.domain.reservation.Reservation;
+import io.hhplus.concert.domain.reservation.ReservationService;
+import io.hhplus.concert.domain.reservation.ReservationStatus;
+import io.hhplus.concert.domain.reservation.ReservationRepository;
+import io.hhplus.concert.domain.user.User;
 import io.hhplus.concert.interfaces.api.reservation.dto.ReservationResponse;
 
 @ExtendWith(MockitoExtension.class)

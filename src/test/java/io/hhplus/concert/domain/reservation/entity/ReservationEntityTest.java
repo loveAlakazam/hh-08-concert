@@ -1,12 +1,13 @@
 package io.hhplus.concert.domain.reservation.entity;
 
-import static io.hhplus.concert.domain.reservation.entity.ReservationStatus.*;
-import static io.hhplus.concert.domain.reservation.exceptions.messages.ReservationExceptionMessage.*;
+import static io.hhplus.concert.domain.reservation.ReservationStatus.*;
+import static io.hhplus.concert.domain.reservation.ReservationExceptionMessage.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 import org.junit.jupiter.api.Test;
 
 import io.hhplus.concert.domain.common.exceptions.InvalidValidationException;
+import io.hhplus.concert.domain.reservation.Reservation;
 
 public class ReservationEntityTest {
 	@Test

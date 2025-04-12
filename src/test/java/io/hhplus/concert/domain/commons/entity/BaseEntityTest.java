@@ -5,7 +5,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import org.junit.jupiter.api.Test;
 
-import io.hhplus.concert.domain.common.entity.BaseEntity;
+import io.hhplus.concert.domain.common.BaseEntity;
 import io.hhplus.concert.domain.common.exceptions.InvalidValidationException;
 
 public class BaseEntityTest {

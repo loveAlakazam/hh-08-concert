@@ -1,13 +1,13 @@
 package io.hhplus.concert.domain.user.entity;
 
 import static io.hhplus.concert.domain.common.exceptions.CommonExceptionMessage.*;
-import static io.hhplus.concert.domain.user.exceptions.messages.UserExceptionMessage.*;
+import static io.hhplus.concert.domain.user.UserExceptionMessage.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 import org.junit.jupiter.api.Test;
 
-import io.hhplus.concert.domain.common.entity.BaseEntity;
 import io.hhplus.concert.domain.common.exceptions.InvalidValidationException;
+import io.hhplus.concert.domain.user.User;
 
 public class UserEntityTest {
 	@Test

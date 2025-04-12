@@ -1,7 +1,7 @@
 package io.hhplus.concert.domain.token.service;
 
-import static io.hhplus.concert.domain.token.exception.messages.TokenExceptionMessage.*;
-import static io.hhplus.concert.domain.user.exceptions.messages.UserExceptionMessage.*;
+import static io.hhplus.concert.domain.token.TokenExceptionMessage.*;
+import static io.hhplus.concert.domain.user.UserExceptionMessage.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -16,11 +16,12 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import io.hhplus.concert.domain.common.exceptions.ConflictException;
 import io.hhplus.concert.domain.common.exceptions.NotFoundException;
-import io.hhplus.concert.domain.token.entity.Token;
-import io.hhplus.concert.domain.token.entity.TokenStatus;
-import io.hhplus.concert.domain.token.repository.TokenRepository;
-import io.hhplus.concert.domain.user.entity.User;
-import io.hhplus.concert.domain.user.repository.UserRepository;
+import io.hhplus.concert.domain.token.Token;
+import io.hhplus.concert.domain.token.TokenService;
+import io.hhplus.concert.domain.token.TokenStatus;
+import io.hhplus.concert.domain.token.TokenRepository;
+import io.hhplus.concert.domain.user.User;
+import io.hhplus.concert.domain.user.UserRepository;
 import io.hhplus.concert.interfaces.queue.WaitingQueue;
 
 @ExtendWith(MockitoExtension.class)

@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import io.hhplus.concert.domain.user.service.UserService;
+import io.hhplus.concert.domain.user.UserService;
 import io.hhplus.concert.interfaces.api.common.dto.ApiResponse;
 import io.hhplus.concert.interfaces.api.common.dto.ApiResponseEntity;
 import io.hhplus.concert.interfaces.api.user.dto.PointRequest;

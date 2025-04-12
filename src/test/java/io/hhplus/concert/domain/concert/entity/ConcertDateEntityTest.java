@@ -1,7 +1,7 @@
 package io.hhplus.concert.domain.concert.entity;
 
 import static io.hhplus.concert.domain.common.exceptions.CommonExceptionMessage.*;
-import static io.hhplus.concert.domain.concert.exceptions.messages.ConcertExceptionMessage.*;
+import static io.hhplus.concert.domain.concert.ConcertExceptionMessage.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.time.LocalDate;
@@ -9,6 +9,7 @@ import java.time.LocalDate;
 import org.junit.jupiter.api.Test;
 
 import io.hhplus.concert.domain.common.exceptions.InvalidValidationException;
+import io.hhplus.concert.domain.concert.ConcertDate;
 
 public class ConcertDateEntityTest {
 	@Test

@@ -1,7 +1,7 @@
 package io.hhplus.concert.infrastructure.persistence.payment;
 
-import io.hhplus.concert.domain.payment.entity.Payment;
-import io.hhplus.concert.domain.payment.repository.PaymentRepository;
+import io.hhplus.concert.domain.payment.Payment;
+import io.hhplus.concert.domain.payment.PaymentRepository;
 import io.hhplus.concert.interfaces.api.payment.dto.PaymentResponse;
 import lombok.RequiredArgsConstructor;
 

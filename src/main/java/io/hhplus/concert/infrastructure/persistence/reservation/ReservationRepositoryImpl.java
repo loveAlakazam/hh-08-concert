@@ -1,7 +1,7 @@
 package io.hhplus.concert.infrastructure.persistence.reservation;
 
-import io.hhplus.concert.domain.reservation.entity.Reservation;
-import io.hhplus.concert.domain.reservation.repository.ReservationRepository;
+import io.hhplus.concert.domain.reservation.Reservation;
+import io.hhplus.concert.domain.reservation.ReservationRepository;
 import io.hhplus.concert.interfaces.api.reservation.dto.ReservationResponse;
 import lombok.RequiredArgsConstructor;
 

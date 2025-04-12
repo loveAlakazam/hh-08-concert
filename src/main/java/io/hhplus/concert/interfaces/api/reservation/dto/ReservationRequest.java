@@ -1,9 +1,7 @@
 package io.hhplus.concert.interfaces.api.reservation.dto;
 
-import io.hhplus.concert.domain.common.entity.BaseEntity;
+import io.hhplus.concert.domain.common.BaseEntity;
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.Data;
-
 
 public record ReservationRequest (
 	@Schema(description = "유저 ID", example="123")

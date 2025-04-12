@@ -1,7 +1,7 @@
 package io.hhplus.concert.domain.concert.entity;
 
 import static io.hhplus.concert.domain.common.exceptions.CommonExceptionMessage.*;
-import static io.hhplus.concert.domain.concert.exceptions.messages.ConcertExceptionMessage.*;
+import static io.hhplus.concert.domain.concert.ConcertExceptionMessage.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 import org.junit.jupiter.api.Test;
@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.hhplus.concert.domain.common.exceptions.InvalidValidationException;
+import io.hhplus.concert.domain.concert.ConcertSeat;
 
 public class ConcertSeatEntityTest {
 	private static final Logger log = LoggerFactory.getLogger(ConcertSeatEntityTest.class);

@@ -3,7 +3,7 @@ package io.hhplus.concert.interfaces.api.payment.dto;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-import io.hhplus.concert.domain.reservation.entity.ReservationStatus;
+import io.hhplus.concert.domain.reservation.ReservationStatus;
 import lombok.Builder;
 
 @Builder

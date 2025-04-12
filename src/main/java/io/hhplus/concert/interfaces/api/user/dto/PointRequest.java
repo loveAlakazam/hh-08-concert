@@ -1,6 +1,6 @@
 package io.hhplus.concert.interfaces.api.user.dto;
 
-import io.hhplus.concert.domain.user.entity.User;
+import io.hhplus.concert.domain.user.User;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 public record PointRequest(

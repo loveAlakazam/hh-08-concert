@@ -1,7 +1,7 @@
 package io.hhplus.concert.application.usecase.payment;
 
-import static io.hhplus.concert.domain.reservation.entity.Reservation.*;
-import static io.hhplus.concert.domain.reservation.entity.ReservationStatus.*;
+import static io.hhplus.concert.domain.reservation.Reservation.*;
+import static io.hhplus.concert.domain.reservation.ReservationStatus.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -15,17 +15,17 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import io.hhplus.concert.domain.concert.entity.Concert;
-import io.hhplus.concert.domain.concert.entity.ConcertDate;
-import io.hhplus.concert.domain.concert.entity.ConcertSeat;
-import io.hhplus.concert.domain.payment.entity.Payment;
-import io.hhplus.concert.domain.payment.service.PaymentService;
-import io.hhplus.concert.domain.reservation.entity.Reservation;
-import io.hhplus.concert.domain.reservation.service.ReservationService;
-import io.hhplus.concert.domain.user.entity.User;
-import io.hhplus.concert.domain.user.service.UserService;
+import io.hhplus.concert.application.usecase.PaymentUsecase;
+import io.hhplus.concert.domain.concert.Concert;
+import io.hhplus.concert.domain.concert.ConcertDate;
+import io.hhplus.concert.domain.concert.ConcertSeat;
+import io.hhplus.concert.domain.payment.Payment;
+import io.hhplus.concert.domain.payment.PaymentService;
+import io.hhplus.concert.domain.reservation.Reservation;
+import io.hhplus.concert.domain.reservation.ReservationService;
+import io.hhplus.concert.domain.user.User;
+import io.hhplus.concert.domain.user.UserService;
 import io.hhplus.concert.interfaces.api.payment.dto.PaymentResponse;
-import io.hhplus.concert.interfaces.api.user.dto.PointResponse;
 
 @ExtendWith(MockitoExtension.class)
 public class ApplyPaymentTest {

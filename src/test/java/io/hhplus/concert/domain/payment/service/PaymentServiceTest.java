@@ -1,7 +1,7 @@
 package io.hhplus.concert.domain.payment.service;
 
-import static io.hhplus.concert.domain.payment.exceptions.messages.PaymentExceptionMessage.*;
-import static io.hhplus.concert.domain.reservation.exceptions.messages.ReservationExceptionMessage.*;
+import static io.hhplus.concert.domain.payment.PaymentExceptionMessage.*;
+import static io.hhplus.concert.domain.reservation.ReservationExceptionMessage.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -17,10 +17,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import io.hhplus.concert.domain.common.exceptions.InvalidValidationException;
 import io.hhplus.concert.domain.common.exceptions.NotFoundException;
-import io.hhplus.concert.domain.payment.entity.Payment;
-import io.hhplus.concert.domain.payment.repository.PaymentRepository;
-import io.hhplus.concert.domain.reservation.entity.Reservation;
-import io.hhplus.concert.domain.reservation.entity.ReservationStatus;
+import io.hhplus.concert.domain.payment.PaymentRepository;
+import io.hhplus.concert.domain.payment.PaymentService;
+import io.hhplus.concert.domain.reservation.Reservation;
+import io.hhplus.concert.domain.reservation.ReservationStatus;
 import io.hhplus.concert.interfaces.api.payment.dto.PaymentResponse;
 
 @ExtendWith(MockitoExtension.class)

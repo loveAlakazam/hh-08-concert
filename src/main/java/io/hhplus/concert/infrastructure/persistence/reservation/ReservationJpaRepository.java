@@ -2,7 +2,7 @@ package io.hhplus.concert.infrastructure.persistence.reservation;
 
 import java.util.Optional;
 
-import io.hhplus.concert.domain.reservation.entity.Reservation;
+import io.hhplus.concert.domain.reservation.Reservation;
 import io.hhplus.concert.interfaces.api.reservation.dto.ReservationResponse;
 
 import org.springframework.data.jpa.repository.JpaRepository;

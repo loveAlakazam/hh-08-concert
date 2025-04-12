@@ -10,8 +10,8 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import io.hhplus.concert.domain.reservation.entity.ReservationStatus;
-import io.hhplus.concert.domain.reservation.service.ReservationService;
+import io.hhplus.concert.domain.reservation.ReservationStatus;
+import io.hhplus.concert.domain.reservation.ReservationService;
 import io.hhplus.concert.interfaces.api.common.dto.ApiResponse;
 import io.hhplus.concert.interfaces.api.common.dto.ApiResponseEntity;
 import io.hhplus.concert.interfaces.api.reservation.dto.ReservationResponse;

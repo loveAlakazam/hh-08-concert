@@ -3,9 +3,8 @@ package io.hhplus.concert.infrastructure.persistence.user;
 
 import java.util.UUID;
 
-import io.hhplus.concert.domain.common.exceptions.NotFoundException;
-import io.hhplus.concert.domain.user.entity.User;
-import io.hhplus.concert.domain.user.repository.UserRepository;
+import io.hhplus.concert.domain.user.User;
+import io.hhplus.concert.domain.user.UserRepository;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor

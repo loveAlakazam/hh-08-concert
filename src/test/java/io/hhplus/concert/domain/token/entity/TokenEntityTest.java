@@ -6,6 +6,9 @@ import java.time.LocalDateTime;
 
 import org.junit.jupiter.api.Test;
 
+import io.hhplus.concert.domain.token.Token;
+import io.hhplus.concert.domain.token.TokenStatus;
+
 public class TokenEntityTest {
 	@Test
 	void 이_토큰은_아직_유효하다 () {

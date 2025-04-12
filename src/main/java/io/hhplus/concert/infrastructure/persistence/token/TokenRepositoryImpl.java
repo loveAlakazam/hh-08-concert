@@ -4,8 +4,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
-import io.hhplus.concert.domain.token.entity.Token;
-import io.hhplus.concert.domain.token.repository.TokenRepository;
+import io.hhplus.concert.domain.token.Token;
+import io.hhplus.concert.domain.token.TokenRepository;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor

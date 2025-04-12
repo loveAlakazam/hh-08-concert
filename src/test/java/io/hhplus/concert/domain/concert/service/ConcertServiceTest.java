@@ -1,7 +1,7 @@
 package io.hhplus.concert.domain.concert.service;
 
-import static io.hhplus.concert.domain.common.entity.BaseEntity.*;
-import static io.hhplus.concert.domain.concert.exceptions.messages.ConcertExceptionMessage.*;
+import static io.hhplus.concert.domain.common.BaseEntity.*;
+import static io.hhplus.concert.domain.concert.ConcertExceptionMessage.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -24,13 +24,13 @@ import org.springframework.data.domain.Pageable;
 
 import io.hhplus.concert.domain.common.exceptions.InvalidValidationException;
 import io.hhplus.concert.domain.common.exceptions.NotFoundException;
-import io.hhplus.concert.domain.concert.entity.Concert;
-import io.hhplus.concert.domain.concert.entity.ConcertDate;
-import io.hhplus.concert.domain.concert.entity.ConcertSeat;
-import io.hhplus.concert.domain.concert.repository.ConcertDateRepository;
-import io.hhplus.concert.domain.concert.repository.ConcertRepository;
-import io.hhplus.concert.domain.concert.repository.ConcertSeatRepository;
-import io.hhplus.concert.domain.user.entity.User;
+import io.hhplus.concert.domain.concert.Concert;
+import io.hhplus.concert.domain.concert.ConcertDate;
+import io.hhplus.concert.domain.concert.ConcertSeat;
+import io.hhplus.concert.domain.concert.ConcertDateRepository;
+import io.hhplus.concert.domain.concert.ConcertRepository;
+import io.hhplus.concert.domain.concert.ConcertSeatRepository;
+import io.hhplus.concert.domain.concert.ConcertService;
 import io.hhplus.concert.interfaces.api.concert.dto.ConcertDateResponse;
 import io.hhplus.concert.interfaces.api.concert.dto.ConcertResponse;
 import io.hhplus.concert.interfaces.api.concert.dto.ConcertSeatDetailResponse;

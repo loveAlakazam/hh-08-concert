@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import io.hhplus.concert.domain.token.service.TokenService;
+import io.hhplus.concert.domain.token.TokenService;
 import io.hhplus.concert.interfaces.api.common.dto.ApiResponse;
 import io.hhplus.concert.interfaces.api.common.dto.ApiResponseEntity;
 import io.hhplus.concert.interfaces.api.token.dto.TokenRequest;

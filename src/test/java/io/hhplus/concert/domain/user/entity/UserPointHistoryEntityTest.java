@@ -1,13 +1,15 @@
 package io.hhplus.concert.domain.user.entity;
 
-import static io.hhplus.concert.domain.user.entity.PointHistoryStatus.*;
-import static io.hhplus.concert.domain.user.exceptions.messages.UserExceptionMessage.*;
-import static io.hhplus.concert.domain.user.exceptions.messages.UserPointHistoryExceptionMessage.*;
+import static io.hhplus.concert.domain.user.UserPointHistoryStatus.*;
+import static io.hhplus.concert.domain.user.UserExceptionMessage.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 import org.junit.jupiter.api.Test;
 
 import io.hhplus.concert.domain.common.exceptions.InvalidValidationException;
+import io.hhplus.concert.domain.user.UserPointHistoryStatus;
+import io.hhplus.concert.domain.user.User;
+import io.hhplus.concert.domain.user.UserPointHistory;
 
 public class UserPointHistoryEntityTest {
 	@Test
@@ -18,7 +20,7 @@ public class UserPointHistoryEntityTest {
 		// when & then
 		InvalidValidationException ex = assertThrows(
 			InvalidValidationException.class,
-			()-> new UserPointHistory(5000L, PointHistoryStatus.CHARGE, invalidUser)
+			()-> new UserPointHistory(5000L, UserPointHistoryStatus.CHARGE, invalidUser)
 		);
 		assertEquals(SHOULD_NOT_EMPTY, ex.getMessage());
 	}
@@ -31,7 +33,7 @@ public class UserPointHistoryEntityTest {
 		// when & then
 		IllegalArgumentException ex = assertThrows(
 			IllegalArgumentException.class,
-			()-> new UserPointHistory(1000L,PointHistoryStatus.valueOf(invalidStatus), user)
+			()-> new UserPointHistory(1000L, UserPointHistoryStatus.valueOf(invalidStatus), user)
 		);
 	}
 	@Test
@@ -43,7 +45,7 @@ public class UserPointHistoryEntityTest {
 		// when & then
 		InvalidValidationException ex = assertThrows(
 			InvalidValidationException.class,
-			()-> new UserPointHistory(invalidAmount, PointHistoryStatus.CHARGE, user)
+			()-> new UserPointHistory(invalidAmount, UserPointHistoryStatus.CHARGE, user)
 		);
 		assertEquals(AMOUNT_SHOULD_BE_POSITIVE_NUMBER, ex.getMessage());
 	}
@@ -56,7 +58,7 @@ public class UserPointHistoryEntityTest {
 		// when & then
 		InvalidValidationException ex = assertThrows(
 			InvalidValidationException.class,
-			()-> new UserPointHistory(invalidAmount, PointHistoryStatus.CHARGE, user)
+			()-> new UserPointHistory(invalidAmount, UserPointHistoryStatus.CHARGE, user)
 		);
 		assertEquals(CHARGE_AMOUNT_SHOULD_BE_MORE_THAN_MINIMUM, ex.getMessage());
 	}
@@ -69,7 +71,7 @@ public class UserPointHistoryEntityTest {
 		// when & then
 		InvalidValidationException ex = assertThrows(
 			InvalidValidationException.class,
-			()-> new UserPointHistory(invalidAmount, PointHistoryStatus.CHARGE, user)
+			()-> new UserPointHistory(invalidAmount, UserPointHistoryStatus.CHARGE, user)
 		);
 		assertEquals(CHARGE_AMOUNT_SHOULD_BE_LESS_THAN_MAXIMUM, ex.getMessage());
 	}

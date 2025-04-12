@@ -1,7 +1,7 @@
 package io.hhplus.concert.interfaces.api.concert.controller;
 
 import static io.hhplus.concert.domain.common.exceptions.CommonExceptionMessage.*;
-import static io.hhplus.concert.domain.token.exception.messages.TokenExceptionMessage.*;
+import static io.hhplus.concert.domain.token.TokenExceptionMessage.*;
 
 import java.time.LocalDate;
 import java.util.List;
