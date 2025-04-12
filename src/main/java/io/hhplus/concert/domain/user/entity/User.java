@@ -4,6 +4,7 @@ import static io.hhplus.concert.domain.user.exceptions.messages.UserExceptionMes
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 import io.hhplus.concert.domain.common.entity.BaseEntity;
 import io.hhplus.concert.domain.common.exceptions.InvalidValidationException;
@@ -31,6 +32,9 @@ public class User extends BaseEntity {
 	@Column(name="point", nullable = false)
 	private long point = 0L; // 유저 보유포인트
 
+	@Column(name="uuid", columnDefinition = "BINARY(16)", unique = true)
+	private UUID uuid; // 유저의 UUID
+
 	/**
 	 * 생성자
 	 */
@@ -52,8 +56,7 @@ public class User extends BaseEntity {
 	 * 연관관계
 	 */
 	// 유저:토큰 = 1:1
-	@OneToOne
-	@JoinColumn(name = "token_id")
+	@OneToOne(mappedBy = "user", fetch=FetchType.LAZY, cascade = CascadeType.ALL)
 	private Token token;
 	// 유저:포인트내역 = 1:N
 	@OneToMany(mappedBy = "user")
@@ -68,6 +71,7 @@ public class User extends BaseEntity {
 	public final static long CHARGE_POINT_MAXIMUM = 100000;
 	public final static int MINIMUM_LENGTH_OF_NAME = 1;
 
+
 	public static void validatePoint(long point) {
 		// 보유 포인트 금액 검증
 		if(point < 0) throw new InvalidValidationException(POINT_SHOULD_BE_POSITIVE_NUMBER);
@@ -79,6 +83,9 @@ public class User extends BaseEntity {
 	public static void validateName(String name) {
 		if(name == null) throw new InvalidValidationException(SHOULD_NOT_EMPTY);
 		if(BaseEntity.getRegexRemoveWhitespace(name).isEmpty()) throw new InvalidValidationException(LENGTH_OF_NAME_SHOULD_BE_MORE_THAN_MINIMUM_LENGTH);
+	}
+	public static boolean validateUUID(String uuidStr) {
+		return uuidStr != null && REGEX_UUID.matches(uuidStr);
 	}
 
 
@@ -112,5 +119,6 @@ public class User extends BaseEntity {
 	public long getCurrentPoint() {
 		return this.point;
 	}
+
 
 }
