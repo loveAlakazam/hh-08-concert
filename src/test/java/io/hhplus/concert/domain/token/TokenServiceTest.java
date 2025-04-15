@@ -14,6 +14,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.stubbing.Answer;
 
 import com.github.dockerjava.api.exception.ConflictException;
 
@@ -224,4 +225,45 @@ public class TokenServiceTest {
 		verify(tokenRepository, times(1)).findTokenByUUID(any());
 		verify(tokenRepository, never()).saveOrUpdate(any());
 	}
+	@Test
+	void 만일_UUID에_대응되는_토큰이_존재하지않으면_BusinessException발생() {
+		UUID uuid = UUID.randomUUID();
+		when(tokenRepository.findTokenByUUID(uuid)).thenReturn(null);
+
+		BusinessException ex = assertThrows(BusinessException.class, () -> tokenService.validateActiveToken(uuid));
+		assertEquals(TOKEN_NOT_FOUND.getMessage(), ex.getMessage());
+		assertEquals(TOKEN_NOT_FOUND.getHttpStatus(), ex.getHttpStatus());
+	}
+	@Test
+	void 만일_대기상태토큰으로_서비스요청시_활성화상태가_아니므로_BusinessException_발생() {
+		// given
+		UUID uuid = UUID.randomUUID();
+		User user = User.of("테스트");
+		Token token = Token.of(user, uuid);
+
+		token.issue(user); // 대기상태토큰
+		when(tokenRepository.findTokenByUUID(uuid)).thenReturn(token);
+		// when
+		BusinessException ex = assertThrows(BusinessException.class, () -> tokenService.validateActiveToken(uuid));
+		// then
+		assertEquals(ALLOW_ACTIVE_TOKEN.getMessage(), ex.getMessage());
+		assertEquals(ALLOW_ACTIVE_TOKEN.getHttpStatus(), ex.getHttpStatus());
+		assertFalse(token.isActivated());
+	}
+	@Test
+	void 활성화상태에서_서비스요청시_토큰_검증로직을_통과한다() {
+		// given
+		UUID uuid = UUID.randomUUID();
+		User user = User.of("테스트");
+		Token token = Token.of(user, uuid);
+		token.issue(user); // 대기상태
+		token.activate(); // 활성화 상태
+		when(tokenRepository.findTokenByUUID(uuid)).thenReturn(token);
+		// when
+		assertDoesNotThrow(() -> tokenService.validateActiveToken(uuid));
+		// then
+		assertFalse(token.isExpiredToken());
+		assertTrue(token.isActivated());
+	}
+
 }

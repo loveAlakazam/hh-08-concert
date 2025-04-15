@@ -12,10 +12,10 @@ public record TokenCriteria(){
 			return new IssueWaitingToken(userId);
 		}
 	}
-	public record GetWaitingTokenPosition(long userId) {
-		public static GetWaitingTokenPosition of(long userId) {
+	public record GetWaitingTokenPositionAndActivateWaitingToken(long userId) {
+		public static GetWaitingTokenPositionAndActivateWaitingToken of(long userId) {
 			if(userId <= 0) throw new InvalidValidationException(ID_SHOULD_BE_POSITIVE_NUMBER);
-			return new GetWaitingTokenPosition(userId);
+			return new GetWaitingTokenPositionAndActivateWaitingToken(userId);
 		}
 	}
 }

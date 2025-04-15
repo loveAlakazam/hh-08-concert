@@ -1,5 +1,7 @@
 package io.hhplus.concert.infrastructure.persistence.token;
 
+import static io.hhplus.concert.interfaces.api.token.TokenErrorCode.*;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -7,6 +9,7 @@ import java.util.UUID;
 
 import io.hhplus.concert.domain.token.Token;
 import io.hhplus.concert.domain.token.TokenRepository;
+import io.hhplus.concert.interfaces.api.common.BusinessException;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor

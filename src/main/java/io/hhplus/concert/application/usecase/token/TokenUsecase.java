@@ -26,7 +26,9 @@ public class TokenUsecase {
 		TokenInfo.IssueWaitingToken info = tokenService.issueWaitingToken(TokenCommand.IssueWaitingToken.from(user));
 		return TokenResult.IssueWaitingToken.of(info, user);
 	}
-	public TokenResult.GetWaitingTokenPosition getWaitingTokenPosition(TokenCriteria.GetWaitingTokenPosition criteria) {
+	public TokenResult.GetWaitingTokenPositionAndActivateWaitingToken getWaitingTokenPositionAndActivateWaitingToken(
+		TokenCriteria.GetWaitingTokenPositionAndActivateWaitingToken criteria)
+	{
 		// 토큰정보 조회
 		TokenInfo.GetTokenByUserId info = tokenService.getTokenByUserId(TokenCommand.GetTokenByUserId.of(criteria.userId()));
 		Token token = info.token();
@@ -34,6 +36,16 @@ public class TokenUsecase {
 
 		// 대기상태 조회
 		int position = tokenService.getCurrentPosition(token.getUuid());
-		return TokenResult.GetWaitingTokenPosition.of(token.getUuid(), position);
+
+		// 토큰의 대기상태번호가 1번이라면(대기열의 맨앞에 있으므로) 대기토큰을 활성화를 시킨다
+		if(position == 1)
+			tokenService.activateToken(TokenCommand.ActivateToken.of(token.getUuid()));
+
+		return TokenResult.GetWaitingTokenPositionAndActivateWaitingToken.of(
+			token.getStatus(),
+			token.getUuid(),
+			position,
+			token.getExpiredAt()
+		);
 	}
 }

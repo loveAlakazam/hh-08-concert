@@ -99,4 +99,13 @@ public class TokenService {
             throw new BusinessException(UUID_NOT_FOUND);
         return position;
     }
+
+	public TokenInfo.ValidateActiveToken validateActiveToken(UUID uuid) {
+        // 토큰정보 조회
+        Token token = tokenRepository.findTokenByUUID(uuid);
+        if(token == null) throw new BusinessException(TOKEN_NOT_FOUND);
+        if(token.isExpiredToken()) throw new BusinessException(EXPIRED_OR_UNAVAILABLE_TOKEN);
+        if(!token.isActivated()) throw new BusinessException(ALLOW_ACTIVE_TOKEN);
+        return TokenInfo.ValidateActiveToken.of(token);
+	}
 }

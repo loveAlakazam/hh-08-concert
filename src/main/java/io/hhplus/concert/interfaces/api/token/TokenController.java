@@ -34,12 +34,14 @@ public class TokenController implements TokenApiDocs {
 
 	// 대기 순번 조회 요청
 	@GetMapping("position")
-	public ResponseEntity<ApiResponse<TokenResponse.GetWaitingTokenPosition>> getWaitingTokenPosition(
-		@RequestBody TokenRequest.GetWaitingTokenPosition request
+	public ResponseEntity<ApiResponse<TokenResponse.GetWaitingTokenPositionAndActivateWaitingToken>>
+	getWaitingTokenPositionAndActivateWaitingToken(
+		@RequestBody TokenRequest.GetWaitingTokenPositionAndActivateWaitingToken request
 	) {
-		TokenResult.GetWaitingTokenPosition result = tokenUsecase.getWaitingTokenPosition(
-			TokenCriteria.GetWaitingTokenPosition.of(request.userId())
-		);
-		return ApiResponseEntity.ok(TokenResponse.GetWaitingTokenPosition.of(result));
+		TokenResult.GetWaitingTokenPositionAndActivateWaitingToken result =
+			tokenUsecase.getWaitingTokenPositionAndActivateWaitingToken(
+				TokenCriteria.GetWaitingTokenPositionAndActivateWaitingToken.of(request.userId())
+			);
+		return ApiResponseEntity.ok(TokenResponse.GetWaitingTokenPositionAndActivateWaitingToken.of(result));
 	}
 }

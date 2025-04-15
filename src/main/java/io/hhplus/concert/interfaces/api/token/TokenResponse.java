@@ -3,6 +3,7 @@ package io.hhplus.concert.interfaces.api.token;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+import io.hhplus.concert.application.usecase.token.TokenCriteria;
 import io.hhplus.concert.application.usecase.token.TokenResult;
 import io.hhplus.concert.domain.token.Token;
 import io.hhplus.concert.domain.token.TokenStatus;
@@ -13,7 +14,6 @@ import lombok.Builder;
 public record TokenResponse (){
 	public record IssueWaitingToken(
 		long userId,
-		long tokenId,
 		UUID uuid,
 		TokenStatus status,
 		LocalDateTime expiredAt,
@@ -24,7 +24,6 @@ public record TokenResponse (){
 			User user = result.user();
 			return new IssueWaitingToken(
 				user.getId(), // 유저아이디
-				token.getId(), // 토큰 아이디
 				token.getUuid(), // 토큰 유저 UUID
 				token.getStatus(), // 토큰 상태
 				token.getExpiredAt(), // 토큰 만료일자
@@ -32,9 +31,9 @@ public record TokenResponse (){
 			);
 		}
 	}
-	public record GetWaitingTokenPosition(UUID uuid, int position) {
-		public static GetWaitingTokenPosition of(TokenResult.GetWaitingTokenPosition result) {
-			return new GetWaitingTokenPosition(result.uuid(), result.position());
+	public record GetWaitingTokenPositionAndActivateWaitingToken(UUID uuid, int position) {
+		public static GetWaitingTokenPositionAndActivateWaitingToken of(TokenResult.GetWaitingTokenPositionAndActivateWaitingToken result) {
+			return new GetWaitingTokenPositionAndActivateWaitingToken(result.uuid(), result.position());
 		}
 	}
 }
