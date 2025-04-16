@@ -1,5 +1,6 @@
 package io.hhplus.concert.infrastructure.persistence.token;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -13,7 +14,12 @@ public class TokenRepositoryImpl implements TokenRepository {
     private final TokenJpaRepository tokenJpaRepository;
 
     @Override
-    public Token findOneByUUID(UUID uuid) {
+    public Token findTokenByUserId(long userId) {
+        return tokenJpaRepository.findOneByUserId(userId).orElse(null);
+    }
+
+    @Override
+    public Token findTokenByUUID(UUID uuid) {
         return tokenJpaRepository.findOneByUUID(uuid).orElse(null);
     }
 
@@ -23,7 +29,7 @@ public class TokenRepositoryImpl implements TokenRepository {
     }
 
     @Override
-    public List<Token> findAllExpiredTokens() {
-        return tokenJpaRepository.findAllExpiredTokens(LocalDateTime.now());
+    public void deleteExpiredTokens() {
+        tokenJpaRepository.deleteExpiredTokens(LocalDate.now());
     }
 }

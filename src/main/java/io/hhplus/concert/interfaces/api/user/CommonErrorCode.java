@@ -15,7 +15,7 @@ public enum CommonErrorCode implements BusinessErrorCode {
 	INVALID_PAGE(HttpStatus.BAD_REQUEST, "잘못된 페이지 값입니다."),
 	PAST_DATE_NOT_AVAILABLE(HttpStatus.BAD_REQUEST, "이미 기간이 지난 날짜입니다"),
 	BUSINESS_RULE_VIOLATION(HttpStatus.UNPROCESSABLE_ENTITY, "도메인 규칙에 위반되었습니다"),
-	INVALID_ACCESS(HttpStatus.BAD_REQUEST, "잘못된 접근입니다"),
+	INVALID_ACCESS(HttpStatus.NOT_ACCEPTABLE, "잘못된 접근입니다"),
 
 	INTERNAL_SERVER_ERROR (HttpStatus.INTERNAL_SERVER_ERROR ,"서버 내부에서 발생한 오류입니다.");
 

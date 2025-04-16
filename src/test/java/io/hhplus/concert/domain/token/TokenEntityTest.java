@@ -1,82 +1,81 @@
 package io.hhplus.concert.domain.token;
 
+import static io.hhplus.concert.domain.token.TokenStatus.*;
 import static io.hhplus.concert.interfaces.api.common.validators.DateValidator.*;
+import static io.hhplus.concert.interfaces.api.user.CommonErrorCode.*;
 import static org.assertj.core.api.AssertionsForClassTypes.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
 
 import io.hhplus.concert.domain.token.Token;
 import io.hhplus.concert.domain.token.TokenStatus;
+import io.hhplus.concert.domain.user.User;
+import io.hhplus.concert.interfaces.api.common.BusinessException;
 
 public class TokenEntityTest {
 	@Test
 	void 이_토큰은_아직_유효하다 () {
 		// given
-		LocalDateTime now = LocalDateTime.now();
-		LocalDateTime validExpiration = now.plusMinutes(1);
-		Token token = new Token(TokenStatus.WAITING, validExpiration);
+		User user = User.of("테스트");
+		Token token = Token.of(user, UUID.randomUUID());
+		token.issue(user);
+
 		// when
 		boolean result = token.isExpiredToken();
 		// then
 		assertThat(result).isFalse();
-	}
-	@Test
-	void 이_토큰은_만료된_토큰이다 () {
-		// given
-		LocalDateTime expired = LocalDateTime.of(2025, 1, 1, 0,0,0);
-		Token token = new Token(TokenStatus.WAITING, expired);
-		// when
-		boolean result = token.isExpiredToken();
-		// then
-		assertThat(result).isTrue();
+		assertThat(isPastDateTime(token.getExpiredAt())).isFalse();
+		assertEquals(WAITING, token.getStatus());
 	}
 	@Test
 	void 이_토큰은_상태는_대기상태이므로_활성화상태가_아니다() {
 		// given
-		LocalDateTime now = LocalDateTime.now();
-		LocalDateTime validExpiration = now.plusMinutes(1);
-		Token token = new Token(TokenStatus.WAITING, validExpiration);
-		// when
-		boolean result = token.isActivated();
-		// then
-		assertThat(result).isFalse();
-	}
-	@Test
-	void 이_토큰은_상태는_활성화되어있지만_토큰유효기간이_만료되었으므로_활성화상태가_아니다() {
-		// given
-		LocalDateTime expired = LocalDateTime.of(2025, 1, 1, 0,0,0);
-		Token token = new Token(TokenStatus.ACTIVE, expired);
-		// when
-		boolean result = token.isActivated();
-		// then
-		assertThat(result).isFalse();
-	}
-	@Test
-	void 이_토큰은_활성상태이다() {
-		// given
-		LocalDateTime now = LocalDateTime.now();
-		LocalDateTime validExpiration = now.plusMinutes(1);
-		Token token = new Token(TokenStatus.ACTIVE, validExpiration);
-		// when
-		boolean result = token.isActivated();
-		// then
-		assertThat(result).isTrue();
-	}
-	@Test
-	void 대기열토큰을_활성화시키면_이_토큰의상태는_활성상태이다() {
-		// given
-		LocalDateTime now = LocalDateTime.now();
-		LocalDateTime validExpiration = now.plusMinutes(1);
-		Token token = new Token(TokenStatus.WAITING, validExpiration);
+		User user = User.of("테스트");
+		Token token = Token.of(user, UUID.randomUUID());
+		token.issue(user);
 
+		// when
+		boolean result = token.isActivated();
+		// then
+		assertThat(result).isFalse();
+		assertEquals(WAITING, token.getStatus());
+	}
+	@Test
+	void 대기상태의_토큰을_활성화_시킬_수있다() {
+		// given
+		User user = User.of("테스트");
+		Token token = Token.of(user, UUID.randomUUID());
+		token.issue(user);
 		// when
 		token.activate();
 
 		// then
-		assertThat(token.getStatus()).isEqualTo(TokenStatus.ACTIVE);
-		assertThat(isPastDateTime(token.getExpiredAt())).isFalse();
+		assertThat(token.isActivated()).isTrue();
+		assertEquals(ACTIVE, token.getStatus());
+	}
+	@Test
+	void 이미활성화된_토큰을_활성화시킬수_없으므로_BusinessException_예외발생() {
+		// given
+		User user = User.of("테스트");
+		Token token = Token.of(user, UUID.randomUUID());
+		token.issue(user); // 대기토큰
+		token.activate(); // 대기토큰 활성화
+
+		// when
+		BusinessException ex = assertThrows(
+			BusinessException.class,
+			() -> token.activate() // 한번더 활성화
+		);
+
+		// then
+		assertEquals(INVALID_ACCESS.getHttpStatus(),ex.getHttpStatus());
+		assertEquals(INVALID_ACCESS.getMessage(),ex.getMessage());
+		assertThat(token.isActivated()).isTrue();
+		assertEquals(ACTIVE, token.getStatus());
 	}
 
 }

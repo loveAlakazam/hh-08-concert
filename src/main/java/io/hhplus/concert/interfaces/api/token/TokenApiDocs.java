@@ -105,7 +105,7 @@ public interface TokenApiDocs {
 			}
 		)
 	)
-	ResponseEntity<ApiResponse<TokenResponse.GetWaitingTokenPosition>> getWaitingTokenSequence(
+	ResponseEntity<ApiResponse<TokenResponse.GetWaitingTokenPosition>> getWaitingTokenPosition(
 		@RequestBody TokenRequest.GetWaitingTokenPosition request
 	);
 }

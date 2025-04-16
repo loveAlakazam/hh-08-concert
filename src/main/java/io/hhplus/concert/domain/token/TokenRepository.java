@@ -6,8 +6,10 @@ import java.util.UUID;
 import io.hhplus.concert.domain.token.Token;
 
 public interface TokenRepository {
-	Token findOneByUUID(UUID uuid);
+	Token findTokenByUserId(long userId);
+	Token findTokenByUUID(UUID uuid);
 
 	Token saveOrUpdate(Token token);
-	List<Token> findAllExpiredTokens();
+
+	void deleteExpiredTokens();
 }

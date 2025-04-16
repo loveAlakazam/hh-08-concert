@@ -6,9 +6,9 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
+import io.hhplus.concert.domain.user.User;
 import io.hhplus.concert.domain.user.UserRepository;
 import io.hhplus.concert.interfaces.api.common.BusinessException;
-import io.hhplus.concert.interfaces.queue.WaitingQueue;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -16,32 +16,77 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class TokenService {
     private final TokenRepository tokenRepository;
-    private final UserRepository userRepository;
     private final WaitingQueue waitingQueue;
 
-    // 대기상태 토큰 발급 요청
-    public Token issueWaitingToken(UUID uuid) {
-        // 요청자
-        // User user = userRepository.findByUUID(uuid);
-        // if(user == null ) throw new NotFoundException(NOT_EXIST_USER);
-        //
-        // // 중복발급을 막기위해 큐에 들어있는지 확인
-        // if(waitingQueue.contains(uuid))
-        //     throw new ConflictException(UUID_IS_ALREADY_EXISTED);
-        //
-        // // 토큰 조회
-        // Token token = tokenRepository.findOneByUUID(uuid);
-        //
-        // // 토큰이 없거나 만료되면 새로발급
-        // if(token == null || token.isExpiredToken()) {
-        //     Token newToken = Token.issuerFor(user); // 대기 상태 토큰 생성
-        //     waitingQueue.enqueue(uuid); // 큐에 uuid 를 넣는다.
-        //     return tokenRepository.saveOrUpdate(newToken); // 토큰정보 저장
-        // }
-        // throw new ConflictException(TOKEN_ALREADY_ISSUED);
-        return null;
+    public TokenInfo.GetTokenByUserId getTokenByUserId(TokenCommand.GetTokenByUserId command) {
+        Token token = tokenRepository.findTokenByUserId(command.userId());
+        return TokenInfo.GetTokenByUserId.from(token);
     }
+    public TokenInfo.GetTokenByUUID getTokenByUUID(TokenCommand.GetTokenByUUID command) {
+        Token token = tokenRepository.findTokenByUUID(command.uuid());
+        return TokenInfo.GetTokenByUUID.from(token);
+    }
+    // 대기상태 토큰 발급 요청
+    public TokenInfo.IssueWaitingToken issueWaitingToken(TokenCommand.IssueWaitingToken command) {
+        User user = command.user();
 
+        // 토큰을 찾는다
+        Token token = tokenRepository.findTokenByUserId(user.getId());
+
+        // 이미 토큰이 있고, 그 토큰이 대기열큐에 들어있다면 예외발생
+        if( token != null && waitingQueue.contains(token.getUuid()))
+            throw new BusinessException(TOKEN_IS_WAITING);
+
+        // 이미 토큰이 있고, 그 토큰이 이미 활성화됐는지 확인
+        if (token != null && token.isActivated())
+            throw new BusinessException(TOKEN_ALREADY_ISSUED);
+        // 이미 토큰이 있고 그 토큰이 아직 유효하다면
+        if (token != null && !token.isExpiredToken())
+            throw new BusinessException(TOKEN_ALREADY_ISSUED);
+
+        // 만일 토큰이 없다면 신규토큰을 만든다.
+        if (token == null) token = Token.of(user, UUID.randomUUID());
+
+        // 토큰의 상태를 대기상태로 한다.
+        token.issue(user);
+
+        // 큐에 토큰을 넣는다
+        waitingQueue.enqueue(token.getUuid());
+        // 현재 토큰의 대기순서를 알려준다.
+        int position = waitingQueue.getPosition(token.getUuid());
+
+        // 토큰을 저장한다
+        tokenRepository.saveOrUpdate(token);
+
+        // 토큰정보와 대기순서를 같이 리턴한다
+        return TokenInfo.IssueWaitingToken.of(token, position);
+    }
+    /**
+     * 토큰 활성상태(ACTIVE) 로 변경
+     * @param command
+     */
+    public TokenInfo.ActivateToken activateToken(TokenCommand.ActivateToken command) {
+        UUID uuid = command.uuid();
+
+        // 대상토큰이 맨앞에있는지 확인
+        if(uuid != waitingQueue.peek()) throw new BusinessException(TOKEN_IS_WAITING);
+
+        // 해당 uuid 를 큐에서 제거
+        waitingQueue.dequeue();
+
+        // 대상토큰이 유효한 상태인지 확인
+        Token token = tokenRepository.findTokenByUUID(uuid);
+        if(token == null) throw new BusinessException(TOKEN_NOT_FOUND);
+
+        // 토큰활성화
+        token.activate();
+
+        // 토큰정보 저장
+        tokenRepository.saveOrUpdate(token);
+
+        // 활성화 토큰을 반환한다
+        return TokenInfo.ActivateToken.of(token);
+    }
     /**
      * 대기번호 조회
      *
@@ -54,77 +99,4 @@ public class TokenService {
             throw new BusinessException(UUID_NOT_FOUND);
         return position;
     }
-
-    /**
-     * 토큰 활성상태(ACTIVE) 로 변경
-     * @param uuid
-     */
-    public void updateActivateToken(UUID uuid) {
-        // 대상토큰이 맨앞에있는지 확인
-        UUID peekTokenUUID = waitingQueue.peek();
-        if(uuid != peekTokenUUID) throw new BusinessException(TOKEN_IS_WAITING);
-
-        // 해당 uuid 큐에서 제거
-        waitingQueue.dequeue();
-
-        // 대상토큰이 유효한 상태인지 확인
-        Token token = isValidToken(uuid);
-
-        // 토큰활성화
-        token.activate();
-
-        // 토큰정보 저장
-        tokenRepository.saveOrUpdate(token);
-    }
-
-    /**
-     * 토큰(대기/활성 모두)이 유효한지 확인
-     *
-     * @param uuid
-     * @return Token
-     */
-    public Token isValidToken(UUID uuid) {
-        // 토큰 조회
-        Token token = tokenRepository.findOneByUUID(uuid);
-
-        // 토큰이 존재하는지 확인
-        if(token == null) throw new BusinessException(TOKEN_NOT_FOUND);
-
-        // 토큰 유효기간이 만료되어있는지 확인
-        if(token.isExpiredToken()) throw new BusinessException(EXPIRED_OR_UNAVAILABLE_TOKEN);
-
-        return token;
-    }
-
-
-    /**
-     * 만료된 대기열큐에 있는 만료된 대기상태토큰들은 삭제된다.
-     * 스케줄러에서 만료된 토큰들을 큐에서 제거할 때 사용된다.
-     * 토큰의 유효시간과 동일한 30분간격으로 스케줄링한다.
-     */
-    public void removeExpiredTokensFromQueue() {
-        List<UUID> uuids = waitingQueue.toList();
-        for(UUID uuid: uuids) {
-            // 토큰 조회
-            Token token = tokenRepository.findOneByUUID(uuid);
-            LocalDateTime tokenExpiredAt = token.getExpiredAt();
-
-            // 토큰이 존재하지않으면 대기열에서 제거한다.
-            if(token == null ) waitingQueue.remove(uuid);
-
-            // 토큰이 만료되면 대기열에서 제외한다.
-            if(token.isExpiredToken()) waitingQueue.remove(uuid);
-        }
-    }
-    /**
-     * TODO
-     * 토큰상태와 관계없이
-     * 토큰테이블에서 유효기간이 만료된 토큰들은 모두 삭제된다.
-     * 1시간 간격으로 유효기간이 만료된 토큰들은 soft-deleted 된다.
-     */
-    public void removeExpiredTokens() {
-
-    }
-
-
 }

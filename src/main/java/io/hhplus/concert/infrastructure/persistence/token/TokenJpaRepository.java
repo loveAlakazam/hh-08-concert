@@ -1,5 +1,6 @@
 package io.hhplus.concert.infrastructure.persistence.token;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -14,16 +15,25 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface TokenJpaRepository extends JpaRepository<Token, Long> {
 	@Query("""
-		SELECT t
+		SELECT t.*
 		FROM Token t
-		WHERE t.user.uuid = :uuid
+		WHERE t.uuid = :uuid
 	""")
 	Optional<Token> findOneByUUID(@Param("uuid") UUID uuid);
 
 	@Query("""
-		SELECT t
-		FROM Token t
+		UPDATE Token t
+		SET t.deleted = true
 		WHERE t.expiredAt < :now
 	""")
-	List<Token> findAllExpiredTokens(@Param("now") LocalDateTime now);
+	void deleteExpiredTokens(@Param("now") LocalDate now);
+
+	@Query("""
+ 		SELECT t.*
+ 		FROM Token t
+ 			JOIN FETCH Token.user u
+ 		WHERE u.id = :userId
+	""")
+	Optional<Token> findOneByUserId(@Param("userId") long userId);
+
 }

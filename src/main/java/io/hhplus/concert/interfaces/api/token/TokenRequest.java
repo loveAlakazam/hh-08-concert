@@ -6,14 +6,15 @@ import io.hhplus.concert.domain.common.BaseEntity;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 public record TokenRequest() {
-	public record IssueWaitingToken(UUID uuid) {
-		public static IssueWaitingToken of(UUID uuid) {
-			return new IssueWaitingToken(uuid);
+	public record IssueWaitingToken(long userId) {
+		public static IssueWaitingToken of(long userId) {
+
+			return new IssueWaitingToken(userId);
 		}
 	}
-	public record GetWaitingTokenPosition() {
-		public static GetWaitingTokenPosition of() {
-			return new GetWaitingTokenPosition();
+	public record GetWaitingTokenPosition(long userId) {
+		public static GetWaitingTokenPosition of(long userId, UUID uuid) {
+			return new GetWaitingTokenPosition(userId);
 		}
 	}
 }

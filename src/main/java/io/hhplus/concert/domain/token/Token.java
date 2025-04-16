@@ -1,9 +1,13 @@
 package io.hhplus.concert.domain.token;
 
 import static io.hhplus.concert.interfaces.api.common.validators.DateValidator.*;
+import static io.hhplus.concert.interfaces.api.token.TokenErrorCode.*;
+import static io.hhplus.concert.interfaces.api.user.CommonErrorCode.*;
 
 import io.hhplus.concert.domain.common.BaseEntity;
 import io.hhplus.concert.domain.user.User;
+import io.hhplus.concert.interfaces.api.common.BusinessException;
+import io.hhplus.concert.interfaces.api.common.InvalidValidationException;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -16,7 +20,6 @@ import java.util.UUID;
 
 @Entity
 @Getter
-@Setter
 @Table(name = "tokens")
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class Token extends BaseEntity {
@@ -45,36 +48,28 @@ public class Token extends BaseEntity {
 
     // 정적팩토리 메소드
     @Builder
-    private Token(long id, TokenStatus status, LocalDateTime expiredAt) {
-        this.id = id;
-        this.status = status;
-        this.expiredAt = expiredAt;
+    private Token(User user, UUID uuid) {
+        this.user = user;
+        this.uuid = uuid;
     }
-    public static Token create (long id, TokenStatus status, LocalDateTime expiredAt) {
+    public static Token of (User user, UUID uuid) {
+        if(user == null) throw new BusinessException(NOT_NULLABLE);
+        if(uuid == null) throw new BusinessException(NOT_NULLABLE);
+
         return Token.builder()
-            .id(id)
-            .status(status)
-            .expiredAt(expiredAt)
+            .user(user)
+            .uuid(uuid)
             .build();
     }
-
-
-    public Token(TokenStatus status, LocalDateTime expiredAt) {
-        super();
-        this.status = status;
-        this.expiredAt = expiredAt;
-    }
-
-
-    // 비즈니스 정책
-    public static final int VALID_TOKEN_DURATION_MINUTE_UNIT = 30; // 30분 - 토큰 유효기간 분단위
-    public static final int VALID_TOKEN_DURATION_SECOND_UNIT = 60 * VALID_TOKEN_DURATION_MINUTE_UNIT; // 토큰 유효기간 초단위
-
-    // 비즈니스 책임
     /**
      * 토큰 활성화
      */
     public void activate() {
+        // 이미 활성화된 토큰은 활성화 처리가 불가능하다
+        if(isActivated()) throw new BusinessException(INVALID_ACCESS);
+        // 토큰 만료됐는지 확인
+        if(this.isExpiredToken()) throw new BusinessException(EXPIRED_OR_UNAVAILABLE_TOKEN);
+
         // 상태변경: WAITING -> ACTIVE
         this.status = TokenStatus.ACTIVE;
 
@@ -96,19 +91,30 @@ public class Token extends BaseEntity {
      * @return boolean
      */
     public boolean isExpiredToken() {
-       return isPastDateTime(this.expiredAt);
+        return isPastDateTime(this.expiredAt);
     }
 
     /**
-     * 토큰 발급
+     * 대기상태 토큰으로 토큰을 발급한다.
+     * 큐에 진입하게되면
      */
-    public static Token issuerFor(User user) {
-        Token token = new Token();
+    public void issue(User user) {
+        // 이미 활성화된 토큰은 대기상태로 전환이 불가능하다
+        if(isActivated()) throw new BusinessException(INVALID_ACCESS);
+
+        // 대기토큰을 생성한다
+        if(user == null) throw new BusinessException(NOT_NULLABLE);
+
+        // 상태 초기화
+        this.status = TokenStatus.WAITING;
+
+        // 토큰만료일자 초기화
         LocalDateTime now = LocalDateTime.now();
-        token.setUser(user);
-        token.setStatus(TokenStatus.WAITING);
-        token.setExpiredAt(now.plusMinutes(VALID_TOKEN_DURATION_MINUTE_UNIT));
-        return token;
+        this.expiredAt = now.plusMinutes(VALID_TOKEN_DURATION_MINUTE_UNIT);
     }
+
+    // 비즈니스 정책
+    public static final int VALID_TOKEN_DURATION_MINUTE_UNIT = 30; // 30분 - 토큰 유효기간 분단위
+    public static final int VALID_TOKEN_DURATION_SECOND_UNIT = 60 * VALID_TOKEN_DURATION_MINUTE_UNIT; // 토큰 유효기간 초단위
 
 }
