@@ -13,10 +13,4 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface UserJpaRepository extends JpaRepository<User, Long> {
-	@Query("""
-		SELECT u.*
-		FROM User u
-		WHERE u.uuid = :uuid
-	""")
-	Optional<User> findByUUID(@Param("uuid") UUID uuid);
 }

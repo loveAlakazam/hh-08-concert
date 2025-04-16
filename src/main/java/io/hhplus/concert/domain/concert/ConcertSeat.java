@@ -1,14 +1,14 @@
 package io.hhplus.concert.domain.concert;
 
-import static io.hhplus.concert.domain.concert.ConcertExceptionMessage.*;
+import static io.hhplus.concert.interfaces.api.concert.ConcertErrorCode.*;
+import static io.hhplus.concert.interfaces.api.user.CommonErrorCode.*;
 
 import io.hhplus.concert.domain.common.BaseEntity;
-import io.hhplus.concert.domain.common.exceptions.ConflictException;
-import io.hhplus.concert.domain.common.exceptions.InvalidValidationException;
-import io.hhplus.concert.domain.common.exceptions.RequestTimeOutException;
 import io.hhplus.concert.domain.reservation.Reservation;
+import io.hhplus.concert.interfaces.api.common.BusinessException;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -16,13 +16,13 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import lombok.Setter;
+
 
 @Entity
 @Getter
-@Setter
 @Table(name = "concert_seats")
 @RequiredArgsConstructor
 public class ConcertSeat extends BaseEntity {
@@ -39,39 +39,78 @@ public class ConcertSeat extends BaseEntity {
 	@Column(name="is_available", nullable = false)
 	private boolean isAvailable = true; // 예약가능여부
 
-	/**
-	 * 생성자
-	 */
-	public ConcertSeat(long id, int number, long price) {
-		super();
-		validateId(id);
-		validateSeatNumber(number);
-		validateSeatPrice(price);
-
-		this.id = id;
-		this.number = number;
-		this.price = price;
-	}
-	public ConcertSeat(long id, int number, long price, boolean isAvailable) {
-		this(id, number, price);
-		this.isAvailable = isAvailable;
-	}
 
 	/**
 	 * 연관관계
 	 */
 	// 콘서트좌석:콘서트=N:1
-	@ManyToOne
+	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "concert_id")
 	Concert concert;
 	// 콘서트좌석:콘서트날짜=N:1
-	@ManyToOne
+	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name= "concert_date_id")
 	ConcertDate concertDate;
 	// 콘서트좌석:예약=1:1
 	@OneToOne
 	@JoinColumn(name = "reservation_id")
 	Reservation reservation;
+
+	/**
+	 * 정적 팩토리 메소드
+	 */
+	@Builder
+	private ConcertSeat(Concert concert, ConcertDate concertDate, int number, long price, boolean isAvailable) {
+		this.concert = concert;
+		this.concertDate = concertDate;
+		this.number = number;
+		this.price = price;
+		this.isAvailable = isAvailable;
+	}
+	public static ConcertSeat of (Concert concert, ConcertDate concertDate, int number, long price, boolean isAvailable) {
+		if(concert == null) throw new BusinessException(NOT_NULLABLE);
+		if(concertDate == null) throw new BusinessException(NOT_NULLABLE);
+
+		return ConcertSeat.builder()
+			.concert(concert)
+			.concertDate(concertDate)
+			.number(number)
+			.price(price)
+			.isAvailable(isAvailable)
+			.build();
+	}
+	/**
+	 * 좌석 예약 - 좌석의 선택 가능 상태를 (선택 가능)->(선택 불가능) 으로 변경
+	 *
+	 * @throws BusinessException
+	 */
+	public void reserve() {
+		// 이미 예약된 좌석
+		if( !isAvailable ) throw new BusinessException(ALREADY_RESERVED_SEAT);
+
+		this.isAvailable = false;
+	}
+	/**
+	 * 좌석 취소
+	 * 임시예약 기간(5분) 내에 결제처리를 하지 못하고 기간이 만료되어, 해당 좌석의 예약이 취소됨.
+	 * 좌석의 선택가능상태를 (선택 불가능)->(선택 가능) 으로 변경
+	 *
+	 * @throws BusinessException
+	 */
+	public void cancel() {
+		this.isAvailable = true;
+	}
+	/**
+	 * 좌석가격을 변경한다
+	 * 예약이 가능한 상태일때만 좌석가격 변경이 가능하다
+	 *
+	 * @param price
+	 */
+	public void editPrice(long price) {
+		if( !isAvailable ) throw new BusinessException(ALREADY_RESERVED_SEAT);
+
+		this.price = price;
+	}
 
 	/**
 	 * 비즈니스 책임
@@ -81,41 +120,5 @@ public class ConcertSeat extends BaseEntity {
 	public static final int MAX_SEAT_NUMBER = 50; // 좌석번호 최대값
 	public static final long MINIMUM_SEAT_PRICE = 1000; // 좌석 가격 최소값
 	public static final long MAXIMUM_SEAT_PRICE = 300000; // 좌석 가격 최대값
-
-	/**
-	 * 좌석가격 유효성 검증
-	 * @param price - 좌석가격
-	 */
-	public static void validateSeatPrice(long price) {
-		if(price < MINIMUM_SEAT_PRICE)
-			throw new InvalidValidationException(PRICE_SHOULD_BE_MORE_THAN_MINIMUM_PRICE);
-		if(price > MAXIMUM_SEAT_PRICE)
-			throw new InvalidValidationException(PRICE_SHOULD_BE_LESS_THAN_MAXIMUM_PRICE);
-	}
-
-	/**
-	 * 좌석번호 유효성 검증<br>
-	 * 콘서트당 좌석번호는 1~50 번까지 50개의 좌석이 있다. <br>
-	 *
-	 * @param seatNumber - 좌석번호
-	 */
-	public static void validateSeatNumber(int seatNumber) {
-		if(seatNumber < MIN_SEAT_NUMBER || seatNumber > MAX_SEAT_NUMBER)
-			throw new InvalidValidationException(INVALID_SEAT_NUMBER);
-	}
-
-	/**
-	 * 좌석 예약
-	 *
-	 * @throws ConflictException
-	 * @throws RequestTimeOutException
-	 */
-	public void reserve() {
-		// 좌석이 이미 예약 됐는지 확인
-		if( !isAvailable ) throw new ConflictException(ALREADY_RESERVED_SEAT);
-
-		// 예약가능 -> 예약불가능 으로 변경
-		this.isAvailable = false;
-	}
 
 }

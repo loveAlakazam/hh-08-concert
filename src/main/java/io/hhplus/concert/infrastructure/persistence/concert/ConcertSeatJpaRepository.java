@@ -6,7 +6,6 @@ import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import io.hhplus.concert.domain.concert.ConcertSeat;
-import io.hhplus.concert.interfaces.api.concert.dto.ConcertSeatDetailResponse;
 
 
 import org.springframework.data.jpa.repository.Query;
@@ -21,27 +20,25 @@ public interface ConcertSeatJpaRepository extends JpaRepository<ConcertSeat, Lon
 		FROM Concert c
 			JOIN FETCH c.dates cd
 			JOIN FETCH c.seats cs
-		WHERE  c.id = :concertId
-			AND cd.isAvailable = true
+		WHERE  
+			c.deleted = false
+			AND cd.deleted = false
+			AND cs.deleted = false
+			AND c.id = :concertId
 			AND cd.id = :concertDateId 
 		"""
 	)
 	List<ConcertSeat> findAllSeats(@Param("concertId") Long concertId, @Param("concertDateId") Long concertDateId);
 
 	@Query("""
-  		SELECT new io.hhplus.concert.interfaces.api.concert.dto.ConcertSeatDetailResponse(
-  			cs.id,
-  			cs.number,
-  			cs.price,
-  			cs.isAvailable,
-  			c.id,
-  			cd.id
-  		)
-  		FROM ConcertSeats cs
-  			JOIN FETCH c.dates cd
-  			JOIN FETCH c.seats cs
-  		WHERE cs.id = :concertSeatId
-  			AND cd.isAvailable = true
-		""")
-	Optional<ConcertSeatDetailResponse> getConcertSeatInfo(@Param("concertSeatId") Long concertSeatId);
+  		SELECT cs.*
+  		FROM ConcertSeat cs
+  			JOIN FETCH cs.date  cd
+  		WHERE 
+  			cd.deleted = false
+  			AND cd.available = false
+  			AND cs.deleted = false
+  			AND cs.id = :concertSeatId
+	""")
+	Optional<ConcertSeat> getConcertSeatInfo(@Param("concertSeatId") Long concertSeatId);
 }

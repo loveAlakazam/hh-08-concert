@@ -23,7 +23,11 @@ public class ConcertRepositoryImpl implements ConcertRepository {
     }
 
     @Override
-    public Concert findConcertById(long id) {
+    public Concert findById(long id) {
         return concertJpaRepository.findById(id).orElse(null);
+    }
+    @Override
+    public Concert saveOrUpdate(Concert concert) {
+        return concertJpaRepository.save(concert);
     }
 }

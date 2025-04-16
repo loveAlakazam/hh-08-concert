@@ -1,18 +1,13 @@
 package io.hhplus.concert.domain.token;
 
-import static io.hhplus.concert.domain.token.TokenExceptionMessage.*;
-import static io.hhplus.concert.domain.user.UserExceptionMessage.*;
+import static io.hhplus.concert.interfaces.api.token.TokenErrorCode.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
-import io.hhplus.concert.domain.common.exceptions.ConflictException;
-import io.hhplus.concert.domain.common.exceptions.NotAcceptableException;
-import io.hhplus.concert.domain.common.exceptions.NotFoundException;
-import io.hhplus.concert.domain.common.exceptions.UnAuthorizedException;
-import io.hhplus.concert.domain.user.User;
 import io.hhplus.concert.domain.user.UserRepository;
+import io.hhplus.concert.interfaces.api.common.BusinessException;
 import io.hhplus.concert.interfaces.queue.WaitingQueue;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -27,23 +22,24 @@ public class TokenService {
     // 대기상태 토큰 발급 요청
     public Token issueWaitingToken(UUID uuid) {
         // 요청자
-        User user = userRepository.findByUUID(uuid);
-        if(user == null ) throw new NotFoundException(NOT_EXIST_USER);
-
-        // 중복발급을 막기위해 큐에 들어있는지 확인
-        if(waitingQueue.contains(uuid))
-            throw new ConflictException(UUID_IS_ALREADY_EXISTED);
-
-        // 토큰 조회
-        Token token = tokenRepository.findOneByUUID(uuid);
-
-        // 토큰이 없거나 만료되면 새로발급
-        if(token == null || token.isExpiredToken()) {
-            Token newToken = Token.issuerFor(user); // 대기 상태 토큰 생성
-            waitingQueue.enqueue(uuid); // 큐에 uuid 를 넣는다.
-            return tokenRepository.saveOrUpdate(newToken); // 토큰정보 저장
-        }
-        throw new ConflictException(TOKEN_ALREADY_ISSUED);
+        // User user = userRepository.findByUUID(uuid);
+        // if(user == null ) throw new NotFoundException(NOT_EXIST_USER);
+        //
+        // // 중복발급을 막기위해 큐에 들어있는지 확인
+        // if(waitingQueue.contains(uuid))
+        //     throw new ConflictException(UUID_IS_ALREADY_EXISTED);
+        //
+        // // 토큰 조회
+        // Token token = tokenRepository.findOneByUUID(uuid);
+        //
+        // // 토큰이 없거나 만료되면 새로발급
+        // if(token == null || token.isExpiredToken()) {
+        //     Token newToken = Token.issuerFor(user); // 대기 상태 토큰 생성
+        //     waitingQueue.enqueue(uuid); // 큐에 uuid 를 넣는다.
+        //     return tokenRepository.saveOrUpdate(newToken); // 토큰정보 저장
+        // }
+        // throw new ConflictException(TOKEN_ALREADY_ISSUED);
+        return null;
     }
 
     /**
@@ -55,7 +51,7 @@ public class TokenService {
     public int getCurrentPosition(UUID uuid) {
         int position = waitingQueue.getPosition(uuid);
         if(position == -1)
-            throw new NotFoundException(UUID_NOT_FOUND);
+            throw new BusinessException(UUID_NOT_FOUND);
         return position;
     }
 
@@ -66,7 +62,7 @@ public class TokenService {
     public void updateActivateToken(UUID uuid) {
         // 대상토큰이 맨앞에있는지 확인
         UUID peekTokenUUID = waitingQueue.peek();
-        if(uuid != peekTokenUUID) throw new NotAcceptableException(TOKEN_IS_WAITING);
+        if(uuid != peekTokenUUID) throw new BusinessException(TOKEN_IS_WAITING);
 
         // 해당 uuid 큐에서 제거
         waitingQueue.dequeue();
@@ -92,10 +88,10 @@ public class TokenService {
         Token token = tokenRepository.findOneByUUID(uuid);
 
         // 토큰이 존재하는지 확인
-        if(token == null) throw new NotFoundException(TOKEN_NOT_FOUND);
+        if(token == null) throw new BusinessException(TOKEN_NOT_FOUND);
 
         // 토큰 유효기간이 만료되어있는지 확인
-        if(token.isExpiredToken()) throw new UnAuthorizedException(EXPIRED_OR_UNAVAILABLE_TOKEN);
+        if(token.isExpiredToken()) throw new BusinessException(EXPIRED_OR_UNAVAILABLE_TOKEN);
 
         return token;
     }

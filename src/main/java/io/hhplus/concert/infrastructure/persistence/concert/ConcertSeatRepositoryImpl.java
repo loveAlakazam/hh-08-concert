@@ -2,10 +2,10 @@ package io.hhplus.concert.infrastructure.persistence.concert;
 
 
 import java.util.List;
+import java.util.Optional;
 
 import io.hhplus.concert.domain.concert.ConcertSeat;
 import io.hhplus.concert.domain.concert.ConcertSeatRepository;
-import io.hhplus.concert.interfaces.api.concert.dto.ConcertSeatDetailResponse;
 
 import lombok.RequiredArgsConstructor;
 
@@ -19,13 +19,13 @@ public class ConcertSeatRepositoryImpl implements ConcertSeatRepository {
     }
 
     @Override
-    public ConcertSeatDetailResponse getConcertSeatInfo(long concertSeatId) {
+    public ConcertSeat getConcertSeatInfo(long concertSeatId) {
         return concertSeatJpaRepository.getConcertSeatInfo(concertSeatId).orElse(null);
     }
 
     @Override
-    public ConcertSeat findConcertSeatById(long id) {
-        return concertSeatJpaRepository.findById(id).orElse(null);
+    public Optional<ConcertSeat> findById(long id) {
+        return concertSeatJpaRepository.findById(id);
     }
 
     @Override

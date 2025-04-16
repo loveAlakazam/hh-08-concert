@@ -14,10 +14,16 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface ConcertDateJpaRepository extends JpaRepository<ConcertDate, Long> {
-	@Query("SELECT cd.* " +
-		" FROM Concert c " +
-		" JOIN FETCH c.dates cd " +
-		" WHERE c.id = :concertId " +
-		" AND cd.progressDate >= :currentDate ")
-	public Page<ConcertDate>  findUpcomingConcertDates (@Param("concertId") Long concertId, @Param("currentDate") LocalDate currentDate, Pageable pageable);
+	@Query(
+		"""
+		SELECT cd.* 
+		FROM Concert c 
+			JOIN FETCH c.dates cd
+		WHERE cd.deleted = false
+			AND cd.isAvailable = true
+			AND cd.progressDate >= :currentDate
+  			AND c.id = :concertId
+		"""
+	)
+	Page<ConcertDate>  findUpcomingConcertDates (@Param("concertId") Long concertId, @Param("currentDate") LocalDate currentDate, Pageable pageable);
 }

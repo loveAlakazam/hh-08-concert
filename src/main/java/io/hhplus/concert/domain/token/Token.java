@@ -1,19 +1,24 @@
 package io.hhplus.concert.domain.token;
 
+import static io.hhplus.concert.interfaces.api.common.validators.DateValidator.*;
+
 import io.hhplus.concert.domain.common.BaseEntity;
 import io.hhplus.concert.domain.user.User;
 import jakarta.persistence.*;
+import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
 @Getter
 @Setter
 @Table(name = "tokens")
-@RequiredArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class Token extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -26,15 +31,8 @@ public class Token extends BaseEntity {
     @Column(name = "expired_at", nullable = false)
     private LocalDateTime expiredAt; // 토큰 만료일자
 
-    public Token(TokenStatus status, LocalDateTime expiredAt) {
-        super();
-        this.status = status;
-        this.expiredAt = expiredAt;
-    }
-    public Token(long id, TokenStatus status, LocalDateTime expiredAt) {
-        this(status, expiredAt);
-        this.id = id;
-    }
+    @Column(name="uuid", columnDefinition = "BINARY(16)", unique = true)
+    private UUID uuid; // 유저의 UUID
 
 
     /**
@@ -44,6 +42,29 @@ public class Token extends BaseEntity {
     @OneToOne
     @JoinColumn(name = "user_id", referencedColumnName = "id", nullable = false, unique = true)
     private User user;
+
+    // 정적팩토리 메소드
+    @Builder
+    private Token(long id, TokenStatus status, LocalDateTime expiredAt) {
+        this.id = id;
+        this.status = status;
+        this.expiredAt = expiredAt;
+    }
+    public static Token create (long id, TokenStatus status, LocalDateTime expiredAt) {
+        return Token.builder()
+            .id(id)
+            .status(status)
+            .expiredAt(expiredAt)
+            .build();
+    }
+
+
+    public Token(TokenStatus status, LocalDateTime expiredAt) {
+        super();
+        this.status = status;
+        this.expiredAt = expiredAt;
+    }
+
 
     // 비즈니스 정책
     public static final int VALID_TOKEN_DURATION_MINUTE_UNIT = 30; // 30분 - 토큰 유효기간 분단위

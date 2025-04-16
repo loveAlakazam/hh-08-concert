@@ -1,96 +1,82 @@
 package io.hhplus.concert.domain.user;
 
-import static io.hhplus.concert.domain.user.UserExceptionMessage.*;
 
 import org.springframework.stereotype.Service;
 
-import io.hhplus.concert.domain.common.exceptions.NotFoundException;
-import io.hhplus.concert.interfaces.api.user.dto.PointResponse;
+import io.hhplus.concert.interfaces.api.common.BusinessException;
+import io.hhplus.concert.interfaces.api.user.UserErrorCode;
 import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
 public class UserService {
     private final UserRepository userRepository;
+    private final UserPointRepository userPointRepository;
     private final UserPointHistoryRepository userPointHistoryRepository;
 
     /**
      * 포인트 충전
      *
-     * @param id 유저 PK
-     * @param amount 충전금액
-     * @return PointResponse
+     * @param command
+     * @return UserInfo.UserPoint
      */
-    public PointResponse chargePoint(long id, long amount) {
-        // 유저 정보 조회
-        User user = userRepository.findById(id);
-        if(user == null) throw new NotFoundException(NOT_EXIST_USER);
+    public UserInfo.ChargePoint chargePoint(UserPointCommand.ChargePoint command) {
+        // 유저 포인트정보 조회
+        UserPoint userPoint = userPointRepository.findByUserId(command.userId());
+        if(userPoint == null)
+            throw new BusinessException(UserErrorCode.NOT_EXIST_USER);
 
         // amount 값만큼 포인트 충전
-        long pointAfterCharge = user.chargePoint(amount);
+        userPoint.charge(command.amount());
 
-        // 유저 정보 업데이트
-        userRepository.save(user);
+        // 유저 포인트 + 포인트 내역 저장
+        userPointRepository.save(userPoint);
 
-        // 포인트 충전 내역 생성
-        userPointHistoryRepository.save(amount, UserPointHistoryStatus.CHARGE, user);
-
-        // 충전후 포인트정보를 리턴
-        return PointResponse.of(id, pointAfterCharge);
+        // 충전후 유저정보를 리턴
+       return UserInfo.ChargePoint.of(userPoint.getPoint());
     }
-
     /**
      * 포인트 사용
      *
-     * @param id 유저 PK
-     * @param amount 사용금액
-     * @return PointResponse
+     * @param command
+     * @return UserInfo.UserPoint
      */
-    public PointResponse usePoint(long id, long amount) {
+    public UserInfo.UsePoint usePoint(UserPointCommand.UsePoint command) {
         // 유저 정보 조회
-        User user = userRepository.findById(id);
-        if(user == null) throw new NotFoundException(NOT_EXIST_USER);
+        UserPoint userPoint = userPointRepository.findByUserId(command.userId());
+        if(userPoint == null) throw new BusinessException(UserErrorCode.NOT_EXIST_USER);
 
         // amount 값만큼 포인트 사용
-        long pointAfterUse = user.usePoint(amount);
+        userPoint.use(command.amount());
 
-        // 유저정보 업데이트
-        userRepository.save(user);
-
-        // 포인트 사용내역 생성
-        userPointHistoryRepository.save(amount, UserPointHistoryStatus.USE, user);
+        // 유저 포인트 + 포인트 내역 저장
+        userPointRepository.save(userPoint);
 
         // 사용후 포인트정보를 리턴
-        return PointResponse.of(id, pointAfterUse);
+        return  UserInfo.UsePoint.of(userPoint.getPoint());
     }
-
-    /**
-     * 보유 포인트 조회
-     *
-     * @param id 유저 PK
-     * @return PointResponse
-     */
-    public PointResponse getCurrentPoint(long id) {
-        // 유저 정보 조회
-        User user = userRepository.findById(id);
-        if(user == null) throw new NotFoundException(NOT_EXIST_USER);
-
-        // 현재 잔액 조회
-        long currentPoint = user.getCurrentPoint();
-
-        // 현재 보유 포인트 정보를 리턴
-        return PointResponse.of(id, currentPoint);
-    }
-
     /**
      * 식별자(id)로 유저 도메인 엔티티를 호출
      *
-     * @param id - 유저 PK
-     * @return User | null
+     * @param command
+     * @return UserInfo.UserPoint
      */
-    public User getUserEntityById(long id) {
-        User user =  userRepository.findById(id);
-        if(user == null) throw new NotFoundException(NOT_EXIST_USER);
+    public UserInfo.GetCurrentPoint getCurrentPoint(UserPointCommand.GetCurrentPoint command) {
+        UserPoint userPoint = userPointRepository.findByUserId(command.userId());
+        if(userPoint == null) throw new BusinessException(UserErrorCode.NOT_EXIST_USER);
+        return UserInfo.GetCurrentPoint.of(userPoint.getPoint());
+    }
+
+    public UserInfo.GetUserPoint getUserPoint(UserCommand.GetUserPoint command) {
+        UserPoint userPoint = userPointRepository.findByUserId(command.userId());
+        if(userPoint == null) throw new BusinessException(UserErrorCode.NOT_EXIST_USER);
+        return UserInfo.GetUserPoint.of(userPoint);
+    }
+
+    public User getUser(UserCommand.Get command) {
+        User user = userRepository.findById(command.id());
+        if(user == null) throw new BusinessException(UserErrorCode.NOT_EXIST_USER);
         return user;
     }
+
 }

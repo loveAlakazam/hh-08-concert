@@ -1,17 +1,21 @@
 package io.hhplus.concert.domain.concert;
 
-import static io.hhplus.concert.domain.common.exceptions.CommonExceptionMessage.*;
-import static io.hhplus.concert.domain.concert.ConcertExceptionMessage.*;
+import static io.hhplus.concert.domain.concert.ConcertSeat.*;
+import static io.hhplus.concert.interfaces.api.user.CommonErrorCode.*;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import io.hhplus.concert.domain.common.BaseEntity;
-import io.hhplus.concert.domain.common.exceptions.InvalidValidationException;
 import io.hhplus.concert.domain.reservation.Reservation;
+import io.hhplus.concert.interfaces.api.common.BusinessException;
+import io.hhplus.concert.interfaces.api.common.validators.EmptyStringValidator;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -19,6 +23,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
@@ -40,75 +45,89 @@ public class ConcertDate extends BaseEntity {
 	@Column(name = "place", nullable = false)
 	private String place; // 공연장소
 
-	// TODO
-	// @Column(name ="rest_of_seats", nullable = false)
-	// private int RestOfSeats; // 남은좌석개수
-
 	/**
-	 * 생성자
+	 * 정적 팩토리 메소드
+	 * @param concert
+	 * @param progressDate
+	 * @param isAvailable
+	 * @param place
 	 */
-	public ConcertDate(long id, LocalDate progressDate, boolean isAvailable, String place) {
-		super();
-		validateId(id);
-		validateProgressDate(progressDate);
-		validatePlace(place);
-
-		this.id = id;
+	@Builder
+	private ConcertDate(Concert concert, LocalDate progressDate, boolean isAvailable, String place) {
+		this.concert = concert;
 		this.progressDate = progressDate;
-		this.place = place;
 		this.isAvailable = isAvailable;
+		this.place = place;
+	}
+	public static ConcertDate of(Concert concert, LocalDate progressDate, boolean isAvailable, String place) {
+		if(concert == null) throw new BusinessException(NOT_NULLABLE);
+		if(progressDate == null) throw new BusinessException(NOT_NULLABLE);
+		if(EmptyStringValidator.isEmptyString(place)) throw new BusinessException(SHOULD_NOT_EMPTY);
+
+		return ConcertDate.builder()
+			.concert(concert)
+			.progressDate(progressDate)
+			.isAvailable(isAvailable)
+			.place(place)
+			.build();
 	}
 
 	/**
 	 * 연관관계
 	 */
 	// 콘서트날짜:콘서트=N:1
-	@ManyToOne
+	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name ="concert_id")
 	private Concert concert;
 	// 콘서트날짜:좌석=1:N
-	@OneToMany(mappedBy = "concertDate")
+	@OneToMany(mappedBy = "concertDate", cascade = CascadeType.ALL, orphanRemoval = true)
 	private List<ConcertSeat> seats = new ArrayList<>();
 	// 콘서트날짜:예약=1:N
 	@OneToMany(mappedBy = "concertDate")
 	private List<Reservation> reservations = new ArrayList<>();
 
 	/**
+	 * 해당 공연에서 신규 공연날짜 추가할때 사용되며,
+	 * 해당 날짜의 공연좌석 50개 정보를 초기화 및 추가.
+	 *
+	 * @param concert - 공연 도메인 엔티티
+	 * @param price - 좌석 가격 초기값
+	 */
+	public void initializeSeats(Concert concert, long price) {
+		// 콘서트 좌석 50개를 만든다
+		for(int seatNumber = MIN_SEAT_NUMBER; seatNumber <= MAX_SEAT_NUMBER ; seatNumber++) {
+			ConcertSeat concertSeat = ConcertSeat.of(concert, this, seatNumber, price , true);
+			this.seats.add(concertSeat);
+		}
+	}
+	/**
+	 * 특정 날짜에 해당되는 공연좌석 정보들을 조회가 가능하다
+	 */
+	public List<ConcertSeat> concertSeats() {
+		return this.seats;
+	}
+	/**
+	 * 특정 날짜에 해당되는 예약 가능한 좌석 개수 조회할 수 있다
+	 */
+	public int countAvailableSeats() {
+		List<ConcertSeat> availableSeats = this.seats.stream()
+			.filter(concertSeat -> concertSeat.isAvailable())
+			.collect(Collectors.toList());
+		return availableSeats.size();
+	}
+	/**
+	 * 좌석이 매진되면 일정의 상태값을 변경한다
+	 */
+	public void soldOut() {
+		if( this.countAvailableSeats() == 0 ) {
+			this.isAvailable = false;
+		}
+	}
+
+	/**
 	 * 비즈니스 정책
 	 */
 	public static int MINIMUM_LENGTH_OF_PLACE_NAME = 2;
 	public static int MAXIMUM_LENGTH_OF_PLACE_NAME = 50;
-
-	// 비즈니스 책임
-	/**
-	 * 장소명 유효성검사
-	 *
-	 * @param place - 장소명
-	 */
-	public static void validatePlace(String place) {
-		if(place == null)
-			throw new InvalidValidationException(SHOULD_NOT_EMPTY);
-
-		String nameRemovedWhiteSpaces = BaseEntity.getRegexRemoveWhitespace(place);
-		if(nameRemovedWhiteSpaces.isEmpty())
-			throw new InvalidValidationException(SHOULD_NOT_EMPTY);
-
-		if(nameRemovedWhiteSpaces.length() < MINIMUM_LENGTH_OF_PLACE_NAME)
-			throw new InvalidValidationException(LENGTH_OF_PLACE_SHOULD_BE_MORE_THAN_MINIMUM_LENGTH);
-
-		if(nameRemovedWhiteSpaces.length() > MAXIMUM_LENGTH_OF_PLACE_NAME)
-			throw new InvalidValidationException(LENGTH_OF_PLACE_SHOULD_BE_LESS_THAN_MAXIMUM_LENGTH);
-	}
-	/**
-	 * 공연 진행날짜 유효성검사
-	 *
-	 * @param progressDate
-	 */
-	public static void validateProgressDate(LocalDate progressDate) {
-		if(progressDate == null) throw new InvalidValidationException(SHOULD_NOT_EMPTY);
-
-		// progressDate 가 과거의 날짜라면 예외발생
-		if(isPastDate(progressDate)) throw new InvalidValidationException(PAST_DATE_NOT_NOT_AVAILABLE);
-	}
 
 }
