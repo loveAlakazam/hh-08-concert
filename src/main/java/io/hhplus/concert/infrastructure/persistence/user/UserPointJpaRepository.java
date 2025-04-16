@@ -13,7 +13,7 @@ import io.hhplus.concert.domain.user.UserPoint;
 public interface UserPointJpaRepository extends JpaRepository<UserPoint, Long> {
 
 	@Query("""
-  		SELECT up.*
+  		SELECT up
   		FROM UserPoint up
   		WHERE up.userId = :userId
 	""")

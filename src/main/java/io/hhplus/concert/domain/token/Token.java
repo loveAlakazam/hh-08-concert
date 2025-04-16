@@ -114,7 +114,7 @@ public class Token extends BaseEntity {
     }
 
     // 비즈니스 정책
-    public static final int VALID_TOKEN_DURATION_MINUTE_UNIT = 30; // 30분 - 토큰 유효기간 분단위
+    public static final int VALID_TOKEN_DURATION_MINUTE_UNIT = 5; // 5분 - 토큰 유효기간 분단위
     public static final int VALID_TOKEN_DURATION_SECOND_UNIT = 60 * VALID_TOKEN_DURATION_MINUTE_UNIT; // 토큰 유효기간 초단위
 
 }

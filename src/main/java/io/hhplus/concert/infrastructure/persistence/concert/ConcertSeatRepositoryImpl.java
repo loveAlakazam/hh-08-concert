@@ -32,4 +32,9 @@ public class ConcertSeatRepositoryImpl implements ConcertSeatRepository {
     public ConcertSeat saveOrUpdate(ConcertSeat concertSeat) {
         return concertSeatJpaRepository.save(concertSeat);
     }
+
+    @Override
+    public void deleteConcertSeatByConcertDateId(long concertDateId) {
+        concertSeatJpaRepository.softDeleteConcertSeat(concertDateId);
+    }
 }

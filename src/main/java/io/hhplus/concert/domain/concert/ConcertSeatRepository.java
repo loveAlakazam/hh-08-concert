@@ -9,4 +9,6 @@ public interface ConcertSeatRepository {
 	ConcertSeat getConcertSeatInfo(long id);
 	Optional<ConcertSeat> findById(long id);
 	ConcertSeat saveOrUpdate(ConcertSeat concertSeat);
+
+	void deleteConcertSeatByConcertDateId(long concertDateId);
 }
