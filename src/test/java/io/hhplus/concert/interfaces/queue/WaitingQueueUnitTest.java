@@ -7,11 +7,14 @@ import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import io.hhplus.concert.domain.token.WaitingQueue;
+import io.hhplus.concert.infrastructure.queue.InMemoryWaitingQueueImpl;
+
 public class WaitingQueueUnitTest {
 	private WaitingQueue queue;
 	@BeforeEach
 	void setUp() {
-		queue = new WaitingQueue();
+		queue = new InMemoryWaitingQueueImpl();
 	}
 
 	@Test

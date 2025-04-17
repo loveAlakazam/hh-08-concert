@@ -1,19 +1,27 @@
 package io.hhplus.concert.application.usecase.payment;
 
-import io.hhplus.concert.application.usecase.reservation.ResservationUsecase;
-import io.hhplus.concert.domain.common.exceptions.InvalidValidationException;
-import io.hhplus.concert.domain.common.exceptions.NotFoundException;
-import io.hhplus.concert.domain.common.exceptions.RequestTimeOutException;
-import io.hhplus.concert.domain.common.exceptions.UnProcessableContentException;
-import io.hhplus.concert.domain.concert.entity.ConcertSeat;
-import io.hhplus.concert.domain.concert.service.ConcertService;
-import io.hhplus.concert.domain.payment.entity.Payment;
-import io.hhplus.concert.domain.payment.service.PaymentService;
-import io.hhplus.concert.domain.reservation.entity.Reservation;
-import io.hhplus.concert.domain.reservation.service.ReservationService;
-import io.hhplus.concert.domain.user.entity.User;
-import io.hhplus.concert.domain.user.service.UserService;
-import io.hhplus.concert.interfaces.api.payment.dto.PaymentResponse;
+import static io.hhplus.concert.interfaces.api.payment.PaymentErrorCode.*;
+
+import io.hhplus.concert.domain.concert.ConcertCommand;
+import io.hhplus.concert.domain.concert.ConcertInfo;
+import io.hhplus.concert.domain.concert.ConcertService;
+import io.hhplus.concert.domain.payment.PaymentCommand;
+import io.hhplus.concert.domain.payment.PaymentInfo;
+import io.hhplus.concert.domain.reservation.ReservationCommand;
+import io.hhplus.concert.domain.reservation.ReservationInfo;
+import io.hhplus.concert.domain.user.UserCommand;
+import io.hhplus.concert.domain.user.UserInfo;
+import io.hhplus.concert.domain.user.UserPoint;
+import io.hhplus.concert.domain.user.UserPointCommand;
+import io.hhplus.concert.interfaces.api.common.BusinessException;
+import io.hhplus.concert.interfaces.api.common.InvalidValidationException;
+import io.hhplus.concert.domain.concert.ConcertSeat;
+import io.hhplus.concert.domain.payment.Payment;
+import io.hhplus.concert.domain.payment.PaymentService;
+import io.hhplus.concert.domain.reservation.Reservation;
+import io.hhplus.concert.domain.reservation.ReservationService;
+import io.hhplus.concert.domain.user.UserService;
+import io.hhplus.concert.interfaces.api.payment.PaymentResponse;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
@@ -27,28 +35,32 @@ public class PaymentUsecase {
 	 *
 	 * 결제완료시 예약좌석은 예약확정 상태로 변경된다.
 	 *
-	 * @param userId - 유저 PK
-	 * @param reservationId - 예약 PK
+	 * @param criteria
 	 * @return PaymentResponse
 	 * @throws InvalidValidationException
-	 * @throws RequestTimeOutException
-	 * @throws NotFoundException
-	 * @throws UnProcessableContentException
 	 */
-	public PaymentResponse applyPayment(long userId, long reservationId) {
-		// 임시예약 상태인지 확인
-		Reservation reservation = reservationService.checkTemporaryReservedStatus(reservationId);
-		ConcertSeat concertSeat = reservation.getConcertSeat();
-		long price = concertSeat.getPrice();
+	public PaymentResult.PayAndConfirm payAndConfirm(PaymentCriteria.PayAndConfirm criteria) {
+		// 유저포인트 조회
+		UserInfo.GetUserPoint userPointInfo = userService.getUserPoint(UserCommand.GetUserPoint.of(criteria.userId()));
+		UserPoint userPoint = userPointInfo.userPoint();
 
-		// 포인트 결제
-		userService.usePoint(userId, price);
+		// 예약데이터 조회
+		ReservationInfo.Get reservationInfo = reservationService.get(ReservationCommand.Get.of(criteria.reservationId()));
+		Reservation reservation = reservationInfo.reservation();
+		long concertSeatPrice = reservation.getConcertSeat().getPrice();
 
-		// 예약 상태를 확정상태로 변경
-		reservation.updateConfirmedStatus();
+		// 임시예약상태일 경우에 결제 가능
+		if(reservation.isTemporary()) {
+			// 포인트 사용
+			userPoint.use(concertSeatPrice);
 
-		// 결제내역 생성후 정보 반환
-		Payment payment = paymentService.confirmedPayment(reservation, price);
-		return paymentService.getPaymentDetailInfo(payment.getId());
+			// 예약 확정 변경
+			reservation.confirm();
+
+			// 결제처리 및 결제정보 반환
+			PaymentInfo.CreatePayment paymentInfo = paymentService.create(PaymentCommand.CreatePayment.of(reservation));
+			return PaymentResult.PayAndConfirm.of(paymentInfo);
+		}
+		throw new BusinessException(NOT_VALID_STATUS_FOR_PAYMENT);
 	}
 }

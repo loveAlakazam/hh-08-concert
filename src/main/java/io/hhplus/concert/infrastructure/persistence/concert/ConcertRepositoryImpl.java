@@ -5,8 +5,8 @@ import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
-import io.hhplus.concert.domain.concert.entity.Concert;
-import io.hhplus.concert.domain.concert.repository.ConcertRepository;
+import io.hhplus.concert.domain.concert.Concert;
+import io.hhplus.concert.domain.concert.ConcertRepository;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
@@ -23,7 +23,11 @@ public class ConcertRepositoryImpl implements ConcertRepository {
     }
 
     @Override
-    public Concert findConcertById(long id) {
+    public Concert findById(long id) {
         return concertJpaRepository.findById(id).orElse(null);
+    }
+    @Override
+    public Concert saveOrUpdate(Concert concert) {
+        return concertJpaRepository.save(concert);
     }
 }

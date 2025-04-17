@@ -4,8 +4,8 @@ import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import io.hhplus.concert.domain.payment.entity.Payment;
-import io.hhplus.concert.interfaces.api.payment.dto.PaymentResponse;
+import io.hhplus.concert.domain.payment.Payment;
+import io.hhplus.concert.interfaces.api.payment.PaymentResponse;
 
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
