@@ -4,11 +4,13 @@ import java.util.List;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Repository;
 
 import io.hhplus.concert.domain.concert.Concert;
 import io.hhplus.concert.domain.concert.ConcertRepository;
 import lombok.RequiredArgsConstructor;
 
+@Repository
 @RequiredArgsConstructor
 public class ConcertRepositoryImpl implements ConcertRepository {
     private final ConcertJpaRepository concertJpaRepository;
@@ -16,10 +18,6 @@ public class ConcertRepositoryImpl implements ConcertRepository {
     @Override
     public List<Concert> findAll() {
         return concertJpaRepository.findAll();
-    }
-    @Override
-    public Page<Concert> findAll(Pageable pageable) {
-        return concertJpaRepository.findAll(pageable);
     }
 
     @Override

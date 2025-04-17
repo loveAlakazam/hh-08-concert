@@ -3,6 +3,7 @@ package io.hhplus.concert.interfaces.api.concert;
 import java.time.LocalDate;
 import java.util.List;
 
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -11,11 +12,14 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import io.hhplus.concert.domain.concert.Concert;
 import io.hhplus.concert.domain.concert.ConcertCommand;
+import io.hhplus.concert.domain.concert.ConcertDate;
 import io.hhplus.concert.domain.concert.ConcertInfo;
 import io.hhplus.concert.domain.concert.ConcertService;
 import io.hhplus.concert.interfaces.api.common.ApiResponse;
 import io.hhplus.concert.interfaces.api.common.ApiResponseEntity;
+import io.hhplus.concert.interfaces.api.common.PaginationUtils;
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -28,8 +32,12 @@ public class ConcertController implements ConcertApiDocs {
 	public ResponseEntity<ApiResponse<ConcertResponse.GetConcerts>> getConcerts(
 		@RequestParam(value = "page", required = false, defaultValue = "1") int page
 	) {
-		ConcertInfo.GetConcertList result = concertService.getConcertList(ConcertCommand.GetConcertList.of(page));
-		return ApiResponseEntity.ok(ConcertResponse.GetConcerts.from(result));
+		// 리스트를 반환
+		ConcertInfo.GetConcertList info = concertService.getConcertList();
+		// 페이징처리를 한다
+		Page<Concert> concertPages = PaginationUtils.toPage(info.concerts(), page);
+		// 페이징처리결과를 응답데이터에 넣어서 응답
+		return ApiResponseEntity.ok(ConcertResponse.GetConcerts.from(concertPages));
 	}
 
 
@@ -39,8 +47,12 @@ public class ConcertController implements ConcertApiDocs {
 		@PathVariable("id") long id,
 		@RequestParam(value = "page", required = false, defaultValue = "1") int page
 	) {
-		ConcertInfo.GetConcertDateList result = concertService.getConcertDateList(ConcertCommand.GetConcertDateList.of(page, id));
-		return ApiResponseEntity.ok(ConcertResponse.GetAvailableConcertDates.from(result));
+		// 리스트를 반환
+		ConcertInfo.GetConcertDateList info = concertService.getConcertDateList(ConcertCommand.GetConcertDateList.of(id));
+		// 페이징처리를 한다
+		Page<ConcertDate> concertDatePage = PaginationUtils.toPage(info.concertDates(), page);
+		// 페이징처리 결과를 응답데이터에 넣고 응답한다
+		return ApiResponseEntity.ok(ConcertResponse.GetAvailableConcertDates.from(concertDatePage));
 	}
 
 	// 특정날짜에서 예약가능한 좌석정보조회

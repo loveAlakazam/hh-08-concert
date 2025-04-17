@@ -5,6 +5,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import io.hhplus.concert.domain.concert.Concert;
 import org.springframework.stereotype.Repository;
 
-@Repository
 public interface ConcertJpaRepository extends JpaRepository<Concert, Long> {
 }

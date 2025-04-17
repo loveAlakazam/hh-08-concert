@@ -48,7 +48,7 @@ public class ConcertServiceTest {
 	private static final Logger log = LoggerFactory.getLogger(ConcertServiceTest.class);
 
 	@Test
-	void 페이징처리를_제외하고_콘서트_목록조회를_성공한다() {
+	void 콘서트_목록조회를_성공한다() {
 		// given
 		List<Concert> list = new ArrayList<>();
 		list.add(Concert.of("벚꽃바람이 부는 재즈패스티벌 콘서트", "재즈 아티스트"));
@@ -56,7 +56,8 @@ public class ConcertServiceTest {
 		when(concertRepository.findAll()).thenReturn(list);
 
 		// when
-		List<Concert> result = concertService.getConcertList();
+		ConcertInfo.GetConcertList info = concertService.getConcertList();
+		List<Concert> result = info.concerts();
 
 		// then
 		assertEquals(2, result.size());
@@ -65,198 +66,6 @@ public class ConcertServiceTest {
 
 		assertEquals("남산의 밤하늘과 함께하는 피아노 공연", result.get(1).getName());
 		assertEquals("피아노 아티스트", result.get(1).getArtistName());
-	}
-	@Test
-	void 콘서트목록_조회시_페이지가_1미만의_정수이면_InvalidValidationException_예외발생() {
-		// given
-		int page = 0;
-
-		// when & then
-		InvalidValidationException ex = assertThrows(
-			InvalidValidationException.class,
-			() -> concertService.getConcertList(ConcertCommand.GetConcertList.of(page))
-		);
-		assertEquals(INVALID_PAGE.getMessage(), ex.getMessage());
-		assertEquals(INVALID_PAGE.getHttpStatus(), ex.getHttpStatus());
-	}
-	@Test
-	void 전체데이터는_12개이고_콘서트목록의_1페이지_조회하게되면_10개의_데이터가_존재시_성공한다() {
-		// given
-		int page = 1;
-
-		Pageable pageable = PageRequest.of(page - 1, PAGE_SIZE);
-		List<Concert> list = new ArrayList<>();
-		for(int i = 1; i <= 12; i++) {
-			list.add(Concert.of("언제나 즐거운 TDD 테스트콘서트"+i , "아티스트"+i));
-		}
-
-		List<Concert> listOfFirstPage = list.subList(0, 10);
-		Page<Concert> concertPage = new PageImpl<>(listOfFirstPage, pageable, list.size());
-		when(concertRepository.findAll(pageable)).thenReturn(concertPage);
-
-		// when
-		ConcertInfo.GetConcertList result = concertService.getConcertList(ConcertCommand.GetConcertList.of(page));
-
-		List<Concert> pageResult = result.concertPage().getContent();
-		int totalPages = result.concertPage().getTotalPages();
-		long totalElements = result.concertPage().getTotalElements();
-		long numberOfElementsInPage = result.concertPage().getNumberOfElements();
-
-		// then
-		assertEquals(10, pageResult.size());
-		assertEquals(2, totalPages);
-		assertEquals(12, totalElements);
-		assertEquals(10, numberOfElementsInPage);
-
-		// 1페이지 1번째 항목 결과
-		assertEquals("언제나 즐거운 TDD 테스트콘서트"+1, pageResult.get(0).getName());
-		assertEquals("아티스트"+1, pageResult.get(0).getArtistName());
-		// 1페이지 2번째 항목 결과
-		assertEquals("언제나 즐거운 TDD 테스트콘서트"+2, pageResult.get(1).getName());
-		assertEquals("아티스트"+2, pageResult.get(1).getArtistName());
-		// 1페이지 10번째 항목 결과
-		assertEquals("언제나 즐거운 TDD 테스트콘서트"+10, pageResult.get(9).getName());
-		assertEquals("아티스트"+10, pageResult.get(9).getArtistName());
-	}
-	@Test
-	void 전체데이터는_12개이고_콘서트목록의_2페이지_조회하게되면_2개의_데이터가_존재시_성공한다() {
-		// given
-		int page = 2;
-		Pageable pageable = PageRequest.of(page - 1, PAGE_SIZE);
-		List<Concert> list = new ArrayList<>();
-		for(int i = 1; i <= 12; i++) {
-			list.add(Concert.of("언제나 즐거운 TDD 테스트콘서트"+i , "아티스트"+i));
-		}
-
-		List<Concert> listOfSecondPage = list.subList(10, 12);
-		Page<Concert> concertPage = new PageImpl<>(listOfSecondPage, pageable, list.size());
-		when(concertRepository.findAll(pageable)).thenReturn(concertPage);
-
-		// when
-		ConcertInfo.GetConcertList result = concertService.getConcertList(ConcertCommand.GetConcertList.of(page));
-
-		List<Concert> pageResult = result.concertPage().getContent();
-		int totalPages = result.concertPage().getTotalPages();
-		long totalElements = result.concertPage().getTotalElements();
-		long numberOfElementsInPage = result.concertPage().getNumberOfElements();
-
-		// then
-		assertEquals(2, pageResult.size());
-		assertEquals(2, totalPages);
-		assertEquals(12, totalElements);
-		assertEquals(2, numberOfElementsInPage);
-
-		// 2페이지 1번째 항목 결과
-		assertEquals("언제나 즐거운 TDD 테스트콘서트"+11, pageResult.get(0).getName());
-		assertEquals("아티스트"+11, pageResult.get(0).getArtistName());
-		// 2페이지 2번째 항목 결과
-		assertEquals("언제나 즐거운 TDD 테스트콘서트"+12, pageResult.get(1).getName());
-		assertEquals("아티스트"+12, pageResult.get(1).getArtistName());
-	}
-	@Test
-	void 콘서트_날짜목록_조회시_페이지가_1미만의_정수이면_InvalidValidationException_예외발생() {
-		// given
-		int page = 0;
-		long concertId = 1L;
-
-		// when & then
-		InvalidValidationException ex = assertThrows(
-			InvalidValidationException.class,
-			() -> concertService.getConcertDateList(ConcertCommand.GetConcertDateList.of(page, concertId))
-		);
-		assertEquals(INVALID_PAGE.getMessage(), ex.getMessage());
-		assertEquals(INVALID_PAGE.getHttpStatus(), ex.getHttpStatus());
-	}
-	@Test
-	void 전체데이터는_19개이고_콘서트_날짜목록_1페이지_조회하게되면_10개의_데이터가_존재시_성공한다() {
-		// given
-		long concertId = 1;
-		int page = 1;
-		LocalDate now = LocalDate.now();
-
-		Concert concert = Concert.of("테스트 콘서트", "테스트 아티스트");
-		Pageable pageable = PageRequest.of(page - 1, PAGE_SIZE);
-		List<ConcertDate> list = new ArrayList<>();
-
-		for(int i = 1; i <= 19; i++) {
-			list.add(ConcertDate.of(concert, now.plusDays(i), true, "테스트 콘서트 장소"+i));
-		}
-
-		List<ConcertDate> listOfFirstPage = list.subList(0, 10);
-		Page<ConcertDate> concertDatePage = new PageImpl<>(listOfFirstPage, pageable, list.size());
-		when(concertDateRepository.findAll(concertId, pageable)).thenReturn(concertDatePage);
-
-		// when
-		ConcertInfo.GetConcertDateList result = concertService.getConcertDateList(ConcertCommand.GetConcertDateList.of(page, concertId));
-
-		List<ConcertDate> pageResult = result.concertDatePage().getContent();
-		int totalPages = result.concertDatePage().getTotalPages();
-		long totalElements = result.concertDatePage().getTotalElements();
-		long numberOfElementsInPage = result.concertDatePage().getNumberOfElements();
-
-		// then
-		assertEquals(10, pageResult.size());
-		assertEquals(2, totalPages);
-		assertEquals(19, totalElements);
-		assertEquals(10, numberOfElementsInPage);
-
-		// 1페이지 1번째 데이터 검증
-		assertEquals(now.plusDays(1), pageResult.get(0).getProgressDate());
-		assertEquals(true, pageResult.get(0).isAvailable());
-		assertEquals("테스트 콘서트 장소"+1, pageResult.get(0).getPlace());
-		// 1페이지 2번째 데이터 검증
-		assertEquals(now.plusDays(2), pageResult.get(1).getProgressDate());
-		assertEquals(true, pageResult.get(1).isAvailable());
-		assertEquals("테스트 콘서트 장소"+2, pageResult.get(1).getPlace());
-		// 1페이지 10번째 데이터 검증
-		assertEquals(now.plusDays(10), pageResult.get(9).getProgressDate());
-		assertEquals(true, pageResult.get(9).isAvailable());
-		assertEquals("테스트 콘서트 장소"+10, pageResult.get(9).getPlace());
-	}
-	@Test
-	void 전체데이터는_19개이고_콘서트의_날짜목록_2페이지_조회하게되면_9개데이터가_존재시_성공한다() {
-		// given
-		long concertId = 1;
-		int page = 2;
-		LocalDate now = LocalDate.now();
-
-		Concert concert = Concert.of("테스트 콘서트", "테스트 아티스트");
-		Pageable pageable = PageRequest.of(page - 1, PAGE_SIZE);
-		List<ConcertDate> list = new ArrayList<>();
-
-		for(int i = 1; i <= 19; i++) {
-			list.add(ConcertDate.of(concert, now.plusDays(i), true, "테스트 콘서트 장소"+i));
-		}
-
-		List<ConcertDate> listOfSecondPage = list.subList(10, 19);
-		Page<ConcertDate> concertDatePage = new PageImpl<>(listOfSecondPage, pageable, list.size());
-		when(concertDateRepository.findAll(concertId, pageable)).thenReturn(concertDatePage);
-
-		// when
-		ConcertInfo.GetConcertDateList result = concertService.getConcertDateList(ConcertCommand.GetConcertDateList.of(page, concertId));
-		List<ConcertDate> pageResult = result.concertDatePage().getContent();
-		int totalPages = result.concertDatePage().getTotalPages();
-		long totalElements = result.concertDatePage().getTotalElements();
-		long numberOfElementsInPage = result.concertDatePage().getNumberOfElements();
-
-		// then
-		assertEquals(9, pageResult.size());
-		assertEquals(2, totalPages);
-		assertEquals(19, totalElements);
-		assertEquals(9, numberOfElementsInPage);
-
-		// 1페이지 1번째 데이터 검증
-		assertEquals(now.plusDays(11), pageResult.get(0).getProgressDate());
-		assertEquals(true, pageResult.get(0).isAvailable());
-		assertEquals("테스트 콘서트 장소"+11, pageResult.get(0).getPlace());
-		// 1페이지 2번째 데이터 검증
-		assertEquals(now.plusDays(12), pageResult.get(1).getProgressDate());
-		assertEquals(true, pageResult.get(1).isAvailable());
-		assertEquals("테스트 콘서트 장소"+12, pageResult.get(1).getPlace());
-		// 1페이지 10번째 데이터 검증
-		assertEquals(now.plusDays(19), pageResult.get(8).getProgressDate());
-		assertEquals(true, pageResult.get(8).isAvailable());
-		assertEquals("테스트 콘서트 장소"+19, pageResult.get(8).getPlace());
 	}
 	@Test
 	void 콘서트아이디1_콘서트날짜아이디2인_콘서트좌석_조회에_성공한다() {

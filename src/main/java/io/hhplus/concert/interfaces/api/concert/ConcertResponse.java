@@ -11,7 +11,7 @@ import io.hhplus.concert.domain.concert.ConcertSeat;
 import lombok.Builder;
 
 @Builder
-public record ConcertResponse(long id, String name, String artistName) {
+public record ConcertResponse(long id, String name, String artistName) { // Page<ConcertDate> concertDatePage
 	public static ConcertResponse of(long id, String name, String artistName) {
 		return ConcertResponse.builder()
 			.id(id)
@@ -32,54 +32,53 @@ public record ConcertResponse(long id, String name, String artistName) {
 	}
 	/**
 	 *
-	 * @param page - 페이지수
-	 * @param elements - 현재페이지의 공연개수
-	 * @param totalPages - 전체 페이지수
+	 * @param concerts - 공연 리스트
 	 * @param totalElements - 전체 공연 개수
-	 * @param list - 공연 리스트
+	 * @param totalPages - 전체 페이지수
+	 * @param currentPage - 현재 페이지수
+	 * @param currentSize - 현재 페이지의 공연 개수
 	 */
 	public record GetConcerts(
-		int page,
-		int elements,
-		int totalPages,
+		List<Concert> concerts,
 		long totalElements,
-		List<Concert> list
+		int totalPages,
+		int currentPage,
+		int currentSize
 	) {
-		public static GetConcerts from(ConcertInfo.GetConcertList info) {
-			Page<Concert> result = info.concertPage();
+		public static GetConcerts from(Page<Concert> concertPage) {
 			return new GetConcerts(
-				result.getNumber() + 1,
-				result.getNumberOfElements(),
-				result.getTotalPages(),
-				result.getTotalElements(),
-				result.getContent()
+				concertPage.getContent(),
+				concertPage.getTotalElements(),
+				concertPage.getTotalPages(),
+				concertPage.getNumber() + 1,
+				concertPage.getNumberOfElements()
 			);
 		}
 	}
 
 	/**
 	 *
-	 * @param page - 현재페이지수
-	 * @param elements - 현재페이지의 공연일정 개수
-	 * @param totalPages - 전체 페이지수
+	 * @param concertDates - 공연일정 리스트
 	 * @param totalElements - 전체 공연일정 개수
-	 * @param list - 공연일정 리스트
+	 * @param totalPages - 전체 페이지수
+	 * @param currentPage - 현재 페이지수
+	 * @param currentSize - 현재 페이지의 공연일정 개수
 	 */
 	public record GetAvailableConcertDates(
-		int page,
-		int elements,
-		int totalPages,
+		List<ConcertDate> concertDates,
 		long totalElements,
-		List<ConcertDate> list
+		int totalPages,
+		int currentPage,
+		int currentSize
 	) {
-		public static GetAvailableConcertDates from(ConcertInfo.GetConcertDateList info) {
-			Page<ConcertDate> result = info.concertDatePage();
+		public static GetAvailableConcertDates from(Page<ConcertDate> concertDatePage) { // from절에는 페이징처리 결과를 넣으면 된다.
+
 			return new GetAvailableConcertDates(
-				result.getNumber() + 1,
-				result.getNumberOfElements(),
-				result.getTotalPages(),
-				result.getTotalElements(),
-				result.getContent()
+				concertDatePage.getContent(),
+				concertDatePage.getTotalElements(),
+				concertDatePage.getTotalPages(),
+				concertDatePage.getNumber() + 1,
+				concertDatePage.getNumberOfElements()
 			);
 		}
 	}

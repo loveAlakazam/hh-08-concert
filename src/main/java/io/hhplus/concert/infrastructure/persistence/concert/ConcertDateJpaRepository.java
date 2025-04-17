@@ -14,7 +14,6 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-@Repository
 public interface ConcertDateJpaRepository extends JpaRepository<ConcertDate, Long> {
 	@Query(
 		"""
@@ -27,7 +26,7 @@ public interface ConcertDateJpaRepository extends JpaRepository<ConcertDate, Lon
   			AND c.id = :concertId
 		"""
 	)
-	Page<ConcertDate>  findUpcomingConcertDates (@Param("concertId") Long concertId, @Param("currentDate") LocalDate currentDate, Pageable pageable);
+	List<ConcertDate> findUpcomingConcertDates (@Param("concertId") Long concertId, @Param("currentDate") LocalDate currentDate);
 
 	@Modifying
 	@Query("""

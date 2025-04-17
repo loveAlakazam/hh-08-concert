@@ -15,33 +15,20 @@ import io.hhplus.concert.interfaces.api.common.validators.EmptyStringValidator;
 import io.hhplus.concert.interfaces.api.user.CommonErrorCode;
 
 public class ConcertCommand {
-	/**
-	 * 콘서트 목록 조회
-	 * @param page - 페이지
-	 */
-	public record GetConcertList(int page) {
-		public static GetConcertList of(int page) {
-			// 페이지 유효성검사
-			validatePage(page);
 
-			return new GetConcertList(page);
-		}
-	}
 
 	/**
 	 * 특정콘서트의 날짜목록 조회
-	 * @param page - 페이지
+	 *
 	 * @param concertId - 콘서트 아이디
 	 */
-	public record GetConcertDateList(int page, long concertId) {
-		public static GetConcertDateList of(int page, long concertId) {
-			// 페이지 유효성 검사
-			validatePage(page);
+	public record GetConcertDateList( long concertId) {
+		public static GetConcertDateList of(long concertId) {
 
 			// concertId 유효성검사
 			if(concertId <= 0)
 				throw new InvalidValidationException(CommonErrorCode.ID_SHOULD_BE_POSITIVE_NUMBER);
-			return new GetConcertDateList(page, concertId);
+			return new GetConcertDateList(concertId);
 		}
 	}
 	/**

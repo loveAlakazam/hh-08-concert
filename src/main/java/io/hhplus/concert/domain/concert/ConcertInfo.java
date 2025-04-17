@@ -5,14 +5,14 @@ import java.util.List;
 import org.springframework.data.domain.Page;
 
 public class ConcertInfo {
-	public record GetConcertList(Page<Concert> concertPage) {
-		public static GetConcertList from(Page<Concert> concertPage) {
-			return new GetConcertList(concertPage);
+	public record GetConcertList(List<Concert> concerts, int size) {
+		public static GetConcertList from(List<Concert> concerts) {
+			return new GetConcertList(concerts, concerts.size());
 		}
 	}
-	public record GetConcertDateList(Page<ConcertDate> concertDatePage) {
-		public static GetConcertDateList from(Page<ConcertDate> concertDatePage) {
-			return new GetConcertDateList(concertDatePage);
+	public record GetConcertDateList(List<ConcertDate> concertDates, int size) {
+		public static GetConcertDateList from(List<ConcertDate> concertDates) {
+			return new GetConcertDateList(concertDates, concertDates.size());
 		}
 	}
 	public record GetConcertSeatList(List<ConcertSeat> concertSeatList) {
