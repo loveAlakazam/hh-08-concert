@@ -44,7 +44,7 @@ public class PaymentUsecase {
 	 */
 	public PaymentResult.PayAndConfirm payAndConfirm(PaymentCriteria.PayAndConfirm criteria) {
 		// 유저포인트 조회
-		UserInfo.GetUserPoint userPointInfo = userService.getUserPoint(UserCommand.GetUserPoint.of(criteria.userId()));
+		UserInfo.GetUserPoint userPointInfo = userService.getUserPoint(UserPointCommand.GetUserPoint.of(criteria.userId()));
 		UserPoint userPoint = userPointInfo.userPoint();
 
 		// 예약데이터 조회

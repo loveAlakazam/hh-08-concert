@@ -33,6 +33,7 @@ import io.hhplus.concert.domain.user.User;
 import io.hhplus.concert.domain.user.UserCommand;
 import io.hhplus.concert.domain.user.UserInfo;
 import io.hhplus.concert.domain.user.UserPoint;
+import io.hhplus.concert.domain.user.UserPointCommand;
 import io.hhplus.concert.domain.user.UserService;
 import io.hhplus.concert.interfaces.api.common.BusinessException;
 import io.hhplus.concert.interfaces.api.payment.PaymentResponse;
@@ -62,7 +63,7 @@ public class PayAndConfirmTest {
 		User user = User.of("테스트유저");
 		UserPoint userPoint = UserPoint.of(user);
 		userPoint.charge(50000); // 5만원 충전
-		UserCommand.GetUserPoint getUserPointCommand = UserCommand.GetUserPoint.of(userId);
+		UserPointCommand.GetUserPoint getUserPointCommand = UserPointCommand.GetUserPoint.of(userId);
 		when(userService.getUserPoint(getUserPointCommand)).thenReturn(UserInfo.GetUserPoint.of(userPoint));
 
 		log.info("콘서트 목데이터, 임시예약상태의 예약데이터 목데이터 생성");
@@ -107,7 +108,7 @@ public class PayAndConfirmTest {
 		User user = User.of("테스트유저");
 		UserPoint userPoint = UserPoint.of(user);
 		userPoint.charge(50000); // 5만원 충전
-		UserCommand.GetUserPoint getUserPointCommand = UserCommand.GetUserPoint.of(userId);
+		UserPointCommand.GetUserPoint getUserPointCommand = UserPointCommand.GetUserPoint.of(userId);
 		when(userService.getUserPoint(getUserPointCommand)).thenReturn(UserInfo.GetUserPoint.of(userPoint));
 
 		log.info("콘서트 목데이터, 임시예약상태의 예약데이터 목데이터 생성");
@@ -154,7 +155,7 @@ public class PayAndConfirmTest {
 		User user = User.of("테스트유저");
 		UserPoint userPoint = UserPoint.of(user);
 		userPoint.charge(50000); // 5만원 충전
-		UserCommand.GetUserPoint getUserPointCommand = UserCommand.GetUserPoint.of(userId);
+		UserPointCommand.GetUserPoint getUserPointCommand = UserPointCommand.GetUserPoint.of(userId);
 		when(userService.getUserPoint(getUserPointCommand)).thenReturn(UserInfo.GetUserPoint.of(userPoint));
 
 		log.info("콘서트 목데이터, 임시예약상태의 예약데이터 목데이터 생성");
