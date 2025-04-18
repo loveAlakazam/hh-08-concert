@@ -1,4 +1,4 @@
-package io.hhplus.concert.interfaces.api.token;
+package io.hhplus.concert.interfaces.api;
 
 import static io.hhplus.concert.interfaces.api.token.TokenErrorCode.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -18,9 +18,10 @@ import io.hhplus.concert.domain.token.Token;
 import io.hhplus.concert.domain.token.TokenInfo;
 import io.hhplus.concert.domain.token.TokenRepository;
 import io.hhplus.concert.domain.token.TokenService;
-import io.hhplus.concert.domain.token.WaitingQueue;
 import io.hhplus.concert.domain.user.User;
 import io.hhplus.concert.interfaces.api.common.BusinessException;
+import io.hhplus.concert.interfaces.api.token.TokenHandlerInterceptor;
+import io.hhplus.concert.interfaces.api.token.UserContextHolder;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
