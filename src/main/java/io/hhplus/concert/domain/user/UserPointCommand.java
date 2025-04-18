@@ -44,6 +44,10 @@ public class UserPointCommand {
 				throw new InvalidValidationException(CommonErrorCode.ID_SHOULD_BE_POSITIVE_NUMBER);
 			return new GetCurrentPoint(userId);
 		}
-
+	}
+	public record GetUserPoint(long userId) {
+		public static GetUserPoint of(long userId) {
+			return new GetUserPoint(userId);
+		}
 	}
 }

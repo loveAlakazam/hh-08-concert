@@ -12,9 +12,4 @@ public class UserCommand {
 			return new Get(id);
 		}
 	}
-	public record GetUserPoint(long userId) {
-		public static GetUserPoint of(long userId) {
-			return new GetUserPoint(userId);
-		}
-	}
 }

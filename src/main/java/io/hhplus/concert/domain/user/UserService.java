@@ -2,6 +2,7 @@ package io.hhplus.concert.domain.user;
 
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import io.hhplus.concert.interfaces.api.common.BusinessException;
 import io.hhplus.concert.interfaces.api.user.UserErrorCode;
@@ -20,6 +21,7 @@ public class UserService {
      * @param command
      * @return UserInfo.UserPoint
      */
+    @Transactional
     public UserInfo.ChargePoint chargePoint(UserPointCommand.ChargePoint command) {
         // 유저 포인트정보 조회
         UserPoint userPoint = userPointRepository.findByUserId(command.userId());
@@ -41,6 +43,7 @@ public class UserService {
      * @param command
      * @return UserInfo.UserPoint
      */
+    @Transactional
     public UserInfo.UsePoint usePoint(UserPointCommand.UsePoint command) {
         // 유저 정보 조회
         UserPoint userPoint = userPointRepository.findByUserId(command.userId());
@@ -67,7 +70,8 @@ public class UserService {
         return UserInfo.GetCurrentPoint.of(userPoint.getPoint());
     }
 
-    public UserInfo.GetUserPoint getUserPoint(UserCommand.GetUserPoint command) {
+    @Transactional
+    public UserInfo.GetUserPoint getUserPoint(UserPointCommand.GetUserPoint command) {
         UserPoint userPoint = userPointRepository.findByUserId(command.userId());
         if(userPoint == null) throw new BusinessException(UserErrorCode.NOT_EXIST_USER);
         return UserInfo.GetUserPoint.of(userPoint);
