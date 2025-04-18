@@ -2,6 +2,8 @@ package io.hhplus.concert.application.usecase.payment;
 
 import static io.hhplus.concert.interfaces.api.payment.PaymentErrorCode.*;
 
+import org.springframework.stereotype.Service;
+
 import io.hhplus.concert.domain.concert.ConcertCommand;
 import io.hhplus.concert.domain.concert.ConcertInfo;
 import io.hhplus.concert.domain.concert.ConcertService;
@@ -24,6 +26,7 @@ import io.hhplus.concert.domain.user.UserService;
 import io.hhplus.concert.interfaces.api.payment.PaymentResponse;
 import lombok.RequiredArgsConstructor;
 
+@Service
 @RequiredArgsConstructor
 public class PaymentUsecase {
 	private final UserService userService;

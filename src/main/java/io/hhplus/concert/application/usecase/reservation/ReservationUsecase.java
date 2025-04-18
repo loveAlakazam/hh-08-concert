@@ -1,6 +1,8 @@
 package io.hhplus.concert.application.usecase.reservation;
 
 
+import org.springframework.stereotype.Service;
+
 import io.hhplus.concert.application.usecase.reservation.ReservationCriteria;
 import io.hhplus.concert.application.usecase.reservation.ReservationResult;
 import io.hhplus.concert.domain.concert.ConcertCommand;
@@ -15,6 +17,7 @@ import io.hhplus.concert.domain.user.UserService;
 
 import lombok.RequiredArgsConstructor;
 
+@Service
 @RequiredArgsConstructor
 public class ReservationUsecase {
 	private final UserService userService;

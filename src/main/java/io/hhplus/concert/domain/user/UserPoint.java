@@ -10,11 +10,14 @@ import io.hhplus.concert.interfaces.api.common.BusinessException;
 import io.hhplus.concert.interfaces.api.user.UserErrorCode;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
+import jakarta.persistence.ConstraintMode;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
+import jakarta.persistence.ForeignKey;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
@@ -26,7 +29,7 @@ import lombok.NoArgsConstructor;
 @Getter
 @Entity
 @Table(name = "user_point")
-@NoArgsConstructor(access = AccessLevel.PRIVATE)
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class UserPoint{
 	/**
 	 * 유저 포인트 ID
@@ -40,7 +43,7 @@ public class UserPoint{
 
 	// 유저포인트:유저=1:1
 	@OneToOne(fetch = FetchType.LAZY)
-	@Column(name ="user_id", nullable = false, unique = true)
+	@JoinColumn(name ="user_id", foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT), nullable = false, unique = true)
 	private User user;
 
 	// 유저포인트:포인트내역=1:N

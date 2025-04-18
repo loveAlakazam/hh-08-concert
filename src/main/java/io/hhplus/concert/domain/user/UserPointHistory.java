@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 @Entity
 @Getter
 @Table(name = "user_point_histories")
-@NoArgsConstructor(access = AccessLevel.PRIVATE)
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class UserPointHistory extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -29,7 +29,11 @@ public class UserPointHistory extends BaseEntity {
      * 연관관계
      */
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_point_id", nullable = false)
+    @JoinColumn(
+        name = "user_point_id",
+        nullable = false,
+        foreignKey = @ForeignKey(value = ConstraintMode.NO_CONSTRAINT)
+    )
     private UserPoint userPoint;
 
 

@@ -2,6 +2,7 @@ package io.hhplus.concert.domain.concert;
 
 import java.util.List;
 
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.stereotype.Service;
 
 import jakarta.persistence.PreUpdate;

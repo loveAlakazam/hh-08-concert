@@ -15,7 +15,6 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-@Repository
 public interface ReservationJpaRepository extends JpaRepository<Reservation, Long> {
 
 	@Query("""
@@ -90,8 +89,8 @@ public interface ReservationJpaRepository extends JpaRepository<Reservation, Lon
 
 	@Query("""
  		SELECT cs.id
- 		FROM Reservation r
- 			JOIN FETCH r.concertSeat  cs
+ 		FROM ConcertSeat cs
+ 			JOIN cs.reservation r
  		WHERE cs.deleted = false
  			AND r.deleted = false
  			AND r.status = :confirmed

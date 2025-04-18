@@ -4,11 +4,14 @@ package io.hhplus.concert.infrastructure.persistence.concert;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.stereotype.Repository;
+
 import io.hhplus.concert.domain.concert.ConcertSeat;
 import io.hhplus.concert.domain.concert.ConcertSeatRepository;
 
 import lombok.RequiredArgsConstructor;
 
+@Repository
 @RequiredArgsConstructor
 public class ConcertSeatRepositoryImpl implements ConcertSeatRepository {
     private final ConcertSeatJpaRepository concertSeatJpaRepository;

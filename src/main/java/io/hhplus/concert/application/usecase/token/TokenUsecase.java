@@ -4,6 +4,8 @@ import static io.hhplus.concert.interfaces.api.token.TokenErrorCode.*;
 
 import java.util.UUID;
 
+import org.springframework.stereotype.Service;
+
 import io.hhplus.concert.domain.token.Token;
 import io.hhplus.concert.domain.token.TokenCommand;
 import io.hhplus.concert.domain.token.TokenInfo;
@@ -14,6 +16,7 @@ import io.hhplus.concert.domain.user.UserService;
 import io.hhplus.concert.interfaces.api.common.BusinessException;
 import lombok.RequiredArgsConstructor;
 
+@Service
 @RequiredArgsConstructor
 public class TokenUsecase {
 	private final UserService userService;

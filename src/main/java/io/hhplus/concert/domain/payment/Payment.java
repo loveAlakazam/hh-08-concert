@@ -32,8 +32,8 @@ public class Payment extends BaseEntity {
 	 * 연관관계
 	 */
 	// 결제:예약=1:1
-	@OneToOne
-	@JoinColumn(name="reservation_id")
+	@OneToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name="reservation_id", foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
 	private Reservation reservation;
 
 	@Builder

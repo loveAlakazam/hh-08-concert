@@ -7,11 +7,14 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.stereotype.Repository;
+
 import io.hhplus.concert.domain.token.Token;
 import io.hhplus.concert.domain.token.TokenRepository;
 import io.hhplus.concert.interfaces.api.common.BusinessException;
 import lombok.RequiredArgsConstructor;
 
+@Repository
 @RequiredArgsConstructor
 public class TokenRepositoryImpl implements TokenRepository {
     private final TokenJpaRepository tokenJpaRepository;
@@ -23,7 +26,7 @@ public class TokenRepositoryImpl implements TokenRepository {
 
     @Override
     public Token findTokenByUUID(UUID uuid) {
-        return tokenJpaRepository.findOneByUUID(uuid).orElse(null);
+        return tokenJpaRepository.findByUuid(uuid).orElse(null);
     }
 
     @Override

@@ -21,7 +21,7 @@ import java.util.UUID;
 @Entity
 @Getter
 @Table(name = "tokens")
-@NoArgsConstructor(access = AccessLevel.PRIVATE)
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Token extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -43,7 +43,13 @@ public class Token extends BaseEntity {
      */
     // 토큰:유저=1:1
     @OneToOne
-    @JoinColumn(name = "user_id", referencedColumnName = "id", nullable = false, unique = true)
+    @JoinColumn(
+        name = "user_id",
+        referencedColumnName = "id",
+        foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT),
+        nullable = false,
+        unique = true
+    )
     private User user;
 
     // 정적팩토리 메소드

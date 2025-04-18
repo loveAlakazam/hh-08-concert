@@ -78,23 +78,23 @@ public class Reservation extends BaseEntity {
 	 */
 	// 예약:유저=N:1
 	@ManyToOne
-	@JoinColumn(name = "user_id")
+	@JoinColumn(name = "user_id", foreignKey = @ForeignKey(value = ConstraintMode.NO_CONSTRAINT))
 	private User user;
 	// 예약:콘서트=N:1
 	@ManyToOne
-	@JoinColumn(name = "concert_id")
+	@JoinColumn(name = "concert_id", foreignKey = @ForeignKey(value = ConstraintMode.NO_CONSTRAINT))
 	private Concert concert;
 	// 예약:콘서트날짜=N:1
 	@ManyToOne
-	@JoinColumn(name = "concert_date_id")
+	@JoinColumn(name = "concert_date_id", foreignKey = @ForeignKey(value = ConstraintMode.NO_CONSTRAINT))
 	private ConcertDate concertDate;
 	// 예약:콘서트좌석=1:1
 	@OneToOne
-	@JoinColumn(name = "concert_seat_id")
+	@JoinColumn(name = "concert_seat_id", foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
 	private ConcertSeat concertSeat;
 	// 예약:결제=1:1
 	@OneToOne
-	@JoinColumn(name="payment_id")
+	@JoinColumn(name="payment_id", foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
 	private Payment payment;
 
 	/**

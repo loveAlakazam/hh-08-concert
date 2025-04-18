@@ -15,14 +15,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-@Repository
 public interface TokenJpaRepository extends JpaRepository<Token, Long> {
-	@Query("""
-		SELECT t
-		FROM Token t
-		WHERE t.uuid = :uuid
-	""")
-	Optional<Token> findOneByUUID(@Param("uuid") UUID uuid);
+	Optional<Token> findByUuid(UUID uuid);
 
 	@Modifying
 	@Query("""
@@ -35,7 +29,7 @@ public interface TokenJpaRepository extends JpaRepository<Token, Long> {
 	@Query("""
  		SELECT t
  		FROM Token t
- 			JOIN FETCH Token.user u
+ 			JOIN FETCH t.user u
  		WHERE u.id = :userId
 	""")
 	Optional<Token> findOneByUserId(@Param("userId") long userId);

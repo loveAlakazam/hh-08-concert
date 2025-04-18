@@ -7,8 +7,10 @@ import io.hhplus.concert.domain.common.BaseEntity;
 import io.hhplus.concert.domain.reservation.Reservation;
 import io.hhplus.concert.interfaces.api.common.BusinessException;
 import jakarta.persistence.Column;
+import jakarta.persistence.ConstraintMode;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
+import jakarta.persistence.ForeignKey;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -45,16 +47,16 @@ public class ConcertSeat extends BaseEntity {
 	 */
 	// 콘서트좌석:콘서트=N:1
 	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "concert_id")
-	Concert concert;
+	@JoinColumn(name = "concert_id", foreignKey = @ForeignKey(value = ConstraintMode.NO_CONSTRAINT))
+	private Concert concert;
 	// 콘서트좌석:콘서트날짜=N:1
 	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name= "concert_date_id")
-	ConcertDate concertDate;
+	@JoinColumn(name= "concert_date_id", foreignKey = @ForeignKey(value = ConstraintMode.NO_CONSTRAINT))
+	private ConcertDate concertDate;
 	// 콘서트좌석:예약=1:1
-	@OneToOne
-	@JoinColumn(name = "reservation_id")
-	Reservation reservation;
+	@OneToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "reservation_id", foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
+	private Reservation reservation;
 
 	/**
 	 * 정적 팩토리 메소드

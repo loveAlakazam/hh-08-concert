@@ -13,14 +13,13 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-@Repository
 public interface ConcertSeatJpaRepository extends JpaRepository<ConcertSeat, Long> {
 	@Query(
 		"""
 		SELECT cs 
-		FROM Concert c
-			JOIN FETCH c.dates cd
-			JOIN FETCH c.seats cs
+		FROM ConcertSeat cs
+			JOIN FETCH cs.concert c
+			JOIN FETCH cs.concertDate cd
 		WHERE  
 			c.deleted = false
 			AND cd.deleted = false
@@ -34,10 +33,10 @@ public interface ConcertSeatJpaRepository extends JpaRepository<ConcertSeat, Lon
 	@Query("""
   		SELECT cs
   		FROM ConcertSeat cs
-  			JOIN FETCH cs.date  cd
+  			JOIN FETCH cs.concertDate  cd
   		WHERE 
   			cd.deleted = false
-  			AND cd.available = false
+  			AND cd.isAvailable = false
   			AND cs.deleted = false
   			AND cs.id = :concertSeatId
 	""")

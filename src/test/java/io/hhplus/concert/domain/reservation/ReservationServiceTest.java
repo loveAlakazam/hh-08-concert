@@ -51,7 +51,8 @@ public class ReservationServiceTest {
 		assertTrue(concertSeat.isAvailable()); // 예약가능
 
 		log.info("예약내역이 없음");
-		when(reservationRepository.findByConcertSeatIdAndUserId(anyLong(), anyLong())).thenReturn(null);
+		when(reservationRepository.findByConcertSeatIdAndUserId(anyLong(), anyLong()))
+			.thenReturn(null);
 		// when
 		log.info("when: 임시예약 요청");
 		ReservationCommand.TemporaryReserve command = ReservationCommand.TemporaryReserve.of(user, concertSeat);
@@ -94,6 +95,7 @@ public class ReservationServiceTest {
 	@Test
 	void 임시예약이_만료되면_예약취소상태로_변경할_수_있다() throws InterruptedException {
 		// given
+		long reservationId = 1L;
 		User user = User.of("테스트");
 		Concert concert = Concert.create("테스트 콘서트", "테스트 아티스트", LocalDate.now(), "테스트 장소", 15000);
 		ConcertDate concertDate = concert.getDates().get(0);
@@ -108,10 +110,10 @@ public class ReservationServiceTest {
 		log.info("6분간 대기");
 		Thread.sleep(6 * 60* 1000); // 6분이 지나서 임시예약 유효기간이 만료
 
-		when( reservationRepository.findById( anyLong() )).thenReturn(reservation);
+		when( reservationRepository.findById( reservationId )).thenReturn(reservation);
 		// when
 		log.info("when: 임시예약이 유효일자가 만료되어 취소상태로 변경을 요청한다");
-		ReservationInfo.Cancel info = reservationService.cancel(ReservationCommand.Cancel.of(anyLong()));
+		ReservationInfo.Cancel info = reservationService.cancel(ReservationCommand.Cancel.of( reservationId ));
 		// then
 		assertEquals(CANCELED, info.reservation().getStatus());
 		assertTrue(DateValidator.isPastDateTime(info.reservation().getTempReservationExpiredAt()));
@@ -126,6 +128,7 @@ public class ReservationServiceTest {
 		assertTrue(concertSeat.isAvailable()); // 해당좌석은 예약가능
 
 		log.info("해당 좌석 임시예약 상태로 변경");
+		long reservationId = 1L;
 		Reservation reservation = Reservation.of(user, concert, concertDate, concertSeat);
 		assertDoesNotThrow(()-> reservation.temporaryReserve());
 		assertTrue(reservation.isTemporary());
@@ -137,12 +140,12 @@ public class ReservationServiceTest {
 		assertDoesNotThrow(() -> reservation.cancel()); // 임시예약상태로 변경
 		assertFalse(reservation.isTemporary()); // 임시예약상태가 아님
 
-		when(reservationRepository.findById(anyLong())).thenReturn(reservation);
+		when(reservationRepository.findById(reservationId)).thenReturn(reservation);
 		// when & then
 		log.info("when: 임시예약이 유효일자가 만료된 상태에서 예약확정 상태로 변경을 요청한다");
 		BusinessException ex = assertThrows(
 			BusinessException.class,
-			() -> reservationService.confirm(ReservationCommand.Confirm.of(anyLong()))
+			() -> reservationService.confirm(ReservationCommand.Confirm.of(reservationId))
 		);
 		assertEquals(INVALID_ACCESS.getHttpStatus(), ex.getHttpStatus());
 		assertEquals(INVALID_ACCESS.getMessage(), ex.getMessage());
@@ -158,16 +161,17 @@ public class ReservationServiceTest {
 		assertTrue(concertSeat.isAvailable()); // 해당좌석은 예약가능
 
 		log.info("해당 좌석 임시예약 상태로 변경");
+		long reservationId = 1L;
 		Reservation reservation = Reservation.of(user, concert, concertDate, concertSeat);
 		assertDoesNotThrow(()-> reservation.temporaryReserve());
 		assertTrue(reservation.isTemporary()); // 임시예약상태
 
-		when(reservationRepository.findById(anyLong())).thenReturn(reservation);
+		when(reservationRepository.findById(reservationId)).thenReturn(reservation);
 
 		// when
 		log.info("when: 임시예약이 유효일자가 만료된 상태에서 예약확정 상태로 변경을 요청한다");
 		ReservationInfo.Confirm info = assertDoesNotThrow(
-			() -> reservationService.confirm(ReservationCommand.Confirm.of(anyLong()))
+			() -> reservationService.confirm(ReservationCommand.Confirm.of(reservationId))
 		);
 
 		// then

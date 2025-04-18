@@ -1,4 +1,4 @@
-package io.hhplus.concert.domain.payment.service;
+package io.hhplus.concert.domain.payment;
 
 import org.junit.jupiter.api.BeforeEach;
 

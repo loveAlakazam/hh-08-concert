@@ -1,7 +1,8 @@
 package io.hhplus.concert.infrastructure.persistence.user;
 
-import org.springframework.stereotype.Repository;
+import org.springframework.data.jpa.repository.JpaRepository;
 
-@Repository
-public interface UserPointHistoryJpaRepository {
+import io.hhplus.concert.domain.user.UserPointHistory;
+
+public interface UserPointHistoryJpaRepository extends JpaRepository<UserPointHistory, Long> {
 }
