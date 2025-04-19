@@ -1,14 +1,26 @@
 package io.hhplus.concert.domain.payment;
 
+import static io.hhplus.concert.interfaces.api.payment.PaymentErrorCode.*;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
+import java.time.LocalDate;
+
 import org.junit.jupiter.api.BeforeEach;
 
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import io.hhplus.concert.domain.payment.PaymentRepository;
-import io.hhplus.concert.domain.payment.PaymentService;
+import io.hhplus.concert.domain.concert.Concert;
+import io.hhplus.concert.domain.concert.ConcertDate;
+import io.hhplus.concert.domain.concert.ConcertSeat;
+import io.hhplus.concert.domain.reservation.Reservation;
+import io.hhplus.concert.domain.user.User;
+import io.hhplus.concert.interfaces.api.common.BusinessException;
+
 
 @ExtendWith(MockitoExtension.class)
 public class PaymentServiceTest {
@@ -22,58 +34,55 @@ public class PaymentServiceTest {
 		paymentService = new PaymentService(paymentRepository);
 	}
 
-	/**
-	@Test
-	void 예약정보가_예약확정_상태가_아니라면_결제를_생성하지않고_InvalidValidationException_예외발생() {
-		// given
-		LocalDateTime now = LocalDateTime.now();
-		Reservation reservation = new Reservation(ReservationStatus.PENDING_PAYMENT, null, now.plusMinutes(5));
 
-		// when & then
-		InvalidValidationException ex = assertThrows(
-			InvalidValidationException.class,
-			() -> paymentService.confirmedPayment(reservation, 15000)
-		);
-		assertEquals(INVALID_RESERVATION_STATUS, ex.getMessage());
-		verify(paymentRepository, never()).saveOrUpdate(any());
-	}
 	@Test
-	void 결제정보가_존재하지_않으면_NotFoundeException_예외발생() {
+	void 예약정보가_예약확정_상태가_아니라면_결제를_생성하지않고_BusinessException_예외발생() {
 		// given
-		long id = 1L;
+		User user = User.of("최은강");
+		Concert concert = Concert.create(
+			"TDD와 유닛테스트와 함께하는 재즈패스티벌",
+			"테스트아티스트",
+			LocalDate.now(),
+			"서울시 성동구 무수막길",
+			2000
+		);
+		ConcertDate concertDate  = concert.getDates().get(0);
+		ConcertSeat concertSeat  = concertDate.getSeats().get(0);
+		// 이 예약은 확정상태가 아닌 임시예약 상태임
+		Reservation reservation = Reservation.of(user,concert,concertDate,concertSeat);
+		reservation.temporaryReserve(); // 임시예약상태
 
 		// when & then
 		BusinessException ex = assertThrows(
 			BusinessException.class,
-			() -> paymentService.getPaymentDetailInfo(id)
+			() -> paymentService.create(PaymentCommand.CreatePayment.of(reservation))
 		);
-		assertEquals(NOT_FOUND_PAYMENT, ex.getMessage());
+		assertEquals(NOT_VALID_STATUS_FOR_PAYMENT.getMessage(), ex.getMessage());
+		verify(paymentRepository, never()).saveOrUpdate(any());
 	}
 	@Test
-	void 결제정보가_존재하면_응답을_반환하여_성공한다() {
+	void 예약확정처리되어_결제내역생성에_성공한다() {
 		// given
-		long id = 1L;
-		PaymentResponse expected = new PaymentResponse(
-			id,
-			1L,
-			1L,
-			ReservationStatus.CONFIRMED,
-			LocalDateTime.now(),
-			15000,
-			"항해99 TDD 재즈패스티벌를 개최합니다.",
-			"테스트1",
+		User user = User.of("최은강");
+		Concert concert = Concert.create(
+			"TDD와 유닛테스트와 함께하는 재즈패스티벌",
+			"테스트아티스트",
 			LocalDate.now(),
-			"뚝섬 공원",
-			1,
-			1L
+			"서울시 성동구 무수막길",
+			2000
 		);
-		when(paymentRepository.getPaymentDetailInfo(id)).thenReturn(expected);
+		ConcertDate concertDate  = concert.getDates().get(0);
+		ConcertSeat concertSeat  = concertDate.getSeats().get(0);
+		// 이 예약은 확정상태가 아닌 임시예약 상태임
+		Reservation reservation = Reservation.of(user,concert,concertDate,concertSeat);
+		reservation.temporaryReserve(); // 임시예약상태
+		reservation.confirm(); // 예약확정
 
-		// when
-		PaymentResponse result = paymentService.getPaymentDetailInfo(id);
-		assertEquals(result.paymentId(), expected.paymentId());
-		assertEquals(result.status(), expected.status());
-		assertEquals(result.concertSeatId(), expected.concertSeatId());
+		// when & then
+		PaymentInfo.CreatePayment info = assertDoesNotThrow(
+			() -> paymentService.create(PaymentCommand.CreatePayment.of(reservation))
+		);
+		verify(paymentRepository, times(1)).saveOrUpdate(any());
 	}
-	**/
+
 }
