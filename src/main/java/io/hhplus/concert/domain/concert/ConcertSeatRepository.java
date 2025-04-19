@@ -11,4 +11,6 @@ public interface ConcertSeatRepository {
 	ConcertSeat saveOrUpdate(ConcertSeat concertSeat);
 
 	void deleteConcertSeatByConcertDateId(long concertDateId);
+
+	void deleteAll();
 }

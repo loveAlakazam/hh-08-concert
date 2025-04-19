@@ -34,4 +34,14 @@ public class ConcertDateRepositoryImpl implements ConcertDateRepository {
     public void deleteConcertDate(long concertDateId) {
         concertDateJpaRepository.softDeleteConcertDate(concertDateId, LocalDate.now());
     }
+
+    @Override
+    public ConcertDate save(ConcertDate concertDate) {
+        return concertDateJpaRepository.save(concertDate);
+    }
+
+    @Override
+    public void deleteAll() {
+        concertDateJpaRepository.deleteAll();
+    }
 }

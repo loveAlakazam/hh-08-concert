@@ -19,7 +19,8 @@ public interface ConcertDateJpaRepository extends JpaRepository<ConcertDate, Lon
 		"""
 		SELECT cd
 		FROM ConcertDate cd 
-			JOIN FETCH cd.concert c			
+			JOIN FETCH cd.concert c	
+			JOIN FETCH cd.seats cs		
 		WHERE cd.deleted = false
 			AND cd.isAvailable = true
 			AND cd.progressDate >= :currentDate

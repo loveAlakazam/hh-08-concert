@@ -10,6 +10,7 @@ import io.hhplus.concert.interfaces.api.common.InvalidValidationException;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -18,11 +19,11 @@ public class ConcertService {
     private final ConcertDateRepository concertDateRepository;
     private final ConcertSeatRepository concertSeatRepository;
 
-
     /**
      * 콘서트 목록조회
      *
      */
+    @Transactional(readOnly = true)
     public ConcertInfo.GetConcertList getConcertList() {
         // 리스트결과를 가져온다.
         List<Concert> concerts = concertRepository.findAll();

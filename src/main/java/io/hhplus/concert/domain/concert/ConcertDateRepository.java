@@ -13,4 +13,7 @@ public interface ConcertDateRepository {
 
 	List<Long> findFinishedConcertDates();
 	void deleteConcertDate(long concertDateId);
+	ConcertDate save(ConcertDate concertDate);
+
+	void deleteAll();
 }

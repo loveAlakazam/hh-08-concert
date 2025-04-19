@@ -12,4 +12,5 @@ public interface ConcertRepository {
 	Concert findById(long id);
 	Concert saveOrUpdate(Concert concert);
 
+	void deleteAll();
 }

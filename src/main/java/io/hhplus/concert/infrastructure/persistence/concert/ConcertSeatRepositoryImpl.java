@@ -40,4 +40,9 @@ public class ConcertSeatRepositoryImpl implements ConcertSeatRepository {
     public void deleteConcertSeatByConcertDateId(long concertDateId) {
         concertSeatJpaRepository.softDeleteConcertSeat(concertDateId);
     }
+
+    @Override
+    public void deleteAll() {
+        concertSeatJpaRepository.deleteAll();
+    }
 }

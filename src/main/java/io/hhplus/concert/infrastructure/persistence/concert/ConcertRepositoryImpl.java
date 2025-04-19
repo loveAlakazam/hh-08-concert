@@ -28,4 +28,9 @@ public class ConcertRepositoryImpl implements ConcertRepository {
     public Concert saveOrUpdate(Concert concert) {
         return concertJpaRepository.save(concert);
     }
+
+    @Override
+    public void deleteAll() {
+        concertJpaRepository.deleteAll();
+    }
 }

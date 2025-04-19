@@ -70,7 +70,7 @@ public class Concert extends BaseEntity {
 	@OneToMany(mappedBy = "concert", cascade = CascadeType.ALL, orphanRemoval = true )
 	private List<ConcertDate> dates = new ArrayList<>();
 	// 콘서트:콘서트좌석 = 1:N
-	@OneToMany(mappedBy = "concert")
+	@OneToMany(mappedBy = "concert", cascade = CascadeType.ALL, orphanRemoval = true )
 	private List<ConcertSeat> seats = new ArrayList<>();
 	// 콘서트:예약 = 1:N
 	@OneToMany(mappedBy = "concert")

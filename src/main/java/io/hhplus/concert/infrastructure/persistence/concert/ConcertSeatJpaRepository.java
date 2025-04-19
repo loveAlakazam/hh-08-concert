@@ -34,10 +34,11 @@ public interface ConcertSeatJpaRepository extends JpaRepository<ConcertSeat, Lon
   		SELECT cs
   		FROM ConcertSeat cs
   			JOIN FETCH cs.concertDate  cd
+  			JOIN FETCH cs.concert c
   		WHERE 
-  			cd.deleted = false
-  			AND cd.isAvailable = false
-  			AND cs.deleted = false
+  			cs.deleted = false
+  			AND cd.deleted = false
+  			AND cd.isAvailable = true
   			AND cs.id = :concertSeatId
 	""")
 	Optional<ConcertSeat> getConcertSeatInfo(@Param("concertSeatId") Long concertSeatId);
