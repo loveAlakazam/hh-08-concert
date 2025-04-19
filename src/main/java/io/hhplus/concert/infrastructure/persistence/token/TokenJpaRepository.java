@@ -1,29 +1,37 @@
 package io.hhplus.concert.infrastructure.persistence.token;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import io.hhplus.concert.domain.token.entity.Token;
+import io.hhplus.concert.domain.token.Token;
+import jakarta.transaction.Transactional;
+
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-@Repository
 public interface TokenJpaRepository extends JpaRepository<Token, Long> {
-	@Query("""
-		SELECT t
-		FROM Token t
-		WHERE t.user.uuid = :uuid
-	""")
-	Optional<Token> findOneByUUID(@Param("uuid") UUID uuid);
+	Optional<Token> findByUuid(UUID uuid);
 
+	@Modifying
 	@Query("""
-		SELECT t
-		FROM Token t
+		UPDATE Token t
+		SET t.deleted = true
 		WHERE t.expiredAt < :now
 	""")
-	List<Token> findAllExpiredTokens(@Param("now") LocalDateTime now);
+	void deleteExpiredTokens(@Param("now") LocalDate now);
+
+	@Query("""
+ 		SELECT t
+ 		FROM Token t
+ 			JOIN FETCH t.user u
+ 		WHERE u.id = :userId
+	""")
+	Optional<Token> findOneByUserId(@Param("userId") long userId);
+
 }

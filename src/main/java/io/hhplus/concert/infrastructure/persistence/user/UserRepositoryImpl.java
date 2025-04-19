@@ -3,11 +3,14 @@ package io.hhplus.concert.infrastructure.persistence.user;
 
 import java.util.UUID;
 
-import io.hhplus.concert.domain.common.exceptions.NotFoundException;
-import io.hhplus.concert.domain.user.entity.User;
-import io.hhplus.concert.domain.user.repository.UserRepository;
+import org.springframework.stereotype.Repository;
+
+import io.hhplus.concert.domain.user.User;
+import io.hhplus.concert.domain.user.UserPoint;
+import io.hhplus.concert.domain.user.UserRepository;
 import lombok.RequiredArgsConstructor;
 
+@Repository
 @RequiredArgsConstructor
 public class UserRepositoryImpl implements UserRepository {
     private final UserJpaRepository userJpaRepository;
@@ -23,7 +26,7 @@ public class UserRepositoryImpl implements UserRepository {
     }
 
     @Override
-    public User findByUUID(UUID uuid) {
-        return userJpaRepository.findByUUID(uuid).orElse(null);
+    public void deleteAll() {
+        userJpaRepository.deleteAll();
     }
 }
