@@ -30,9 +30,9 @@ public class Reservation extends BaseEntity {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private long id; // 예약 PK
 
-	@Column(name="status")
+	@Column(name="status", nullable = false)
 	@Enumerated(EnumType.STRING)
-	private ReservationStatus status; // 예약상태
+	private ReservationStatus status = PENDING_PAYMENT; // 예약상태
 
 	@Column(name="reserved_at")
 	private LocalDateTime reservedAt = null; // 예약확정 일자

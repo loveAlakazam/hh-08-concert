@@ -23,7 +23,7 @@ public class UserPointHistory extends BaseEntity {
 
     @Column(name="status", nullable = false)
     @Enumerated(EnumType.STRING)
-    private UserPointHistoryStatus status; // 포인트 내역 상태
+    private UserPointHistoryStatus status = UserPointHistoryStatus.CHARGE; // 포인트 내역 상태
 
     /**
      * 연관관계
