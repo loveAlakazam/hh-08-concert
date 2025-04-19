@@ -52,4 +52,8 @@ public interface WaitingQueue {
 	 * @return List
 	 */
 	List<UUID> toList();
+	/**
+	 * 대기열큐를 비운다
+	 */
+	void clear();
 }

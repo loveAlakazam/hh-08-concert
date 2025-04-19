@@ -17,31 +17,37 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class InMemoryWaitingQueueImpl implements WaitingQueue {
 	private final Queue<UUID> queue = new ConcurrentLinkedQueue<>();
-
+	@Override
 	public int size() {
 		return queue.size();
 	}
 
+	@Override
 	public void enqueue(UUID uuid) {
 		queue.offer(uuid);
 	}
 
+	@Override
 	public UUID peek() {
 		return queue.peek();
 	}
 
+	@Override
 	public UUID dequeue() {
 		return queue.poll();
 	}
 
+	@Override
 	public void remove(UUID uuid) {
 		queue.remove(uuid);
 	}
 
+	@Override
 	public boolean contains(UUID uuid) {
 		return queue.contains(uuid);
 	}
 
+	@Override
 	public int getPosition(UUID requestUUID) {
 		int index = 0;
 		for(UUID uuid: queue) {
@@ -51,8 +57,14 @@ public class InMemoryWaitingQueueImpl implements WaitingQueue {
 		return -1; // 대기열에 없음
 	}
 
+	@Override
 	public List<UUID> toList() {
 		return List.copyOf(queue);
+	}
+
+	@Override
+	public void clear() {
+		queue.clear();
 	}
 
 }
