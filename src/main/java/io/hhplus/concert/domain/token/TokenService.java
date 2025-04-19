@@ -11,6 +11,7 @@ import io.hhplus.concert.domain.user.UserRepository;
 import io.hhplus.concert.interfaces.api.common.BusinessException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -27,6 +28,7 @@ public class TokenService {
         return TokenInfo.GetTokenByUUID.from(token);
     }
     // 대기상태 토큰 발급 요청
+    @Transactional
     public TokenInfo.IssueWaitingToken issueWaitingToken(TokenCommand.IssueWaitingToken command) {
         User user = command.user();
 
@@ -65,18 +67,20 @@ public class TokenService {
      * 토큰 활성상태(ACTIVE) 로 변경
      * @param command
      */
+    @Transactional
     public TokenInfo.ActivateToken activateToken(TokenCommand.ActivateToken command) {
         UUID uuid = command.uuid();
-
-        // 대상토큰이 맨앞에있는지 확인
-        if(uuid != waitingQueue.peek()) throw new BusinessException(TOKEN_IS_WAITING);
-
-        // 해당 uuid 를 큐에서 제거
-        waitingQueue.dequeue();
-
         // 대상토큰이 유효한 상태인지 확인
         Token token = tokenRepository.findTokenByUUID(uuid);
         if(token == null) throw new BusinessException(TOKEN_NOT_FOUND);
+        // 이미 토큰이 activated 됐는지 확인
+        if(token.isActivated()) throw new BusinessException(TOKEN_ALREADY_ISSUED);
+        // 대기열큐에 존재하며, 대상토큰의 uuid가 대기열큐의 맨앞에있는지 확인
+        if( waitingQueue.contains(uuid) && uuid != waitingQueue.peek())
+            throw new BusinessException(TOKEN_IS_WAITING);
+
+        // 해당 uuid 를 큐에서 제거
+        waitingQueue.dequeue();
 
         // 토큰활성화
         token.activate();
