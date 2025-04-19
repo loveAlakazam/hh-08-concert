@@ -28,7 +28,7 @@ import lombok.NoArgsConstructor;
 
 @Getter
 @Entity
-@Table(name = "user_point")
+@Table(name = "user_points")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class UserPoint{
 	/**
