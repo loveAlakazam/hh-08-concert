@@ -1,5 +1,7 @@
 package io.hhplus.concert.domain.reservation;
 
+import static io.hhplus.concert.interfaces.api.user.CommonErrorCode.*;
+
 import io.hhplus.concert.domain.concert.ConcertSeat;
 import io.hhplus.concert.domain.user.User;
 import io.hhplus.concert.interfaces.api.common.InvalidValidationException;
@@ -8,6 +10,8 @@ import io.hhplus.concert.interfaces.api.user.CommonErrorCode;
 public class ReservationCommand {
 	public record TemporaryReserve(User user, ConcertSeat concertSeat) {
 		public static TemporaryReserve of(User user, ConcertSeat concertSeat) {
+			if(user == null) throw new InvalidValidationException(NOT_NULLABLE);
+			if(concertSeat == null) throw new InvalidValidationException(NOT_NULLABLE);
 			return new TemporaryReserve(user, concertSeat);
 		}
 	}

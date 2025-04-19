@@ -19,6 +19,7 @@ import org.slf4j.LoggerFactory;
 import io.hhplus.concert.domain.concert.Concert;
 import io.hhplus.concert.domain.concert.ConcertDate;
 import io.hhplus.concert.domain.concert.ConcertSeat;
+import io.hhplus.concert.domain.concert.ConcertSeatRepository;
 import io.hhplus.concert.domain.reservation.ReservationService;
 import io.hhplus.concert.domain.reservation.ReservationRepository;
 import io.hhplus.concert.domain.user.User;
@@ -33,10 +34,12 @@ public class ReservationServiceTest {
 
 	@Mock
 	private ReservationRepository reservationRepository;
+	@Mock
+	private ConcertSeatRepository concertSeatRepository;
 
 	@BeforeEach
 	void setUp() {
-		reservationService = new ReservationService(reservationRepository);
+		reservationService = new ReservationService(reservationRepository,concertSeatRepository);
 	}
 
 	private static final Logger log = LoggerFactory.getLogger(ReservationServiceTest.class);

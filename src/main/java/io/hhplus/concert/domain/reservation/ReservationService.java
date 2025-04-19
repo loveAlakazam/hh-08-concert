@@ -4,17 +4,20 @@ import static io.hhplus.concert.interfaces.api.reservation.ReservationErrorCode.
 
 import io.hhplus.concert.domain.concert.Concert;
 import io.hhplus.concert.domain.concert.ConcertDate;
+import io.hhplus.concert.domain.concert.ConcertSeatRepository;
 import io.hhplus.concert.interfaces.api.common.BusinessException;
 import io.hhplus.concert.domain.concert.ConcertSeat;
 import io.hhplus.concert.domain.user.User;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
 public class ReservationService {
     private final ReservationRepository reservationRepository;
+    private final ConcertSeatRepository concertSeatRepository;
 
     /**
      * 임시예약 상태
@@ -22,6 +25,7 @@ public class ReservationService {
      * @return ReservationInfo.TemporaryReserve
      * @throws BusinessException
      */
+    @Transactional
     public ReservationInfo.TemporaryReserve temporaryReserve(ReservationCommand.TemporaryReserve command) {
         // 기존 예약 이력 확인
         Reservation reservation = reservationRepository.findByConcertSeatIdAndUserId(
@@ -31,8 +35,10 @@ public class ReservationService {
         if(reservation == null) reservation = initTemporaryReservedStatus(command.user(),command.concertSeat());
         // 임시예약
         reservation.temporaryReserve();
-        // 데이터베이스에 저장
+        // 임시예약 상태의 예약 정보를 데이터베이스에 저장
         reservationRepository.saveOrUpdate(reservation);
+        // 임시예약 상태면 좌석도 점유되어있으므로 데이터베이스에 저장
+        concertSeatRepository.saveOrUpdate(reservation.getConcertSeat());
         return ReservationInfo.TemporaryReserve.from(reservation);
     }
     /**
@@ -46,9 +52,8 @@ public class ReservationService {
         // 기존 이력이 없으면 신규이력으로 등록
         Concert concert = concertSeat.getConcert();
         ConcertDate concertDate = concertSeat.getConcertDate();
-        Reservation reservation = Reservation.of(user,concert, concertDate, concertSeat);
 
-        return reservation;
+		return Reservation.of(user,concert, concertDate, concertSeat);
     }
     /**
      * 임시예약기간 만료로 예약취소
@@ -65,8 +70,11 @@ public class ReservationService {
         // 취소처리
         reservation.cancel();
 
-        // 데이터베이스에 저장
+        // 예약상태가 취소되었음을 데이터베이스에 저장
         reservationRepository.saveOrUpdate(reservation);
+        // 좌석상태가 예약불가능 -> 예약가능으로 변경하였으므로 데이터베이스에 저장
+        concertSeatRepository.saveOrUpdate(reservation.getConcertSeat());
+
         return ReservationInfo.Cancel.from(reservation);
     }
     /**
@@ -75,6 +83,7 @@ public class ReservationService {
      * @param command
      * @return ReservationInfo.Confirm
      */
+    @Transactional
     public ReservationInfo.Confirm confirm(ReservationCommand.Confirm command) {
         // 예약이력확인
         Reservation reservation = reservationRepository.findById(command.reservationId());
