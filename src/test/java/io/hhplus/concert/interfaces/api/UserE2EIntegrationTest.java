@@ -1,5 +1,5 @@
 package io.hhplus.concert.interfaces.api;
 
-public class UserControllerIntegrationTest {
+public class UserE2EIntegrationTest {
 
 }
