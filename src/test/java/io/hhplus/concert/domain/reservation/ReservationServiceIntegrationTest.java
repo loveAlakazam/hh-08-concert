@@ -133,8 +133,32 @@ public class ReservationServiceIntegrationTest {
 	@Test
 	void 이미_좌석을_결제하여_예약확정상태인데_동일한좌석을_임시예약_할_수_없으므로_BusinessException_예외발생() {
 		// given
+		// 임시예약이 만료된 상태의 예약이다.
+		log.info("임시예약 신청하여 좌석 5분간 임시점유 상태");
+		ReservationInfo.TemporaryReserve info = reservationService.temporaryReserve(
+			ReservationCommand.TemporaryReserve.of(sampleUser, sampleConcertSeat)
+		);
+		Reservation reservation = info.reservation(); // 임시예약상태
+		long reservationId = reservation.getId();
+		// 임시 예약 상태 확인
+		assertNotNull(reservation);
+		assertTrue(reservation.isTemporary());
+		// 좌석이 점유(isAvailable = false) 됐는지 확인
+		assertFalse(reservation.getConcertSeat().isAvailable());
+		// 이미 예약 확정 상태
+		ReservationInfo.Confirm confirmedInfo = reservationService.confirm(ReservationCommand.Confirm.of(reservationId));
+		reservation = confirmedInfo.reservation();
+
+		// 이미 예약확정 처리했는데 동일한 좌석을 임시예약상태로 변경은 비즈니스 규칙에 위배되므로 예외발생
 		// when & then
-		// TODO
+		BusinessException exception = assertThrows(
+			BusinessException.class,
+			()-> reservationService.temporaryReserve(
+				ReservationCommand.TemporaryReserve.of(sampleUser, sampleConcertSeat)
+			)
+		);
+		assertEquals(INVALID_ACCESS.getMessage(), exception.getMessage());
+		assertEquals(INVALID_ACCESS.getHttpStatus(), exception.getHttpStatus());
 	}
 
 	/**
