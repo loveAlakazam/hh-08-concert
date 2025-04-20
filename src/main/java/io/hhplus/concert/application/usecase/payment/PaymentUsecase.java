@@ -3,6 +3,7 @@ package io.hhplus.concert.application.usecase.payment;
 import static io.hhplus.concert.interfaces.api.payment.PaymentErrorCode.*;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import io.hhplus.concert.domain.concert.ConcertCommand;
 import io.hhplus.concert.domain.concert.ConcertInfo;
@@ -42,6 +43,7 @@ public class PaymentUsecase {
 	 * @return PaymentResponse
 	 * @throws InvalidValidationException
 	 */
+	@Transactional
 	public PaymentResult.PayAndConfirm payAndConfirm(PaymentCriteria.PayAndConfirm criteria) {
 		// 유저포인트 조회
 		UserInfo.GetUserPoint userPointInfo = userService.getUserPoint(UserPointCommand.GetUserPoint.of(criteria.userId()));
