@@ -41,7 +41,7 @@ public class DateValidator {
 	 * @return boolean
 	 */
 	public static boolean isPastDateTime(LocalDateTime dateTime) {
-		if(dateTime == null) throw new InvalidValidationException(SHOULD_NOT_EMPTY);
+		if(dateTime == null) return false;
 		LocalDateTime now = LocalDateTime.now();
 
 		// dateTime 이 now 보다 과거일경우

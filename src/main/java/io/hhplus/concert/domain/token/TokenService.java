@@ -76,7 +76,7 @@ public class TokenService {
         // 이미 토큰이 activated 됐는지 확인
         if(token.isActivated()) throw new BusinessException(TOKEN_ALREADY_ISSUED);
         // 대기열큐에 존재하며, 대상토큰의 uuid가 대기열큐의 맨앞에있는지 확인
-        if( waitingQueue.contains(uuid) && uuid != waitingQueue.peek())
+        if( waitingQueue.contains(uuid) && (uuid != waitingQueue.peek()) )
             throw new BusinessException(TOKEN_IS_WAITING);
 
         // 해당 uuid 를 큐에서 제거

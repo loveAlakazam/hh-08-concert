@@ -35,6 +35,7 @@ public class TokenServiceTest {
 	@BeforeEach
 	void setUp() {
 		tokenService = new TokenService(tokenRepository, waitingQueue);
+		waitingQueue.clear();
 	}
 
 	@Test
@@ -156,8 +157,9 @@ public class TokenServiceTest {
 		User user = User.of("사용자");
 		Token token = Token.of(user, uuid);
 		token.issue(user); // 대기상태 토큰 발급
+		when(tokenRepository.findTokenByUUID(uuid)).thenReturn(token); // 래포지토리에 uuid에 매핑되는 토큰을 찾는다
+		when(waitingQueue.contains(uuid)).thenReturn(true);
 		when(waitingQueue.peek()).thenReturn(uuid); // 대기열의 맨앞에 있음
-		when(tokenRepository.findTokenByUUID(uuid)).thenReturn(token);
 		when(tokenRepository.saveOrUpdate(token)).thenReturn(token);
 
 		// when
@@ -170,6 +172,7 @@ public class TokenServiceTest {
 		assertEquals(TokenStatus.ACTIVE, result.token().getStatus()); // 활성화된 상태인지 확인
 		assertFalse(result.token().isExpiredToken()); // 만료되지 않음
 
+		verify(waitingQueue, times(1)).contains(uuid);
 		verify(waitingQueue, times(1)).peek();
 		verify(waitingQueue, times(1)).dequeue();
 		verify(tokenRepository, times(1)).findTokenByUUID(any());
@@ -183,7 +186,9 @@ public class TokenServiceTest {
 		Token token = Token.of(user, uuid);
 		token.issue(user); // 대기상태 토큰 발급
 
-		when(waitingQueue.peek()).thenReturn(UUID.randomUUID()); // 대기열의 맨앞에 있지않음
+		when(tokenRepository.findTokenByUUID(uuid)).thenReturn(token);
+		when(waitingQueue.contains(uuid)).thenReturn(true); // 대기열에 있음
+		when(waitingQueue.peek()).thenReturn(any()); // 대기열의 맨앞에 있지않음 다른토큰이 들어있음
 		BusinessException ex = assertThrows(
 			BusinessException.class,
 			() -> tokenService.activateToken(TokenCommand.ActivateToken.of(uuid))
@@ -199,8 +204,8 @@ public class TokenServiceTest {
 		assertFalse(token.isExpiredToken()); // 현 대기토큰은 만료되지 않음
 
 		verify(waitingQueue, times(1)).peek();
+		verify(tokenRepository, times(1)).findTokenByUUID(uuid);
 		verify(waitingQueue, never()).dequeue();
-		verify(tokenRepository, never()).findTokenByUUID(any());
 		verify(tokenRepository, never()).saveOrUpdate(any());
 	}
 	@Test
@@ -209,7 +214,6 @@ public class TokenServiceTest {
 		UUID uuid = UUID.randomUUID();
 		User user = User.of("사용자");
 
-		when(waitingQueue.peek()).thenReturn(uuid); // 대기열의 맨앞에 있음
 		when(tokenRepository.findTokenByUUID(uuid)).thenReturn(null); // 토큰정보가 없음
 		BusinessException ex = assertThrows(
 			BusinessException.class,
@@ -220,9 +224,9 @@ public class TokenServiceTest {
 		assertEquals(TOKEN_NOT_FOUND.getMessage() ,ex.getMessage());
 		assertEquals(TOKEN_NOT_FOUND.getHttpStatus() ,ex.getHttpStatus());
 
-		verify(waitingQueue, times(1)).peek();
-		verify(waitingQueue, times(1)).dequeue();
 		verify(tokenRepository, times(1)).findTokenByUUID(any());
+		verify(waitingQueue, never()).peek();
+		verify(waitingQueue, never()).dequeue();
 		verify(tokenRepository, never()).saveOrUpdate(any());
 	}
 	@Test

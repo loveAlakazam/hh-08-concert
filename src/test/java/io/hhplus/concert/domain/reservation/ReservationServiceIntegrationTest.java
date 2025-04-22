@@ -354,11 +354,11 @@ public class ReservationServiceIntegrationTest {
 
 		// when & then
 		// 임시예약이 만료되어있는데 예약확정상태로 변경하려는 경우에 비즈니스규칙에 위배
-		InvalidValidationException exception = assertThrows(
-			InvalidValidationException.class,
+		BusinessException exception = assertThrows(
+			BusinessException.class,
 			() -> reservationService.cancel(ReservationCommand.Cancel.of(reservationId))
 		);
-		assertEquals(SHOULD_NOT_EMPTY.getMessage(), exception.getMessage());
+		assertEquals(INVALID_ACCESS.getMessage(), exception.getMessage());
 	}
 	@Order(12)
 	@Test
