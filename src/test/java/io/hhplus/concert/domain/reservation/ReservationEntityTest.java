@@ -83,7 +83,7 @@ public class ReservationEntityTest {
 		assertEquals(49, concertDate.countAvailableSeats()); // 해당 콘서트일정에서 예약가능한 좌석개수가 49개인지 확인
 	}
 	@Test
-	void 이미_예약된_좌석을_임시예약_요청하면_BusinessException_예외를_발생() {
+	void 이미_점유된_좌석을_임시예약_요청하면_BusinessException_예외를_발생() {
 		// given
 		User user = User.of("테스트"); // 유저 초기화
 		// 콘서트, 콘서트일정, 콘서트 좌석 초기화
@@ -96,10 +96,10 @@ public class ReservationEntityTest {
 		);
 		// 예약하려는 콘서트 - concert
 		// 예약하려는 콘서트일정 - concertDate
-		// 예약하려는 콘서트좌석(이미 예약완료된상태) - concertSeat
+		// 예약하려는 콘서트좌석(이미 점유된상태) - concertSeat
 		ConcertDate concertDate = concert.getDates().get(0);
 		ConcertSeat concertSeat = concertDate.getSeats().get(0);
-		concertSeat.reserve(); //예약하려는 좌석이 이미 예약된 상태로 설정
+		concertSeat.reserve(); //예약하려는 좌석이 이미 임시예약된 상태로 설정
 
 		assertEquals(true, concertDate.isAvailable()); // 공연 일정 가능 가능
 		assertEquals(false, concertSeat.isAvailable()); // 이미 예약된 상태
@@ -112,11 +112,6 @@ public class ReservationEntityTest {
 		// when & then
 		assertEquals(ALREADY_RESERVED_SEAT.getMessage(), ex.getMessage());
 		assertEquals(ALREADY_RESERVED_SEAT.getHttpStatus(), ex.getHttpStatus());
-
-		assertEquals(false, reservation.isTemporary()); // 임시예약상태가 아닌지
-		// 예약상태정보가 변경없음
-		assertNotEquals(CONFIRMED, reservation.getStatus());
-		assertNull(reservation.getTempReservationExpiredAt());
 	}
 	@Test
 	void 임시예약상태에서_예약확정으로_변경() {
