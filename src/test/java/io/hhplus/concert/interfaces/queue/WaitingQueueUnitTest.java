@@ -7,11 +7,14 @@ import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import io.hhplus.concert.domain.token.WaitingQueue;
+import io.hhplus.concert.infrastructure.queue.InMemoryWaitingQueueImpl;
+
 public class WaitingQueueUnitTest {
 	private WaitingQueue queue;
 	@BeforeEach
 	void setUp() {
-		queue = new WaitingQueue();
+		queue = new InMemoryWaitingQueueImpl();
 	}
 
 	@Test
@@ -58,5 +61,20 @@ public class WaitingQueueUnitTest {
 		assertThat(result).isEqualTo(uuid1);
 		assertThat(result).isNotEqualTo(uuid2);
 		assertThat(queue.size()).isEqualTo(1);
+	}
+	@Test
+	void 큐의_모든원소들을_제거한다() {
+		// given
+		UUID uuid1 = UUID.randomUUID();
+		UUID uuid2 = UUID.randomUUID();
+		queue.enqueue(uuid1);
+		queue.enqueue(uuid2);
+
+		// when
+		queue.clear();
+
+		// then
+		assertThat(queue.size()).isEqualTo(0);
+
 	}
 }
