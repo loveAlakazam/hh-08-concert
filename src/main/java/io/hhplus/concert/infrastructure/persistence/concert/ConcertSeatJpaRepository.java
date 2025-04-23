@@ -7,7 +7,9 @@ import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import io.hhplus.concert.domain.concert.ConcertSeat;
+import jakarta.persistence.LockModeType;
 
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -52,4 +54,12 @@ public interface ConcertSeatJpaRepository extends JpaRepository<ConcertSeat, Lon
 			AND cs.concertDate.id = :id
 	""")
 	void softDeleteConcertSeat(@Param("id") long concertDateId);
+
+	@Lock(LockModeType.PESSIMISTIC_WRITE)
+	@Query("""
+		SELECT cs
+		FROM ConcertSeat cs
+		WHERE cs.id = :id
+	""")
+	ConcertSeat findConcertSeatWithExclusiveLock(@Param("id") long concertSeatId);
 }

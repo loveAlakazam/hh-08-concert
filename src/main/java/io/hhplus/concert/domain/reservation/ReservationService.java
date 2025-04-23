@@ -1,5 +1,6 @@
 package io.hhplus.concert.domain.reservation;
 
+import static io.hhplus.concert.interfaces.api.concert.ConcertErrorCode.*;
 import static io.hhplus.concert.interfaces.api.reservation.ReservationErrorCode.*;
 
 import io.hhplus.concert.domain.concert.Concert;
@@ -27,6 +28,10 @@ public class ReservationService {
      */
     @Transactional
     public ReservationInfo.TemporaryReserve temporaryReserve(ReservationCommand.TemporaryReserve command) {
+        // 콘서트좌석 정보조회
+        ConcertSeat concertSeat = concertSeatRepository.findConcertSeatWithExclusiveLock(command.concertSeat().getId());
+        if(concertSeat == null) throw new BusinessException(CONCERT_SEAT_NOT_FOUND);
+
         // 기존 예약 이력 확인
         Reservation reservation = reservationRepository.findByConcertSeatIdAndUserId(
             command.user().getId(), command.concertSeat().getId()

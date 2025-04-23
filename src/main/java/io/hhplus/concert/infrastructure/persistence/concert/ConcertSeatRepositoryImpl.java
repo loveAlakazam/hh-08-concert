@@ -45,4 +45,9 @@ public class ConcertSeatRepositoryImpl implements ConcertSeatRepository {
     public void deleteAll() {
         concertSeatJpaRepository.deleteAll();
     }
+
+    @Override
+    public ConcertSeat findConcertSeatWithExclusiveLock(long concertSeatId) {
+        return concertSeatJpaRepository.findConcertSeatWithExclusiveLock(concertSeatId);
+    }
 }
