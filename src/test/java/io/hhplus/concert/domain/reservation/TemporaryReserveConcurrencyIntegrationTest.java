@@ -77,8 +77,9 @@ public class TemporaryReserveConcurrencyIntegrationTest {
 	@Test
 	void 서로다른_두명의_사용자가_동일한_좌석을_예약하려고할때_한명만_예약이_가능하다() throws InterruptedException {
 		// given
-		User user1 = User.of("최은강");
-		User user2 = User.of("최금강");
+		User user1 = userRepository.save(User.of("최은강"));
+		User user2 = userRepository.save(User.of("최금강"));;
+
 		ReservationCommand.TemporaryReserve command1 = ReservationCommand.TemporaryReserve.of(user1, sampleConcertSeat);
 		ReservationCommand.TemporaryReserve command2 = ReservationCommand.TemporaryReserve.of(user2, sampleConcertSeat);
 
