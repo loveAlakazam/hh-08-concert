@@ -115,4 +115,64 @@ public class TemporaryReserveConcurrencyIntegrationTest {
 			}).count();
 		assertEquals(1, successfulReservations, "오직 한명의 유저만 좌석 예약에 성공한다");
 	}
+	@Test
+	void 서로다른_사용자_10명이_동일한_좌석을_예약하려고할때_한명만_예약이_가능하다() throws InterruptedException {
+		// given
+		List<User> users = new ArrayList<>();
+		List<ReservationCommand.TemporaryReserve> commands = new ArrayList<>();
+		for(int i = 1; i <= 10 ; i++) {
+			User user = User.of("최은강 "+i);
+			users.add(userRepository.save(user));
+			commands.add(ReservationCommand.TemporaryReserve.of(user, sampleConcertSeat));
+		}
+		// when
+		int threadCount = users.size();
+		ExecutorService executorService = Executors.newFixedThreadPool(threadCount);
+		CountDownLatch latch = new CountDownLatch(threadCount);
+
+		List<Future<ReservationInfo.TemporaryReserve>> results = new ArrayList<>();
+		commands.forEach(command -> {
+			Future<ReservationInfo.TemporaryReserve> commandResult = executorService.submit(() -> {
+				latch.countDown();
+				latch.await();
+				return reservationService.temporaryReserve(command);
+			});
+			results.add(commandResult);
+		});
+		executorService.shutdown();
+
+
+		// then
+		long successfulReservations = results.stream().filter(
+			temporaryReserveFuture -> {
+				try {
+					return temporaryReserveFuture.get() != null;
+				} catch (Exception e) {
+					return false;
+				}
+			}).count();
+
+		// 로그작성
+		for(int i = 0; i < results.size(); i++) {
+			User user = users.get(i);
+			Future<ReservationInfo.TemporaryReserve> future = results.get(i);
+			try {
+				ReservationInfo.TemporaryReserve info = future.get();
+				if (info != null) {
+					log.info("✅ 성공: {}(userId: {}) 님이 좌석을 예약하였습니다.", user.getName(), user.getId());
+				} else {
+					log.info("❌ 실패: {}(userId: {}) 님은 좌석예약에 실패하였습니다.", user.getName(), user.getId());
+				}
+
+			} catch(Exception e) {
+				log.warn("❌ 실패: {}(userId: {}) 님은 처리중 예외발생으로 예약에 실패했습니다. - 발생예외: {} - 메시지: {}",
+					user.getName(),
+					user.getId(),
+					e.getCause().getClass().getSimpleName(),
+					e.getMessage()
+				);
+			}
+		}
+		assertEquals(1, successfulReservations, "오직 한명의 유저만 좌석 예약에 성공한다");
+	}
 }
