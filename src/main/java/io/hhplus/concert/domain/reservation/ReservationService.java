@@ -9,6 +9,7 @@ import io.hhplus.concert.interfaces.api.common.BusinessException;
 import io.hhplus.concert.domain.concert.ConcertSeat;
 import io.hhplus.concert.domain.user.User;
 
+import jakarta.persistence.OptimisticLockException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,19 +28,25 @@ public class ReservationService {
      */
     @Transactional
     public ReservationInfo.TemporaryReserve temporaryReserve(ReservationCommand.TemporaryReserve command) {
-        // 기존 예약 이력 확인
-        Reservation reservation = reservationRepository.findByConcertSeatIdAndUserId(
-            command.user().getId(), command.concertSeat().getId()
-        );
-        // 신규이력생성
-        if(reservation == null) reservation = initTemporaryReservedStatus(command.user(),command.concertSeat());
-        // 임시예약
-        reservation.temporaryReserve();
-        // 임시예약 상태의 예약 정보를 데이터베이스에 저장
-        reservationRepository.saveOrUpdate(reservation);
-        // 임시예약 상태면 좌석도 점유되어있으므로 데이터베이스에 저장
-        concertSeatRepository.saveOrUpdate(reservation.getConcertSeat());
-        return ReservationInfo.TemporaryReserve.from(reservation);
+        try{
+            // 기존 예약 이력 확인
+            Reservation reservation = reservationRepository.findByConcertSeatIdAndUserId(
+                command.user().getId(), command.concertSeat().getId()
+            );
+            // 신규이력생성
+            if(reservation == null) reservation = initTemporaryReservedStatus(command.user(),command.concertSeat());
+            // 임시예약
+            reservation.temporaryReserve();
+            // 임시예약 상태면 좌석도 점유되어있으므로 데이터베이스에 저장
+            concertSeatRepository.saveOrUpdate(reservation.getConcertSeat());
+            // 임시예약 상태의 예약 정보를 데이터베이스에 저장
+            reservationRepository.saveOrUpdate(reservation);
+            return ReservationInfo.TemporaryReserve.from(reservation);
+
+        } catch(OptimisticLockException e) {
+            // 좌석의 version이 일치하지 않으면 예외발생
+            throw new BusinessException(ALREADY_RESERVED);
+        }
     }
     /**
      * 신규 임시예약 상태 예약도메인 생성
