@@ -13,4 +13,6 @@ public interface ConcertSeatRepository {
 	void deleteConcertSeatByConcertDateId(long concertDateId);
 
 	void deleteAll();
+
+	ConcertSeat findConcertSeatWithSharedLock(long concertSeatId);
 }

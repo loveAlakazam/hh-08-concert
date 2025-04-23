@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import io.hhplus.concert.domain.concert.ConcertSeat;
 import io.hhplus.concert.domain.concert.ConcertSeatRepository;
@@ -44,5 +46,11 @@ public class ConcertSeatRepositoryImpl implements ConcertSeatRepository {
     @Override
     public void deleteAll() {
         concertSeatJpaRepository.deleteAll();
+    }
+
+    @Override
+    @Transactional
+    public ConcertSeat findConcertSeatWithSharedLock(long concertSeatId) {
+        return concertSeatJpaRepository.findConcertSeatWithSharedLock(concertSeatId);
     }
 }

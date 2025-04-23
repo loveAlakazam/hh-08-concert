@@ -7,7 +7,9 @@ import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import io.hhplus.concert.domain.concert.ConcertSeat;
+import jakarta.persistence.LockModeType;
 
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -52,4 +54,25 @@ public interface ConcertSeatJpaRepository extends JpaRepository<ConcertSeat, Lon
 			AND cs.concertDate.id = :id
 	""")
 	void softDeleteConcertSeat(@Param("id") long concertDateId);
+
+	/**
+	 * findConcertSeatWithSharedLock
+	 *
+	 * - 실제 SQL 쿼리문
+	 * START TRANSACTION;
+	 *
+	 * SELECT cs.*
+	 * FROM concert_seats as cs
+	 * WHERE cs.id = :id  LOCK IN SHARE MODE;
+	 * ```
+	 * @param concertSeatId - 좌석 아이디
+	 * @return ConcertSeat
+	 */
+	@Lock(LockModeType.PESSIMISTIC_READ) // S-LOCK
+	@Query("""
+		SELECT cs
+		FROM ConcertSeat cs
+		WHERE cs.id = :id
+	""")
+	ConcertSeat findConcertSeatWithSharedLock(@Param("id") long concertSeatId);
 }
