@@ -22,6 +22,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.test.context.jdbc.Sql;
 
 import io.hhplus.concert.TestcontainersConfiguration;
@@ -105,5 +106,61 @@ public class UserPointConcurrencyIntegrationTest {
 		// then: 최종 포인트는 10,000 + 5,000 - 5,000 = 10,000
 		UserInfo.GetCurrentPoint info = userService.getCurrentPoint(UserPointCommand.GetCurrentPoint.of(userId));
 		assertEquals(10_000L, info.point());
+	}
+	@Test
+	@Order(2)
+	void 포인트_충전과_사용은_동시에_진행되면_둘중하나는_ObjectOptimisticLockingFailureException_예외발생() throws Exception {
+		// given
+		long userId = sampleUser.getId();
+
+		// 먼저 10,000원 충전
+		userService.chargePoint(UserPointCommand.ChargePoint.of(userId, 10_000L));
+
+		// 두 작업이 동시에 실행되도록 조율하는 CyclicBarrier
+		CyclicBarrier barrier = new CyclicBarrier(2);
+
+		ExecutorService executor = Executors.newFixedThreadPool(2);
+		List<Future<String>> results = new ArrayList<>();
+
+		// 충전 쓰레드
+		results.add(executor.submit(() -> {
+			try{
+				log.info("::: 포인트 충전 스레드 실행");
+				barrier.await(); // 🔥 다른 스레드가 도달할 때까지 대기
+				userService.chargePoint(UserPointCommand.ChargePoint.of(userId, 5_000L));
+				return "충전 성공";
+			} catch(ObjectOptimisticLockingFailureException e){
+				return "충전 충돌";
+			}
+		}));
+
+		// 사용 쓰레드
+		results.add(executor.submit(() -> {
+			try {
+				log.info("::: 포인트 사용 스레드 실행");
+				barrier.await(); // 🔥 두 스레드가 동시에 실행되도록 조율
+				userService.usePoint(UserPointCommand.UsePoint.of(userId, 5_000L));
+				return "사용 성공";
+
+			} catch (ObjectOptimisticLockingFailureException e) {
+				return "사용 충돌";
+			}
+		}));
+
+		// when: 두 작업이 완료될 때까지 기다림
+		List<String> messages = new ArrayList<>();
+		for (Future<String> result : results) {
+			messages.add(result.get()); // 예외 발생 시 여기서 잡힘
+		}
+
+		// 충전/사용 중 하나는 반드시 성공하고 하나는 충돌이어야 한다
+		log.info("결과메시지: {}", messages);
+		assertTrue(messages.contains("충전 성공") || messages.contains("사용 성공"));
+		assertTrue(messages.contains("충전 충돌") || messages.contains("사용 충돌"));
+
+		// then
+		UserInfo.GetCurrentPoint info = userService.getCurrentPoint(UserPointCommand.GetCurrentPoint.of(userId));
+		log.info("보유포인트 : {}", info.point());
+		assertTrue(info.point() == 15000 || info.point() == 5000);
 	}
 }
