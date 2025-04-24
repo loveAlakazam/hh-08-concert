@@ -24,7 +24,7 @@ public class UserService {
     @Transactional
     public UserInfo.ChargePoint chargePoint(UserPointCommand.ChargePoint command) {
         // 유저 포인트정보 조회
-        UserPoint userPoint = userPointRepository.findByUserId(command.userId());
+        UserPoint userPoint = userPointRepository.findUserPointWithExclusiveLock(command.userId());
         if(userPoint == null)
             throw new BusinessException(UserErrorCode.NOT_EXIST_USER);
 
@@ -46,7 +46,7 @@ public class UserService {
     @Transactional
     public UserInfo.UsePoint usePoint(UserPointCommand.UsePoint command) {
         // 유저 정보 조회
-        UserPoint userPoint = userPointRepository.findByUserId(command.userId());
+        UserPoint userPoint = userPointRepository.findUserPointWithExclusiveLock(command.userId());
         if(userPoint == null) throw new BusinessException(UserErrorCode.NOT_EXIST_USER);
 
         // amount 값만큼 포인트 사용
