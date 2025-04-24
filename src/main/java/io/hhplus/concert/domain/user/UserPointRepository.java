@@ -7,4 +7,5 @@ public interface UserPointRepository {
 	UserPoint save(UserPoint userPoint);
 
 	void deleteAll();
+	UserPoint findUserPointWithSharedLock(long userId);
 }
