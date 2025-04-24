@@ -1,6 +1,7 @@
 package io.hhplus.concert.infrastructure.persistence.user;
 
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import io.hhplus.concert.domain.user.UserPoint;
 import io.hhplus.concert.domain.user.UserPointRepository;
@@ -24,5 +25,11 @@ public class UserPointRepositoryImpl implements UserPointRepository {
 	@Override
 	public void deleteAll() {
 		userPointJpaRepository.deleteAll();
+	}
+
+	@Override
+	@Transactional
+	public UserPoint findUserPointWithExclusiveLock(long userId) {
+		return userPointJpaRepository.findUserPointWithExclusiveLock(userId);
 	}
 }
