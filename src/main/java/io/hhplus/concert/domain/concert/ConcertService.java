@@ -30,13 +30,13 @@ public class ConcertService {
         return ConcertInfo.GetConcertList.from(concerts);
     }
     /**
-     * 콘서트 날짜 목록 조회
+     * 예약가능한 콘서트 날짜 목록 조회
      *
      * @return ConcertInfo.GetConcertDateList
      */
     public ConcertInfo.GetConcertDateList getConcertDateList(ConcertCommand.GetConcertDateList command) {
         // 리스트결과를 가져온다
-        List<ConcertDate> concertDates =  concertDateRepository.findAll(command.concertId());
+        List<ConcertDate> concertDates =  concertDateRepository.findAllAvailable(command.concertId());
         return ConcertInfo.GetConcertDateList.from(concertDates);
     }
     /**

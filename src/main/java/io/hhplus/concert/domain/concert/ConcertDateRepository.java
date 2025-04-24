@@ -8,7 +8,7 @@ import org.springframework.data.domain.Pageable;
 import io.hhplus.concert.domain.concert.ConcertDate;
 
 public interface ConcertDateRepository {
-	List<ConcertDate> findAll(long concertId);
+	List<ConcertDate> findAllAvailable(long concertId);
 	ConcertDate findConcertDateById(long id);
 
 	List<Long> findFinishedConcertDates();
@@ -16,4 +16,6 @@ public interface ConcertDateRepository {
 	ConcertDate save(ConcertDate concertDate);
 
 	void deleteAll();
+
+	List<ConcertDate> findAll();
 }
