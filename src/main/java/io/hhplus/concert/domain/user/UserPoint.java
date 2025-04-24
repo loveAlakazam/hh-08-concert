@@ -21,6 +21,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -40,6 +41,9 @@ public class UserPoint{
 	private long id;
 	@Column(name ="point", nullable = false)
 	private long point = 0; // 잔액
+
+	@Version
+	private int version;
 
 	// 유저포인트:유저=1:1
 	@OneToOne(fetch = FetchType.LAZY)
