@@ -11,11 +11,11 @@ public interface ConcertDateRepository {
 	List<ConcertDate> findAllAvailable(long concertId);
 	ConcertDate findConcertDateById(long id);
 
-	List<Long> findFinishedConcertDates();
+	List<Long> findFinishedConcertDateIds();
 	void deleteConcertDate(long concertDateId);
 	ConcertDate save(ConcertDate concertDate);
 
 	void deleteAll();
 
-	List<ConcertDate> findAll();
+	List<ConcertDate> findAllNotDeleted();
 }

@@ -46,5 +46,13 @@ public interface ConcertDateJpaRepository extends JpaRepository<ConcertDate, Lon
 		WHERE cd.deleted = false 
 			AND cd.progressDate < :now 	
 	""")
-	List<Long> findFinishedConcertDates(@Param("now") LocalDate now);
+	List<Long> findFinishedConcertDateIds(@Param("now") LocalDate now);
+
+	@Query("""
+		SELECT cd
+		FROM ConcertDate cd
+			JOIN FETCH cd.seats cs
+		WHERE cd.deleted = false
+	""")
+	List<ConcertDate> findAllNotDeleted();
 }

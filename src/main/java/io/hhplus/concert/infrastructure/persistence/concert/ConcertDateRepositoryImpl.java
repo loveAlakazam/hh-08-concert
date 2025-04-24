@@ -26,8 +26,8 @@ public class ConcertDateRepositoryImpl implements ConcertDateRepository {
     }
 
     @Override
-    public List<Long> findFinishedConcertDates() {
-        return concertDateJpaRepository.findFinishedConcertDates(LocalDate.now());
+    public List<Long> findFinishedConcertDateIds() {
+        return concertDateJpaRepository.findFinishedConcertDateIds(LocalDate.now());
     }
 
     @Override
@@ -46,7 +46,7 @@ public class ConcertDateRepositoryImpl implements ConcertDateRepository {
     }
 
     @Override
-    public List<ConcertDate> findAll() {
-        return List.of();
+    public List<ConcertDate> findAllNotDeleted() {
+        return concertDateJpaRepository.findAllNotDeleted();
     }
 }
