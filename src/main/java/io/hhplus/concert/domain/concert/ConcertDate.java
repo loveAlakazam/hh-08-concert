@@ -122,9 +122,13 @@ public class ConcertDate extends BaseEntity {
 	 * 좌석이 매진되면 일정의 상태값을 변경한다
 	 */
 	public void soldOut() {
-		if( this.countAvailableSeats() == 0 ) {
-			this.isAvailable = false;
-		}
+		this.isAvailable = false;
+	}
+	/**
+	 * 좌석이 다시 가능하다면 일정의 상태값을 변경한다.
+	 */
+	public void available() {
+		this.isAvailable = true;
 	}
 
 	/**

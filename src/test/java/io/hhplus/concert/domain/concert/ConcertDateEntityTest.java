@@ -59,10 +59,10 @@ public class ConcertDateEntityTest {
 		}
 
 		// when
+		assertEquals(0, concertDate.countAvailableSeats());
 		concertDate.soldOut();
 
 		// then
-		assertEquals(0, concertDate.countAvailableSeats());
 		assertEquals(false, concertDate.isAvailable()); // 좌석 매진으로 예약불가
 	}
 }
