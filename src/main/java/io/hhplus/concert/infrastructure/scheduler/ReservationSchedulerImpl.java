@@ -16,8 +16,8 @@ public class ReservationSchedulerImpl implements ReservationScheduler {
 
 	@Scheduled(cron = "0 0 0 * * *")
 	@Override
-	public void deleteExpiredReservations() {
-		reservationMaintenanceService.deleteExpiredReservations();
+	public void deleteCanceledReservations() {
+		reservationMaintenanceService.deleteCanceledReservations();
 	}
 
 	@Scheduled(cron = "0 */5 0 * * * ")

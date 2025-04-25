@@ -32,8 +32,8 @@ public class ReservationRepositoryImpl implements ReservationRepository {
     }
 
     @Override
-    public void deleteExpiredReservations() {
-        reservationJpaRepository.deleteExpiredReservations(LocalDateTime.now());
+    public void deleteCanceledReservations() {
+        reservationJpaRepository.deleteCanceledReservations(ReservationStatus.CANCELED, LocalDateTime.now());
     }
 
     @Override
