@@ -8,7 +8,7 @@ public class EmptyStringValidator {
 
 	public static boolean isEmptyString(String input) {
 		if(input == null) return true;
-		if(input.replaceAll(REGEX_REMOVE_WHITESPACE, "").length() == 0) return true;
+		if(input.replaceAll(REGEX_REMOVE_WHITESPACE, "").isEmpty()) return true;
 		return false;
 	}
 
