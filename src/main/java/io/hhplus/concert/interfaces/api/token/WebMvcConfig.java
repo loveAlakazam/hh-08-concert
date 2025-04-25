@@ -14,7 +14,7 @@ public class WebMvcConfig implements WebMvcConfigurer {
 	public void addInterceptors(InterceptorRegistry registry) {
 		registry.addInterceptor(tokenInterceptor)
 			.addPathPatterns("/**") // 전체 대상
-			.excludePathPatterns("/concerts/**", "/tokens/**"); // 해당 API 는 인터셉터 검증을 제외한다
+			.excludePathPatterns("/concerts/**", "/tokens/**", "/users/account"); // 해당 API 는 인터셉터 검증을 제외한다
 	}
 
 }
