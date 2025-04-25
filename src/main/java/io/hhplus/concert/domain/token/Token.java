@@ -92,6 +92,11 @@ public class Token extends BaseEntity {
         return true;
     }
 
+    public void expire(LocalDateTime expiredAt) {
+        if(isPastDateTime(expiredAt))
+            this.expiredAt =  expiredAt;
+    }
+
     /**
      * 만료일자가 이미 지난 일자인지 확인
      * @return boolean
