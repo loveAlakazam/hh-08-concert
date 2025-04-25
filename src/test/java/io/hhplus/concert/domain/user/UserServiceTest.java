@@ -219,4 +219,21 @@ public class UserServiceTest {
 		assertEquals(7000L, response.point());
 		assertEquals(2, userPoint.getHistories().size());
 	}
+	@Test
+	void 유저생성에_성공한다() {
+		// given
+		String name = "사용자";
+		User user = User.of(name);
+		UserPoint userPoint = UserPoint.of(user);
+		when(userRepository.save(any(User.class))).thenReturn(user);
+		when(userPointRepository.save(any(UserPoint.class))).thenReturn(userPoint);
+
+		// when
+		UserInfo.CreateNewUser info = userService.createUser(UserCommand.CreateNewUser.from(name));
+		// then
+		assertNotNull(info.user());
+		assertNotNull(info.userPoint());
+		assertEquals(name, info.user().getName());
+		assertEquals(0, info.userPoint().getPoint());
+	}
 }
