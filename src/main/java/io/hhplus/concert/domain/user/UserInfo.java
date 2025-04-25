@@ -22,5 +22,11 @@ public class UserInfo {
 			return new ChargePoint(point);
 		}
 	}
+	public record CreateNewUser(User user, UserPoint userPoint) {
+
+		public static CreateNewUser of(User user, UserPoint userPoint) {
+			return new CreateNewUser(user, userPoint);
+		}
+	}
 
 }
