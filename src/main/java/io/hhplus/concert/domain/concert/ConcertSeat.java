@@ -18,6 +18,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -40,6 +41,9 @@ public class ConcertSeat extends BaseEntity {
 
 	@Column(name="is_available", nullable = false)
 	private boolean isAvailable = true; // 예약가능여부
+
+	@Version
+	private int version; // 낙관적락
 
 
 	/**
