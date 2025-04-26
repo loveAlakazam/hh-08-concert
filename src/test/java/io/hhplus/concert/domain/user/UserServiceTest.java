@@ -53,7 +53,7 @@ public class UserServiceTest {
 		// given
 		long userId = 1L;
 		long amount = 1000L;
-		when(userPointRepository.findByUserId(userId)).thenReturn(null);
+		when(userPointRepository.findUserPointWithExclusiveLock(userId)).thenReturn(null);
 
 		// when & then
 		BusinessException ex = assertThrows(
@@ -72,7 +72,7 @@ public class UserServiceTest {
 		long invalidAmount = 999;
 		User user = User.of("사용자");
 		UserPoint userPoint = UserPoint.of(user);
-		when(userPointRepository.findByUserId(userId)).thenReturn(userPoint);
+		when(userPointRepository.findUserPointWithExclusiveLock(userId)).thenReturn(userPoint);
 
 		// when & then
 		BusinessException ex = assertThrows(
@@ -93,7 +93,7 @@ public class UserServiceTest {
 		long invalidAmount = 100001L;
 		User user = User.of("사용자");
 		UserPoint userPoint = UserPoint.of(user);
-		when(userPointRepository.findByUserId(userId)).thenReturn(userPoint);
+		when(userPointRepository.findUserPointWithExclusiveLock(userId)).thenReturn(userPoint);
 
 		// when & then
 		BusinessException ex = assertThrows(
@@ -115,14 +115,14 @@ public class UserServiceTest {
 		User user = User.of("사용자");
 		UserPoint userPoint = UserPoint.of(user);
 
-		when(userPointRepository.findByUserId(userId)).thenReturn(userPoint);
+		when(userPointRepository.findUserPointWithExclusiveLock(userId)).thenReturn(userPoint);
 		when(userPointRepository.save(userPoint)).thenReturn(userPoint);
 
 		// when
 		UserInfo.ChargePoint result = userService.chargePoint(UserPointCommand.ChargePoint.of(userId, amount));
 
 		// then
-		verify(userPointRepository,times(1)).findByUserId(userId); // 조회쿼리 1회 호출
+		verify(userPointRepository,times(1)).findUserPointWithExclusiveLock(userId); // 조회쿼리 1회 호출
 		verify(userPointRepository, times(1)).save(userPoint); // 저장쿼리 1회 호출
 
 		assertEquals(5000L, result.point()); // 충전금액 반환
@@ -141,7 +141,7 @@ public class UserServiceTest {
 		UserPoint userPoint = UserPoint.of(user);
 		userPoint.charge(4000L); // 4000 원 충전
 
-		when(userPointRepository.findByUserId(userId)).thenReturn(userPoint);
+		when(userPointRepository.findUserPointWithExclusiveLock(userId)).thenReturn(userPoint);
 
 		// when & then
 		BusinessException ex = assertThrows(
@@ -167,14 +167,14 @@ public class UserServiceTest {
 		UserPoint userPoint = UserPoint.of(user);
 		userPoint.charge(10000L); // 10000 원 충전
 
-		when(userPointRepository.findByUserId(userId)).thenReturn(userPoint);
+		when(userPointRepository.findUserPointWithExclusiveLock(userId)).thenReturn(userPoint);
 		when(userPointRepository.save(userPoint)).thenReturn(userPoint);
 
 		// when
 		UserInfo.UsePoint response = userService.usePoint(UserPointCommand.UsePoint.of(userId, amount));
 
 		// then
-		verify(userPointRepository,times(1)).findByUserId(userId);
+		verify(userPointRepository,times(1)).findUserPointWithExclusiveLock(userId);
 		verify(userPointRepository, times(1)).save(userPoint);
 		assertEquals(5000L, response.point()); // 반환금액
 
@@ -218,5 +218,22 @@ public class UserServiceTest {
 		// then
 		assertEquals(7000L, response.point());
 		assertEquals(2, userPoint.getHistories().size());
+	}
+	@Test
+	void 유저생성에_성공한다() {
+		// given
+		String name = "사용자";
+		User user = User.of(name);
+		UserPoint userPoint = UserPoint.of(user);
+		when(userRepository.save(any(User.class))).thenReturn(user);
+		when(userPointRepository.save(any(UserPoint.class))).thenReturn(userPoint);
+
+		// when
+		UserInfo.CreateNewUser info = userService.createUser(UserCommand.CreateNewUser.from(name));
+		// then
+		assertNotNull(info.user());
+		assertNotNull(info.userPoint());
+		assertEquals(name, info.user().getName());
+		assertEquals(0, info.userPoint().getPoint());
 	}
 }

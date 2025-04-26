@@ -7,7 +7,7 @@ public interface ReservationRepository {
 	Reservation findByConcertSeatIdAndUserId(long userId, long concertSeatId);
 	Reservation findById(long id);
 	Reservation saveOrUpdate(Reservation reservation);
-	void deleteExpiredReservations();
+	void deleteCanceledReservations();
 	List<Reservation> findExpiredTempReservations();
 
 

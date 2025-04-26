@@ -1,4 +1,4 @@
-package io.hhplus.concert.interfaces.queue;
+package io.hhplus.concert.infrastructure.queue;
 
 import static org.assertj.core.api.AssertionsForClassTypes.*;
 

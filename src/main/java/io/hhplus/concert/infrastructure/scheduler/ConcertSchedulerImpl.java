@@ -17,4 +17,10 @@ public class ConcertSchedulerImpl implements ConcertScheduler {
 	public void deletePastConcertDates() {
 		concertMaintenanceService.deletePastConcertDates();
 	}
+
+	@Scheduled(cron = "0 0 * * * *")
+	@Override
+	public void checkSoldOut() {
+		concertMaintenanceService.checkSoldOut();
+	}
 }

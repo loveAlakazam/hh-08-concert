@@ -272,4 +272,17 @@ public class UserServiceIntegrationTest {
 		assertEquals(UserPointHistoryStatus.CHARGE, userPointHistories.get(0).getStatus());
 		assertEquals(5000L, userPoint.getPoint());
 	}
+	@Test
+	@Order(14)
+	void 유저계정생성을_성공한다() {
+		// given
+		String name = "테스트";
+
+		// when
+		UserInfo.CreateNewUser info =userService.createUser(UserCommand.CreateNewUser.from(name));
+
+		// then
+		assertEquals(name, info.user().getName());
+		assertEquals(0, info.userPoint().getPoint());
+	}
 }

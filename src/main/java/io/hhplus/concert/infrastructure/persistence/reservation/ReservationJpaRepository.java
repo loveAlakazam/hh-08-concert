@@ -56,9 +56,10 @@ public interface ReservationJpaRepository extends JpaRepository<Reservation, Lon
  		UPDATE Reservation r
  		SET r.deleted = true
  		WHERE r.deleted = false
- 			AND r.tempReservationExpiredAt < :now 
+ 			AND r.status = :canceled
+ 			AND r.tempReservationExpiredAt < :now
 	""")
-	void deleteExpiredReservations(@Param("now") LocalDateTime now);
+	void deleteCanceledReservations(@Param("canceled") ReservationStatus canceled, @Param("now") LocalDateTime now);
 
 	@Modifying
 	@Query("""

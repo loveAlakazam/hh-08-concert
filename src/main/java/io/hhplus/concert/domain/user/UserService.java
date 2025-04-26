@@ -82,4 +82,17 @@ public class UserService {
         return user;
     }
 
+    /**
+     * 계정생성
+     */
+    public UserInfo.CreateNewUser createUser(UserCommand.CreateNewUser command) {
+        // 유저생성
+        User user = userRepository.save(User.of(command.name()));
+
+        // 유저포인트생성
+        UserPoint userPoint = userPointRepository.save(UserPoint.of(user));
+        return UserInfo.CreateNewUser.of(user, userPoint);
+    }
+
+
 }

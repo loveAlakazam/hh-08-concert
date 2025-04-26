@@ -34,7 +34,7 @@ public class Token extends BaseEntity {
     @Column(name = "expired_at", nullable = false)
     private LocalDateTime expiredAt; // 토큰 만료일자
 
-    @Column(name="uuid", columnDefinition = "BINARY(16)", unique = true)
+    @Column(name="uuid", columnDefinition = "BINARY(16)", nullable = false, unique = true)
     private UUID uuid; // 유저의 UUID
 
 
@@ -90,6 +90,11 @@ public class Token extends BaseEntity {
         // 유효기간이 만료되면 활성상태가 아니다.
         if(this.isExpiredToken()) return false;
         return true;
+    }
+
+    public void expire(LocalDateTime expiredAt) {
+        if(isPastDateTime(expiredAt))
+            this.expiredAt =  expiredAt;
     }
 
     /**

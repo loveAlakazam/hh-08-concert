@@ -104,6 +104,7 @@ public class TokenService {
         return position;
     }
 
+    @Transactional
 	public TokenInfo.ValidateActiveToken validateActiveToken(UUID uuid) {
         // 토큰정보 조회
         Token token = tokenRepository.findTokenByUUID(uuid);
