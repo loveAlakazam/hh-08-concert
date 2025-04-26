@@ -16,7 +16,12 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 public interface TokenJpaRepository extends JpaRepository<Token, Long> {
-	Optional<Token> findByUuid(UUID uuid);
+	@Query("""
+		SELECT t
+		FROM Token t
+		WHERE t.uuid = :uuid
+	""")
+	Optional<Token> findByUuid(@Param("uuid") UUID uuid);
 
 	@Modifying
 	@Query("""

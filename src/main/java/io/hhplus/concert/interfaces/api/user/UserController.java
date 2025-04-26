@@ -47,7 +47,6 @@ public class UserController implements UserPointApiDocs {
 	public ResponseEntity<ApiResponse<PointResponse.GetCurrentPoint>> getPoint(
 		@RequestHeader("token") @Valid String token
 	) {
-		// TODO: ACTIVE token의 유효성검사
 		// 토큰을 통해서 userId 를 추출.
 		long userId = 1L;
 		UserInfo.GetCurrentPoint result = userService.getCurrentPoint(UserPointCommand.GetCurrentPoint.of(userId));

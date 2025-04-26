@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.UUID;
 
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import io.hhplus.concert.domain.token.Token;
 import io.hhplus.concert.domain.token.TokenRepository;
@@ -31,7 +32,9 @@ public class TokenRepositoryImpl implements TokenRepository {
 
     @Override
     public Token saveOrUpdate(Token token) {
-        return tokenJpaRepository.save(token);
+        Token savedToken = tokenJpaRepository.save(token);
+        tokenJpaRepository.flush();
+        return savedToken;
     }
 
     @Override
