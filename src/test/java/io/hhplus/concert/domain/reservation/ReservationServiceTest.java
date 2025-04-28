@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -80,9 +81,10 @@ public class ReservationServiceTest {
 		assertDoesNotThrow(()-> reservation.temporaryReserve());
 		assertTrue(reservation.isTemporary());
 
-		log.info("6분간 대기");
-		Thread.sleep(6 * 60* 1000); // 6분이 지나서 임시예약 유효기간이 만료
-		log.info("임시예약이 유효일자가 만료되어 취소상태로 변경");
+		log.info("임시예약만료일자가 만료됨");
+		reservation.expireTemporaryReserve(LocalDateTime.now().minusSeconds(1));
+
+		log.info("임시예약이 만료되어 취소상태로 변경");
 		assertDoesNotThrow(() -> reservation.cancel()); // 임시예약상태로 변경
 
 		when(reservationRepository.findByConcertSeatIdAndUserId(anyLong(), anyLong())).thenReturn(reservation);
@@ -110,8 +112,8 @@ public class ReservationServiceTest {
 		assertDoesNotThrow(()-> reservation.temporaryReserve());
 		assertTrue(reservation.isTemporary());
 
-		log.info("6분간 대기");
-		Thread.sleep(6 * 60* 1000); // 6분이 지나서 임시예약 유효기간이 만료
+		log.info("임시예약 유효기간 만료");
+		reservation.expireTemporaryReserve(LocalDateTime.now().minusSeconds(1));
 
 		when( reservationRepository.findById( reservationId )).thenReturn(reservation);
 		// when
@@ -136,8 +138,8 @@ public class ReservationServiceTest {
 		assertDoesNotThrow(()-> reservation.temporaryReserve());
 		assertTrue(reservation.isTemporary());
 
-		log.info("6분간 대기");
-		Thread.sleep(6 * 60* 1000); // 6분이 지나서 임시예약 유효기간이 만료
+		log.info("임시예약 유효기간이 만료됨");
+		reservation.expireTemporaryReserve(LocalDateTime.now().minusSeconds(1));
 
 		log.info("임시예약이 유효일자가 만료되어 취소상태로 변경");
 		assertDoesNotThrow(() -> reservation.cancel()); // 임시예약상태로 변경

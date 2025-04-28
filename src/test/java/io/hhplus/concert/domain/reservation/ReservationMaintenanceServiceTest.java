@@ -50,9 +50,11 @@ public class ReservationMaintenanceServiceTest {
         ConcertSeat concertSeat = concertDate.getSeats().get(0);
 
         Reservation reservation = Reservation.of(user,concert, concertDate, concertSeat);
-        reservation.temporaryReserve();// 임시에약상태로 변경
-        log.info(":: 임시예약 만료가 될때까지 5분 대기");
-        Thread.sleep(5 * 60 * 1000 + 1);
+        // 임시에약상태로 변경
+        reservation.temporaryReserve();
+        // 임시예약상태를 만료
+        log.info("임시예약 유효기간이 만료됨");
+        reservation.expireTemporaryReserve(LocalDateTime.now().minusSeconds(1));
 
         List<Reservation> expiredReservations = List.of(reservation);
 
