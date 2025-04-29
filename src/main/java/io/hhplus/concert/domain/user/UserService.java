@@ -71,7 +71,7 @@ public class UserService {
     }
 
     public UserInfo.GetUserPoint getUserPoint(UserPointCommand.GetUserPoint command) {
-        UserPoint userPoint = userPointRepository.findByUserId(command.userId());
+        UserPoint userPoint = userPointRepository.findUserPointWithExclusiveLock(command.userId());
         if(userPoint == null) throw new BusinessException(UserErrorCode.NOT_EXIST_USER);
         return UserInfo.GetUserPoint.of(userPoint);
     }
