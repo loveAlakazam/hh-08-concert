@@ -53,7 +53,7 @@ public class UserPointHistory extends BaseEntity {
 
     /**
      * 정적 팩토리 메소드로 포인트히스토리 추가
-     * @param user
+     * @param userPoint
      * @param amount
      * @param status
      * @return UserPointHistory

@@ -43,7 +43,7 @@ public class ConcertSeat extends BaseEntity {
 	private boolean isAvailable = true; // 예약가능여부
 
 	@Version
-	private int version; // 낙관적락
+	private long version; // 낙관적락
 
 
 	/**
@@ -72,6 +72,7 @@ public class ConcertSeat extends BaseEntity {
 		this.number = number;
 		this.price = price;
 		this.isAvailable = isAvailable;
+		this.version = 0L;
 	}
 	public static ConcertSeat of (Concert concert, ConcertDate concertDate, int number, long price, boolean isAvailable) {
 		if(concert == null) throw new BusinessException(NOT_NULLABLE);

@@ -70,7 +70,7 @@ public class ReservationUsecaseIntegrationTest {
 	User sampleUser;
 	@BeforeEach
 	void setUp() {
-		// truncate -> serUp -> 테스트케이스 수행 순으로 진행
+		// truncate -> setUp -> 테스트케이스 수행 순으로 진행
 		// 유저 테스트 데이터 셋팅
 		sampleUser = User.of("최은강");
 		userRepository.save(sampleUser);

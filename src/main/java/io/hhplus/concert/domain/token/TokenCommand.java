@@ -17,7 +17,7 @@ public record TokenCommand() {
 	}
 	public record GetTokenByUUID(UUID uuid) {
 		public static GetTokenByUUID of(UUID uuid) {
-			if(uuid != null) throw new InvalidValidationException(SHOULD_NOT_EMPTY);
+			if(uuid == null) throw new InvalidValidationException(SHOULD_NOT_EMPTY);
 			return new GetTokenByUUID(uuid);
 		}
 	}

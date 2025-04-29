@@ -4,6 +4,7 @@ import static io.hhplus.concert.interfaces.api.token.TokenErrorCode.*;
 import static io.hhplus.concert.interfaces.api.user.CommonErrorCode.*;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -27,6 +28,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class TokenHandlerInterceptor implements HandlerInterceptor {
 	private final TokenService tokenService;
+	private final ObjectMapper objectMapper;
 
 
 	@Override
@@ -60,13 +62,9 @@ public class TokenHandlerInterceptor implements HandlerInterceptor {
 		response.setStatus(status.value());
 		response.setContentType(MediaType.APPLICATION_JSON_VALUE);
 		response.setCharacterEncoding("UTF-8");
-		String body = """
-			{
-				"status": %d,
-				"message": "%s"
-			}
-			""".formatted(status.value(), message);
-		response.getWriter().write(body);
 
+		ErrorResponse errorResponse = ErrorResponse.of(status.value(), message);
+		String json = objectMapper.writeValueAsString(errorResponse);
+		response.getOutputStream().write(json.getBytes(StandardCharsets.UTF_8));
 	}
 }

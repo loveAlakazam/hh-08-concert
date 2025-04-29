@@ -38,6 +38,8 @@ import io.hhplus.concert.domain.user.UserRepository;
 	"TRUNCATE TABLE concert_seats",
 	"TRUNCATE TABLE concert_dates",
 	"TRUNCATE TABLE concerts",
+	"TRUNCATE TABLE user_point_histories",
+	"TRUNCATE TABLE user_points",
 	"TRUNCATE TABLE users",
 	"SET FOREIGN_KEY_CHECKS=1"
 }, executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)

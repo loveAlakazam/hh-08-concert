@@ -8,6 +8,7 @@ import static io.hhplus.concert.interfaces.api.token.TokenErrorCode.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -300,8 +301,11 @@ public class TokenServiceIntegrationTest {
 			TokenCommand.IssueWaitingToken.from(sampleUser)
 		);
 		Token token = tokenInfo.token();
-		log.info("만료여부를 확인하기 위해 6분 대기");
-		Thread.sleep(6 * 60 * 1000);
+		log.info("토큰 만료");
+		token.expire(LocalDateTime.now().minusSeconds(1));
+		tokenRepository.saveOrUpdate(token);
+
+
 		// when & then
 		BusinessException exception = assertThrows(
 			BusinessException.class,
