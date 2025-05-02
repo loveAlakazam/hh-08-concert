@@ -1,6 +1,8 @@
 package io.hhplus.concert.domain.concert;
 
+import static io.hhplus.concert.domain.concert.ConcertService.*;
 import static io.hhplus.concert.interfaces.api.user.CommonErrorCode.*;
+import static org.assertj.core.api.AssertionsForClassTypes.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.time.LocalDate;
@@ -17,16 +19,22 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.jdbc.Sql;
 
+import io.hhplus.concert.RedisTestContainerConfiguration;
 import io.hhplus.concert.TestcontainersConfiguration;
 import io.hhplus.concert.interfaces.api.common.InvalidValidationException;
 import jakarta.persistence.EntityManager;
 
 @SpringBootTest
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@Import(TestcontainersConfiguration.class)
+@ContextConfiguration(classes = {
+	TestcontainersConfiguration.class,
+	RedisTestContainerConfiguration.class
+})
 @Sql(statements = {
 	"SET FOREIGN_KEY_CHECKS=0",
 	"TRUNCATE TABLE concert_seats",
@@ -40,8 +48,10 @@ public class ConcertServiceIntegrationTest {
 	@Autowired private ConcertRepository concertRepository;
 	@Autowired private ConcertDateRepository concertDateRepository;
 	@Autowired private ConcertSeatRepository concertSeatRepository;
+	@Autowired private RedisTemplate<String, Object> redisTemplate;
 
 	private static final Logger log = LoggerFactory.getLogger(ConcertServiceIntegrationTest.class);
+	private static final String CONCERT_LIST_CACHE_KEY = "concert:list";
 
 	Concert sampleConcert;
 	ConcertDate sampleConcertDate;
@@ -59,6 +69,9 @@ public class ConcertServiceIntegrationTest {
 		concertRepository.saveOrUpdate(sampleConcert);
 		sampleConcertDate = sampleConcert.getDates().get(0);
 		sampleConcertSeat = sampleConcertDate.getSeats().get(0);
+
+		// 캐시 초기화
+		redisTemplate.delete(CONCERT_LIST_CACHE_KEY); // 콘서트목록
 	}
 	@Test
 	@Order(1)
@@ -67,16 +80,27 @@ public class ConcertServiceIntegrationTest {
 		ConcertInfo.GetConcertList concertInfo = assertDoesNotThrow(
 			() -> concertService.getConcertList()
 		);
-		List<Concert> concerts = concertInfo.concerts();
+		List<ConcertInfo.GetConcertListDto> concerts = concertInfo.concerts();
 		assertEquals(1, concertInfo.size());
 
 		// then
-		Concert concert = concerts.get(0);
-		assertEquals(sampleConcert.getName(), concert.getName());
-		assertEquals(sampleConcert.getArtistName(), concert.getArtistName());
-		assertEquals(1, concert.getId());
+		ConcertInfo.GetConcertListDto concert = concerts.get(0);
+		assertEquals(sampleConcert.getName(), concert.name());
+		assertEquals(sampleConcert.getArtistName(), concert.artistName());
+		assertEquals(1, concert.id());
 	}
+	@Test
 	@Order(2)
+	void 콘서트_목록조회_요청시_캐시히트면_바로_응답하고_캐시미스면_DB에서_조회후에_캐시에_저장한다(){
+		// when
+		ConcertInfo.GetConcertList result1 = concertService.getConcertList();
+		ConcertInfo.GetConcertList result2 = concertService.getConcertList();
+
+		// then
+		assertThat(result1).isEqualTo(result2);
+		assertThat(redisTemplate.opsForValue().get(CONCERT_LIST_CACHE_KEY)).isNotNull();
+	}
+	@Order(3)
 	@Test
 	void 콘서트_일정목록_조회를_성공한다() {
 		// given
@@ -101,7 +125,7 @@ public class ConcertServiceIntegrationTest {
 		// 예약가능한 좌석개수 확인
 		assertEquals(50, concertDate.countAvailableSeats());
 	}
-	@Order(3)
+	@Order(4)
 	@Test
 	void 콘서트_일정목록조회_요청시_concertId가_0이하의_음수이면_InvalidValidationException_예외발생() {
 		// given
@@ -117,7 +141,7 @@ public class ConcertServiceIntegrationTest {
 		assertEquals(ID_SHOULD_BE_POSITIVE_NUMBER.getMessage(), ex.getMessage());
 		assertEquals(ID_SHOULD_BE_POSITIVE_NUMBER.getHttpStatus(), ex.getHttpStatus());
 	}
-	@Order(4)
+	@Order(5)
 	@Test
 	void 콘서트_공연일정의_좌석목록조회를_성공한다() {
 		// given
@@ -133,7 +157,7 @@ public class ConcertServiceIntegrationTest {
 		List<ConcertSeat> concertSeats = info.concertSeatList();
 		assertEquals(50, concertSeats.size()); // 공연좌석 개수는 최대 50개이다.
 	}
-	@Order(5)
+	@Order(6)
 	@Test
 	void 좌석목록조회_요청시_concertId가_0이하의_음수이면_InvalidValidationException_예외발생() {
 		// given
@@ -150,7 +174,7 @@ public class ConcertServiceIntegrationTest {
 		assertEquals(ID_SHOULD_BE_POSITIVE_NUMBER.getMessage(), ex.getMessage());
 		assertEquals(ID_SHOULD_BE_POSITIVE_NUMBER.getHttpStatus(), ex.getHttpStatus());
 	}
-	@Order(6)
+	@Order(7)
 	@Test
 	void 좌석목록조회_요청시_concertDateId가_0이하의_음수이면_InvalidValidationException_예외발생() {
 		// given
@@ -167,7 +191,7 @@ public class ConcertServiceIntegrationTest {
 		assertEquals(ID_SHOULD_BE_POSITIVE_NUMBER.getMessage(), ex.getMessage());
 		assertEquals(ID_SHOULD_BE_POSITIVE_NUMBER.getHttpStatus(), ex.getHttpStatus());
 	}
-	@Order(7)
+	@Order(8)
 	@Test
 	void 콘서트좌석정보_조회하면_좌석에대한_정보를_조회할_수있다() {
 		// given

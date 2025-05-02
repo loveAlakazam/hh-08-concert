@@ -3,6 +3,7 @@ package io.hhplus.concert.domain.concert;
 import static io.hhplus.concert.interfaces.api.common.validators.PaginationValidator.*;
 import static io.hhplus.concert.interfaces.api.concert.ConcertErrorCode.*;
 import static io.hhplus.concert.interfaces.api.user.CommonErrorCode.*;
+import static org.assertj.core.api.AssertionsForClassTypes.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -18,10 +19,10 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.ValueOperations;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.hhplus.concert.interfaces.api.common.BusinessException;
 import io.hhplus.concert.interfaces.api.common.InvalidValidationException;
@@ -40,33 +41,62 @@ public class ConcertServiceTest {
 	@Mock
 	private ConcertSeatRepository concertSeatRepository;
 
+	@Mock
+	private RedisTemplate<String, Object> redisTemplate;
+	@Mock
+	private ValueOperations<String, Object> valueOps;
+	@Mock
+	private ObjectMapper objectMapper;
+
+	private static final String CONCERT_LIST_CACHE_KEY = "concert:list";
+
 	@BeforeEach
 	void setUp() {
-		concertService = new ConcertService(concertRepository, concertDateRepository, concertSeatRepository);
+		concertService = new ConcertService(concertRepository, concertDateRepository, concertSeatRepository, redisTemplate, objectMapper);
 	}
 
 	private static final Logger log = LoggerFactory.getLogger(ConcertServiceTest.class);
 
 	@Test
-	void 콘서트_목록조회를_성공한다() {
+	void 캐시에_콘서트목록_데이터가_존재하지않아서_캐시미스가_발생하면_데이터베이스에서_조회후_캐시에_저장한다() {
 		// given
-		List<Concert> list = new ArrayList<>();
-		list.add(Concert.of("벚꽃바람이 부는 재즈패스티벌 콘서트", "재즈 아티스트"));
-		list.add(Concert.of("남산의 밤하늘과 함께하는 피아노 공연", "피아노 아티스트"));
-		when(concertRepository.findAll()).thenReturn(list);
+		List<Concert> dbConcerts = new ArrayList<>();
+		dbConcerts.add(Concert.of("벚꽃바람이 부는 재즈패스티벌 콘서트", "재즈 아티스트"));
+		dbConcerts.add(Concert.of("남산의 밤하늘과 함께하는 피아노 공연", "피아노 아티스트"));
+		ConcertInfo.GetConcertList expected = ConcertInfo.GetConcertList.from(dbConcerts);
+
+		when(redisTemplate.opsForValue()).thenReturn(valueOps);
+		when(valueOps.get(CONCERT_LIST_CACHE_KEY)).thenReturn(null);
+		when(concertRepository.findAll()).thenReturn(expected);
 
 		// when
-		ConcertInfo.GetConcertList info = concertService.getConcertList();
-		List<Concert> result = info.concerts();
+		ConcertInfo.GetConcertList result = concertService.getConcertList();
 
 		// then
-		assertEquals(2, result.size());
-		assertEquals("벚꽃바람이 부는 재즈패스티벌 콘서트", result.get(0).getName());
-		assertEquals("재즈 아티스트", result.get(0).getArtistName());
-
-		assertEquals("남산의 밤하늘과 함께하는 피아노 공연", result.get(1).getName());
-		assertEquals("피아노 아티스트", result.get(1).getArtistName());
+		assertThat(result).isEqualTo(expected);
+		verify(valueOps).set(eq(CONCERT_LIST_CACHE_KEY), eq(expected), any());
 	}
+	@Test
+	void 캐시에_콘서트목록_데이터가_존재해서_캐시히트가_발생하면_캐싱된_데이터를_리턴한다() {
+		// given
+		List<Concert> dbConcerts = new ArrayList<>();
+		dbConcerts.add(Concert.of("벚꽃바람이 부는 재즈패스티벌 콘서트", "재즈 아티스트"));
+		dbConcerts.add(Concert.of("남산의 밤하늘과 함께하는 피아노 공연", "피아노 아티스트"));
+
+		ConcertInfo.GetConcertList cached = ConcertInfo.GetConcertList.from(dbConcerts);
+
+		when(redisTemplate.opsForValue()).thenReturn(valueOps);
+		when(valueOps.get(CONCERT_LIST_CACHE_KEY)).thenReturn(new Object());
+		when(objectMapper.convertValue(any(), eq(ConcertInfo.GetConcertList.class))).thenReturn(cached);
+
+		// when
+		ConcertInfo.GetConcertList result = concertService.getConcertList();
+
+		// then
+		assertThat(result).isEqualTo(cached);
+		verify(concertRepository, never()).findAll();
+	}
+
 	@Test
 	void 콘서트아이디1_콘서트날짜아이디2인_콘서트좌석_조회에_성공한다() {
 		// given
