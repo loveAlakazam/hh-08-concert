@@ -3,6 +3,9 @@ package io.hhplus.concert.domain.concert;
 import static io.hhplus.concert.interfaces.api.concert.ConcertErrorCode.*;
 import static io.hhplus.concert.interfaces.api.user.CommonErrorCode.*;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import io.hhplus.concert.domain.common.BaseEntity;
 import io.hhplus.concert.domain.reservation.Reservation;
 import io.hhplus.concert.interfaces.api.common.BusinessException;
@@ -52,14 +55,19 @@ public class ConcertSeat extends BaseEntity {
 	// 콘서트좌석:콘서트=N:1
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "concert_id", foreignKey = @ForeignKey(value = ConstraintMode.NO_CONSTRAINT))
+	@JsonBackReference
 	private Concert concert;
+
 	// 콘서트좌석:콘서트날짜=N:1
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name= "concert_date_id", foreignKey = @ForeignKey(value = ConstraintMode.NO_CONSTRAINT))
+	@JsonBackReference
 	private ConcertDate concertDate;
+
 	// 콘서트좌석:예약=1:1
 	@OneToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "reservation_id", foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
+	@JsonIgnore
 	private Reservation reservation;
 
 	/**

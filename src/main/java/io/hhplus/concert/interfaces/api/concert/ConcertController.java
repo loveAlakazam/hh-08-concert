@@ -35,7 +35,7 @@ public class ConcertController implements ConcertApiDocs {
 		// 리스트를 반환
 		ConcertInfo.GetConcertList info = concertService.getConcertList();
 		// 페이징처리를 한다
-		Page<Concert> concertPages = PaginationUtils.toPage(info.concerts(), page);
+		Page<ConcertInfo.GetConcertListDto> concertPages = PaginationUtils.toPage(info.concerts(), page);
 		// 페이징처리결과를 응답데이터에 넣어서 응답
 		return ApiResponseEntity.ok(ConcertResponse.GetConcerts.from(concertPages));
 	}

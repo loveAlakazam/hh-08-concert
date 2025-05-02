@@ -39,13 +39,13 @@ public record ConcertResponse(long id, String name, String artistName) { // Page
 	 * @param currentSize - 현재 페이지의 공연 개수
 	 */
 	public record GetConcerts(
-		List<Concert> concerts,
+		List<ConcertInfo.GetConcertListDto> concerts,
 		long totalElements,
 		int totalPages,
 		int currentPage,
 		int currentSize
 	) {
-		public static GetConcerts from(Page<Concert> concertPage) {
+		public static GetConcerts from(Page<ConcertInfo.GetConcertListDto> concertPage) {
 			return new GetConcerts(
 				concertPage.getContent(),
 				concertPage.getTotalElements(),

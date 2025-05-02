@@ -2,6 +2,7 @@ package io.hhplus.concert.domain.concert;
 
 import static io.hhplus.concert.interfaces.api.concert.ConcertErrorCode.*;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 
@@ -9,8 +10,11 @@ import io.hhplus.concert.interfaces.api.common.BusinessException;
 import io.hhplus.concert.interfaces.api.common.InvalidValidationException;
 import lombok.RequiredArgsConstructor;
 
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Service
 @RequiredArgsConstructor
@@ -19,15 +23,27 @@ public class ConcertService {
     private final ConcertDateRepository concertDateRepository;
     private final ConcertSeatRepository concertSeatRepository;
 
+    private final RedisTemplate<String, Object> redisTemplate;
+    private final ObjectMapper objectMapper;
+    private static final String CONCERT_LIST_CACHE_KEY = "concert:list";
+    private static final Duration CONCERT_LIST_CACHE_TTL = Duration.ofHours(1);
+
     /**
      * 콘서트 목록조회
      *
      */
     @Transactional(readOnly = true)
     public ConcertInfo.GetConcertList getConcertList() {
-        // 리스트결과를 가져온다.
-        List<Concert> concerts = concertRepository.findAll();
-        return ConcertInfo.GetConcertList.from(concerts);
+        // 캐시조회
+        Object cachedRaw = redisTemplate.opsForValue().get(CONCERT_LIST_CACHE_KEY);
+        if(cachedRaw != null) {
+			return objectMapper.convertValue(cachedRaw, ConcertInfo.GetConcertList.class);
+        }
+
+        // 캐시미스일 경우 - 데이터베이스로부터 리스트결과를 가져온후에 캐시에 저장한다.
+        ConcertInfo.GetConcertList concerts = concertRepository.findAll();
+        redisTemplate.opsForValue().set(CONCERT_LIST_CACHE_KEY, concerts, CONCERT_LIST_CACHE_TTL);
+        return concerts;
     }
     /**
      * 예약가능한 콘서트 날짜 목록 조회
