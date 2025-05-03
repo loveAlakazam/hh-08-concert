@@ -137,9 +137,18 @@ public class TokenService {
 
     @Transactional
 	public TokenInfo.ValidateActiveToken validateActiveToken(UUID uuid) {
-        // 토큰정보 조회
-        Token token = tokenRepository.findTokenByUUID(uuid);
-        if(token == null) throw new BusinessException(TOKEN_NOT_FOUND);
+        // 캐시저장소에서 토큰 조회
+        String tokenKey = TOKEN_CACHE_KEY + uuid.toString();
+        Object cachedRaw = redisTemplate.opsForValue().get(tokenKey);
+        Token token = objectMapper.convertValue(cachedRaw, Token.class);
+
+        // 캐시 미스일 경우
+        if(token == null) {
+            // 토큰정보 조회
+            token = tokenRepository.findTokenByUUID(uuid);
+            if(token == null) throw new BusinessException(TOKEN_NOT_FOUND);
+        }
+
         if(token.isExpiredToken()) throw new BusinessException(EXPIRED_OR_UNAVAILABLE_TOKEN);
         if(!token.isActivated()) throw new BusinessException(ALLOW_ACTIVE_TOKEN);
         return TokenInfo.ValidateActiveToken.of(token);

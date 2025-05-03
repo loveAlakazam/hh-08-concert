@@ -356,24 +356,64 @@ public class TokenServiceTest {
 
 		verify(valueOps, never()).set(eq(tokenKey), any(), any());
 	}
+	/**
+	 * validateActiveToken
+	 */
+	@Order(12)
 	@Test
 	void 만일_UUID에_대응되는_토큰이_존재하지않으면_BusinessException발생() {
+		// given
 		UUID uuid = UUID.randomUUID();
+
+		// 캐시미스
+		String tokenKey = TOKEN_CACHE_KEY+uuid;
+		when(redisTemplate.opsForValue()).thenReturn(valueOps);
+		when(valueOps.get(tokenKey)).thenReturn(null);
 		when(tokenRepository.findTokenByUUID(uuid)).thenReturn(null);
 
+		// when & then
 		BusinessException ex = assertThrows(BusinessException.class, () -> tokenService.validateActiveToken(uuid));
 		assertEquals(TOKEN_NOT_FOUND.getMessage(), ex.getMessage());
 		assertEquals(TOKEN_NOT_FOUND.getHttpStatus(), ex.getHttpStatus());
 	}
+	@Order(13)
 	@Test
-	void 만일_대기상태토큰으로_서비스요청시_활성화상태가_아니므로_BusinessException_발생() {
+	void 캐시스토어에서_캐시히트이고_만일_대기상태토큰으로_서비스요청시_활성화상태가_아니므로_BusinessException_발생() {
+		// given
+		UUID uuid = UUID.randomUUID();
+		User user = User.of("테스트");
+		Token token = Token.of(user, uuid);
+		token.issue(user); // 대기상태토큰
+
+		String tokenKey = TOKEN_CACHE_KEY+uuid;
+		when(redisTemplate.opsForValue()).thenReturn(valueOps);
+		when(valueOps.get(tokenKey)).thenReturn(new Object());
+		when(objectMapper.convertValue(any(), eq(Token.class))).thenReturn(token);
+
+		// when
+		BusinessException ex = assertThrows(BusinessException.class, () -> tokenService.validateActiveToken(uuid));
+		// then
+		assertEquals(ALLOW_ACTIVE_TOKEN.getMessage(), ex.getMessage());
+		assertEquals(ALLOW_ACTIVE_TOKEN.getHttpStatus(), ex.getHttpStatus());
+		assertFalse(token.isActivated());
+
+		verify(tokenRepository, never()).findTokenByUUID(uuid);
+	}
+	@Order(14)
+	@Test
+	void 캐시스토어에서_캐시미스이고_만일_대기상태토큰으로_서비스요청시_활성화상태가_아니므로_BusinessException_발생() {
 		// given
 		UUID uuid = UUID.randomUUID();
 		User user = User.of("테스트");
 		Token token = Token.of(user, uuid);
 
+		String tokenKey = TOKEN_CACHE_KEY+uuid;
+		when(redisTemplate.opsForValue()).thenReturn(valueOps);
+		when(valueOps.get(tokenKey)).thenReturn(null);
+
 		token.issue(user); // 대기상태토큰
 		when(tokenRepository.findTokenByUUID(uuid)).thenReturn(token);
+
 		// when
 		BusinessException ex = assertThrows(BusinessException.class, () -> tokenService.validateActiveToken(uuid));
 		// then
@@ -381,18 +421,47 @@ public class TokenServiceTest {
 		assertEquals(ALLOW_ACTIVE_TOKEN.getHttpStatus(), ex.getHttpStatus());
 		assertFalse(token.isActivated());
 	}
+	@Order(15)
 	@Test
-	void 활성화상태에서_서비스요청시_토큰_검증로직을_통과한다() {
+	void 캐시스토어에서_캐시히트일경우_활성화상태에서_서비스요청시_토큰_검증로직을_통과한다() {
 		// given
 		UUID uuid = UUID.randomUUID();
 		User user = User.of("테스트");
 		Token token = Token.of(user, uuid);
 		token.issue(user); // 대기상태
 		token.activate(); // 활성화 상태
-		when(tokenRepository.findTokenByUUID(uuid)).thenReturn(token);
+
+		String tokenKey = TOKEN_CACHE_KEY+uuid;
+		when(redisTemplate.opsForValue()).thenReturn(valueOps);
+		when(valueOps.get(tokenKey)).thenReturn(new Object());
+		when(objectMapper.convertValue(any(), eq(Token.class))).thenReturn(token);
+
 		// when
 		assertDoesNotThrow(() -> tokenService.validateActiveToken(uuid));
 		// then
+		assertFalse(token.isExpiredToken());
+		assertTrue(token.isActivated());
+		verify(tokenRepository, never()).findTokenByUUID(uuid);
+	}
+	@Order(16)
+	@Test
+	void 캐시스토어에서_캐시미스일경우_활성화상태에서_서비스요청시_토큰_검증로직을_통과한다() {
+		// given
+		UUID uuid = UUID.randomUUID();
+		User user = User.of("테스트");
+		Token token = Token.of(user, uuid);
+		token.issue(user); // 대기상태
+		token.activate(); // 활성화 상태
+
+		String tokenKey = TOKEN_CACHE_KEY+uuid;
+		when(redisTemplate.opsForValue()).thenReturn(valueOps);
+		when(valueOps.get(tokenKey)).thenReturn(null);
+		when(tokenRepository.findTokenByUUID(uuid)).thenReturn(token);
+
+		// when
+		assertDoesNotThrow(() -> tokenService.validateActiveToken(uuid));
+		// then
+		verify(tokenRepository, times(1)).findTokenByUUID(uuid);
 		assertFalse(token.isExpiredToken());
 		assertTrue(token.isActivated());
 	}

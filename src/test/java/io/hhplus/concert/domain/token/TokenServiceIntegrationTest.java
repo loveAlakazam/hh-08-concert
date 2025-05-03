@@ -240,21 +240,21 @@ public class TokenServiceIntegrationTest {
 	@Test
 	void 콘서트예약_서비스이용시_이용자의_토큰이_활성화상태라면_검증완료로_활성화된_토큰을_리턴한다() {
 		// given
-		// 이미 활성화된 토큰을 받았음
 		TokenInfo.IssueWaitingToken tokenInfo = tokenService.issueWaitingToken(
 			TokenCommand.IssueWaitingToken.from(sampleUser)
 		);
-		Token token = tokenInfo.token();
-		tokenService.activateToken(TokenCommand.ActivateToken.of(token.getUuid()));
+		UUID uuid = tokenInfo.token().getUuid();
+		tokenService.activateToken(TokenCommand.ActivateToken.of(uuid));
+
 		// when
 		TokenInfo.ValidateActiveToken validateActiveTokenInfo = assertDoesNotThrow(
-			() -> tokenService.validateActiveToken(token.getUuid())
+			() -> tokenService.validateActiveToken(uuid)
 		);
 		// then
 		assertEquals(sampleUser.getId(), validateActiveTokenInfo.userId()); // 유저아이디 검증
 		assertEquals(TokenStatus.ACTIVE, validateActiveTokenInfo.status()); // 토큰상태 검증
 		assertNotNull(validateActiveTokenInfo.uuid()); // 토큰 UUID 검증 (null 이 아님)
-		assertEquals(token.getUuid(), validateActiveTokenInfo.uuid()); // 토큰 UUID 검증
+		assertEquals(uuid, validateActiveTokenInfo.uuid()); // 토큰 UUID 검증
 		assertNotNull(validateActiveTokenInfo.expiredAt()); // 토큰 유효만료일자 검증 (null 이 아님)
 		assertFalse(isPastDateTime(validateActiveTokenInfo.expiredAt())); // 토큰이 유효기간 검증
 	}
@@ -263,6 +263,7 @@ public class TokenServiceIntegrationTest {
 	void 콘서트예약_서비스이용시_이용자의_토큰이_활성상태인지_검증요청하는데_토큰이_없으면_BusinessException_예외발생() {
 		// given
 		UUID notExistUUID = UUID.randomUUID();
+
 		// when & then
 		BusinessException exception = assertThrows(
 			BusinessException.class,
@@ -274,7 +275,6 @@ public class TokenServiceIntegrationTest {
 	@Test
 	void 콘서트예약_서비스이용시_이용자의_토큰이_대기상태_라면_BusinessException_예외발생() {
 		// given
-		// 대기상태 토큰발급
 		TokenInfo.IssueWaitingToken tokenInfo = tokenService.issueWaitingToken(
 			TokenCommand.IssueWaitingToken.from(sampleUser)
 		);
@@ -290,13 +290,14 @@ public class TokenServiceIntegrationTest {
 	@Test
 	void 콘서트예약_서비스이용시_이용자의_토큰이_만료되어있다면_BusinessException_예외발생() throws InterruptedException {
 		// given
-		// 대기상태 토큰발급
 		TokenInfo.IssueWaitingToken tokenInfo = tokenService.issueWaitingToken(
 			TokenCommand.IssueWaitingToken.from(sampleUser)
 		);
 		Token token = tokenInfo.token();
+
 		log.info("토큰 만료");
 		token.expire(LocalDateTime.now().minusSeconds(1));
+		redisTemplate.delete(TOKEN_CACHE_KEY+token.getUuid());
 		tokenRepository.saveOrUpdate(token);
 
 
