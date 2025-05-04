@@ -87,14 +87,26 @@ public class TokenService {
     @Transactional
     public TokenInfo.ActivateToken activateToken(TokenCommand.ActivateToken command) {
         UUID uuid = command.uuid();
-        // 대상토큰이 유효한 상태인지 확인
-        Token token = tokenRepository.findTokenByUUID(uuid);
-        if(token == null) throw new BusinessException(TOKEN_NOT_FOUND);
+        // 캐시저장소 조회
+        String tokenKey = TOKEN_CACHE_KEY + uuid.toString();
+        Object cachedRaw = redisTemplate.opsForValue().get(tokenKey);
+        Token token = objectMapper.convertValue(cachedRaw, Token.class);
+
+        // 캐시 미스일경우
+        if(cachedRaw == null) {
+            // 대상토큰이 유효한 상태인지 확인
+            token = tokenRepository.findTokenByUUID(uuid);
+            if(token == null) throw new BusinessException(TOKEN_NOT_FOUND);
+        }
+
         // 이미 토큰이 activated 됐는지 확인
         if(token.isActivated()) throw new BusinessException(TOKEN_ALREADY_ISSUED);
+
         // 대기열큐에 존재하며, 대상토큰의 uuid가 대기열큐의 맨앞에있는지 확인
-        if( waitingQueue.contains(uuid) && waitingQueue.peek() == uuid )
+        boolean isFirstPositionWaitingQueue = waitingQueue.contains(uuid) && (!waitingQueue.peek().equals(uuid));
+        if(isFirstPositionWaitingQueue) {
             throw new BusinessException(TOKEN_IS_WAITING);
+        }
 
         // 해당 uuid 를 큐에서 제거
         waitingQueue.dequeue();
@@ -102,8 +114,10 @@ public class TokenService {
         // 토큰활성화
         token.activate();
 
-        // 토큰정보 저장
+        // DB에 토큰정보 저장
         tokenRepository.saveOrUpdate(token);
+        // 캐시를 동기화한다(write-through)
+        redisTemplate.opsForValue().set(tokenKey,token, TOKEN_CACHE_TTL );
 
         // 활성화 토큰을 반환한다
         return TokenInfo.ActivateToken.of(token);

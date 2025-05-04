@@ -177,14 +177,58 @@ public class TokenServiceTest {
 		verify(valueOps).set(eq(tokenKey), eq(result.token()), any());
 	}
 
-	}
+	/**
+	 * activateToken
+	 */
+	@Order(7)
 	@Test
-	void 토큰활성화에_성공한다() {
+	void 캐시스토어의_토큰이_캐시히트일때_토큰활성화에_성공한다() {
 		// given
 		UUID uuid = UUID.randomUUID();
 		User user = User.of("사용자");
 		Token token = Token.of(user, uuid);
 		token.issue(user); // 대기상태 토큰 발급
+
+		String tokenKey = TOKEN_CACHE_KEY + token.getUuid();
+		when(redisTemplate.opsForValue()).thenReturn(valueOps);
+		when(valueOps.get(tokenKey)).thenReturn(new Object());
+		when(objectMapper.convertValue(any(), eq(Token.class))).thenReturn(token);
+
+		when(waitingQueue.contains(uuid)).thenReturn(true);
+		when(waitingQueue.peek()).thenReturn(uuid); // 대기열의 맨앞에 있음
+		when(tokenRepository.saveOrUpdate(token)).thenReturn(token);
+
+		// when
+		TokenInfo.ActivateToken result = assertDoesNotThrow(
+			() -> tokenService.activateToken(TokenCommand.ActivateToken.of(uuid))
+		);
+
+		// then
+		assertNotNull(result.token().getUuid()); // uuid가 존재하는지 확인
+		assertEquals(TokenStatus.ACTIVE, result.token().getStatus()); // 활성화된 상태인지 확인
+		assertFalse(result.token().isExpiredToken()); // 만료되지 않음
+
+		verify(waitingQueue, times(1)).contains(uuid);
+		verify(waitingQueue, times(1)).peek();
+		verify(waitingQueue, times(1)).dequeue();
+		verify(tokenRepository, never()).findTokenByUUID(any());
+		verify(tokenRepository, times(1)).saveOrUpdate(any());
+
+		verify(valueOps).set(eq(tokenKey), eq(result.token()), any());
+	}
+	@Order(8)
+	@Test
+	void 캐시스토어의_토큰이_캐시미스일때_토큰활성화에_성공한다() {
+		// given
+		UUID uuid = UUID.randomUUID();
+		User user = User.of("사용자");
+		Token token = Token.of(user, uuid);
+		token.issue(user); // 대기상태 토큰 발급
+
+		String tokenKey = TOKEN_CACHE_KEY + uuid;
+		when(redisTemplate.opsForValue()).thenReturn(valueOps);
+		when(valueOps.get(tokenKey)).thenReturn(null);
+
 		when(tokenRepository.findTokenByUUID(uuid)).thenReturn(token); // 래포지토리에 uuid에 매핑되는 토큰을 찾는다
 		when(waitingQueue.contains(uuid)).thenReturn(true);
 		when(waitingQueue.peek()).thenReturn(uuid); // 대기열의 맨앞에 있음
@@ -205,18 +249,26 @@ public class TokenServiceTest {
 		verify(waitingQueue, times(1)).dequeue();
 		verify(tokenRepository, times(1)).findTokenByUUID(any());
 		verify(tokenRepository, times(1)).saveOrUpdate(any());
+
+		verify(valueOps).set(eq(tokenKey), eq(result.token()), any());
 	}
+	@Order(9)
 	@Test
-	void 대기열의_맨앞에_있지않은상태에서_활성화_요청시_BusinessException_예외발생() {
+	void 캐시스토어의_토큰이_캐시히트일때_대기열의_맨앞에_있지않은상태에서_활성화_요청시_BusinessException_예외발생() {
 		// given
 		UUID uuid = UUID.randomUUID();
 		User user = User.of("사용자");
 		Token token = Token.of(user, uuid);
 		token.issue(user); // 대기상태 토큰 발급
 
-		when(tokenRepository.findTokenByUUID(uuid)).thenReturn(token);
+		// 캐시히트
+		String tokenKey = TOKEN_CACHE_KEY + token.getUuid();
+		when(redisTemplate.opsForValue()).thenReturn(valueOps);
+		when(valueOps.get(tokenKey)).thenReturn(new Object());
+		when(objectMapper.convertValue(any(), eq(Token.class))).thenReturn(token);
+
 		when(waitingQueue.contains(uuid)).thenReturn(true); // 대기열에 있음
-		when(waitingQueue.peek()).thenReturn(any()); // 대기열의 맨앞에 있지않음 다른토큰이 들어있음
+		when(waitingQueue.peek()).thenReturn(UUID.randomUUID()); // 대기열의 맨앞에 있지않음 다른토큰이 들어있음
 		BusinessException ex = assertThrows(
 			BusinessException.class,
 			() -> tokenService.activateToken(TokenCommand.ActivateToken.of(uuid))
@@ -231,18 +283,63 @@ public class TokenServiceTest {
 		assertEquals(TokenStatus.WAITING, token.getStatus()); // 대기상태
 		assertFalse(token.isExpiredToken()); // 현 대기토큰은 만료되지 않음
 
+		verify(tokenRepository, never()).findTokenByUUID(uuid);
 		verify(waitingQueue, times(1)).peek();
-		verify(tokenRepository, times(1)).findTokenByUUID(uuid);
 		verify(waitingQueue, never()).dequeue();
 		verify(tokenRepository, never()).saveOrUpdate(any());
+		verify(valueOps, never()).set(eq(tokenKey), any(), any());
 	}
+	@Order(10)
+	@Test
+	void 캐시스토어의_토큰이_캐시미스일때_대기열의_맨앞에_있지않은상태에서_활성화_요청시_BusinessException_예외발생() {
+		// given
+		UUID uuid = UUID.randomUUID();
+		User user = User.of("사용자");
+		Token token = Token.of(user, uuid);
+		token.issue(user); // 대기상태 토큰 발급
+
+		// 캐시미스
+		String tokenKey = TOKEN_CACHE_KEY + uuid;
+		when(redisTemplate.opsForValue()).thenReturn(valueOps);
+		when(valueOps.get(tokenKey)).thenReturn(null);
+
+		when(tokenRepository.findTokenByUUID(uuid)).thenReturn(token);
+		when(waitingQueue.contains(uuid)).thenReturn(true); // 대기열에 있음
+		when(waitingQueue.peek()).thenReturn(UUID.randomUUID()); // 대기열의 맨앞에 있지않음 다른토큰이 들어있음
+		BusinessException ex = assertThrows(
+			BusinessException.class,
+			() -> tokenService.activateToken(TokenCommand.ActivateToken.of(uuid))
+		);
+
+		// then
+		assertEquals(TOKEN_IS_WAITING.getMessage() ,ex.getMessage());
+		assertEquals(TOKEN_IS_WAITING.getHttpStatus() ,ex.getHttpStatus());
+
+		assertNotNull(token.getUuid()); // uuid가 존재하는지 확인
+		assertNotEquals(TokenStatus.ACTIVE, token.getStatus()); // 아직 활성화 되지않음
+		assertEquals(TokenStatus.WAITING, token.getStatus()); // 대기상태
+		assertFalse(token.isExpiredToken()); // 현 대기토큰은 만료되지 않음
+
+		verify(tokenRepository, times(1)).findTokenByUUID(uuid);
+		verify(waitingQueue, times(1)).peek();
+		verify(waitingQueue, never()).dequeue();
+		verify(tokenRepository, never()).saveOrUpdate(any());
+		verify(valueOps, never()).set(eq(tokenKey), any(), any());
+	}
+	@Order(11)
 	@Test
 	void 대기열의_맨앞에있지만_토큰이_존재하지않은경우_BusinessException_예외발생() {
 		// given
 		UUID uuid = UUID.randomUUID();
 		User user = User.of("사용자");
 
+		// 캐시미스
+		String tokenKey = TOKEN_CACHE_KEY + uuid.toString();
+		when(redisTemplate.opsForValue()).thenReturn(valueOps);
+		when(valueOps.get(tokenKey)).thenReturn(null);
 		when(tokenRepository.findTokenByUUID(uuid)).thenReturn(null); // 토큰정보가 없음
+
+		// when
 		BusinessException ex = assertThrows(
 			BusinessException.class,
 			() -> tokenService.activateToken(TokenCommand.ActivateToken.of(uuid))
@@ -256,6 +353,8 @@ public class TokenServiceTest {
 		verify(waitingQueue, never()).peek();
 		verify(waitingQueue, never()).dequeue();
 		verify(tokenRepository, never()).saveOrUpdate(any());
+
+		verify(valueOps, never()).set(eq(tokenKey), any(), any());
 	}
 	@Test
 	void 만일_UUID에_대응되는_토큰이_존재하지않으면_BusinessException발생() {

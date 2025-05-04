@@ -167,27 +167,19 @@ public class TokenServiceIntegrationTest {
 	 */
 	@Order(6)
 	@Test
-	void 대기상태_토큰을_활성화_시키는데_성공한다() {
+	void 캐시저장소에서_토큰이_캐시히트일때_대기상태_토큰을_활성화_시키는데_성공한다() {
 		// given
 		TokenInfo.IssueWaitingToken waitingTokenInfo = tokenService.issueWaitingToken(TokenCommand.IssueWaitingToken.from(sampleUser));
 		Token waitingToken = waitingTokenInfo.token();
-		// 활성화 요청 대기상태토큰이 대기열에 들어있는지 확인
-		assertTrue(waitingQueue.contains(waitingToken.getUuid()));
-		// 활성화 요청 대기상태토큰이 대기열의 맨앞에 있는지 확인
-		assertEquals(waitingQueue.peek(), waitingToken.getUuid());
-		assertEquals(1, waitingTokenInfo.position());
-		// 아직 유효한지 확인
-		assertFalse(waitingToken.isExpiredToken());
-		// 토큰상태가 대기상태인지 확인
-		assertEquals(TokenStatus.WAITING, waitingToken.getStatus());
+
 		// when
 		TokenInfo.ActivateToken info = assertDoesNotThrow(
 			() -> tokenService.activateToken(TokenCommand.ActivateToken.of(waitingToken.getUuid()))
 		);
+
 		// then
 		Token activatedToken = info.token();
-		// 활성화 상태인지 확인
-		assertTrue(activatedToken.isActivated());
+		assertTrue(activatedToken.isActivated()); // 활성화 상태인지 확인
 		assertFalse(activatedToken.isExpiredToken()); // 유효함
 		assertEquals(TokenStatus.ACTIVE, activatedToken.getStatus()); // 활성화 상태
 		assertFalse(waitingQueue.contains(activatedToken.getUuid())); // 대기열큐에 없음
@@ -196,13 +188,9 @@ public class TokenServiceIntegrationTest {
 	@Test
 	void 이미활성화된_토큰을_발급받은상태에서_토큰활성화를_중복_요청하게되면_BusinessException_예외발생() {
 		// given
-		// 이미 활성화된 토큰을 받았음
 		TokenInfo.IssueWaitingToken tokenInfo = tokenService.issueWaitingToken(TokenCommand.IssueWaitingToken.from(sampleUser));
 		UUID tokenUUID = tokenInfo.token().getUuid();
-		assertEquals(1, waitingQueue.getPosition(tokenUUID));
-		// 이미 활성화된 토큰을 가지고있음
-		tokenService.activateToken(TokenCommand.ActivateToken.of(tokenUUID));
-		assertFalse(waitingQueue.contains(tokenUUID));
+		tokenService.activateToken(TokenCommand.ActivateToken.of(tokenUUID)); // 이미 활성화된 토큰을 가지고있음
 
 		// when & then
 		// 이미 요청자는 활성화된 토큰을 받았는데도 중복으로 활성화를 요청함
@@ -220,10 +208,8 @@ public class TokenServiceIntegrationTest {
 		List<User> users = new ArrayList<>();
 		List<UUID> uuids = new ArrayList<>();
 		for( int i = 1; i <= 3; i++ ) {
-			// 유저객체 초기화
-			User user = User.of("테스트" + i);
-			// 유저를 DB에 저장
-			userRepository.save(user);
+			// 유저객체 초기화 및 DB에 저장
+			User user = userRepository.save(User.of("테스트" + i));
 			// 유저리스트에 추가
 			users.add(user);
 			// 대기열토큰 생성
