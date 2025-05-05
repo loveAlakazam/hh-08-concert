@@ -1,5 +1,6 @@
 package io.hhplus.concert.domain.concert;
 
+import static io.hhplus.concert.domain.concert.ConcertService.*;
 import static io.hhplus.concert.interfaces.api.common.validators.PaginationValidator.*;
 import static io.hhplus.concert.interfaces.api.concert.ConcertErrorCode.*;
 import static io.hhplus.concert.interfaces.api.user.CommonErrorCode.*;
@@ -49,6 +50,7 @@ public class ConcertServiceTest {
 	private ObjectMapper objectMapper;
 
 	private static final String CONCERT_LIST_CACHE_KEY = "concert:list";
+	private static final String CONCERT_DATE_LIST_CACHE_KEY= "concert_date:list";
 
 	@BeforeEach
 	void setUp() {

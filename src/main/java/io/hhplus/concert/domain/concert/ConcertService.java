@@ -28,6 +28,8 @@ public class ConcertService {
     private static final String CONCERT_LIST_CACHE_KEY = "concert:list";
     private static final Duration CONCERT_LIST_CACHE_TTL = Duration.ofHours(1);
 
+    private static final String CONCERT_DATE_LIST_CACHE_KEY= "concert_date:list";
+    private static final Duration CONCERT_DATE_LIST_CACHE_TTL = Duration.ofMinutes(30);
     /**
      * 콘서트 목록조회
      *
@@ -51,9 +53,16 @@ public class ConcertService {
      * @return ConcertInfo.GetConcertDateList
      */
     public ConcertInfo.GetConcertDateList getConcertDateList(ConcertCommand.GetConcertDateList command) {
-        // 리스트결과를 가져온다
-        List<ConcertDate> concertDates =  concertDateRepository.findAllAvailable(command.concertId());
-        return ConcertInfo.GetConcertDateList.from(concertDates);
+        // 캐시 조회
+        Object cachedRaw = redisTemplate.opsForValue().get(CONCERT_DATE_LIST_CACHE_KEY);
+        if(cachedRaw != null) {
+            return objectMapper.convertValue(cachedRaw, ConcertInfo.GetConcertDateList.class);
+        }
+
+        // 캐시미스일 경우 - 데이터베이스로부터 리스트결과를 가져온후에 캐시에 저장한다.
+        ConcertInfo.GetConcertDateList concertDates =  concertDateRepository.findAllAvailable(command.concertId());
+        redisTemplate.opsForValue().set(CONCERT_DATE_LIST_CACHE_KEY, concertDates, CONCERT_DATE_LIST_CACHE_TTL);
+        return concertDates;
     }
     /**
      * 콘서트 좌석 목록 조회

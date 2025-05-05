@@ -52,6 +52,7 @@ public class ConcertServiceIntegrationTest {
 
 	private static final Logger log = LoggerFactory.getLogger(ConcertServiceIntegrationTest.class);
 	private static final String CONCERT_LIST_CACHE_KEY = "concert:list";
+	private static final String CONCERT_DATE_LIST_CACHE_KEY = "concert_date:list";
 
 	Concert sampleConcert;
 	ConcertDate sampleConcertDate;
@@ -72,6 +73,7 @@ public class ConcertServiceIntegrationTest {
 
 		// 캐시 초기화
 		redisTemplate.delete(CONCERT_LIST_CACHE_KEY); // 콘서트목록
+		redisTemplate.delete(CONCERT_DATE_LIST_CACHE_KEY); // 콘서트일정 목록
 	}
 	@Test
 	@Order(1)
@@ -115,15 +117,28 @@ public class ConcertServiceIntegrationTest {
 		// then
 		assertEquals(1, info.size());
 
-		List<ConcertDate> concertDates = info.concertDates();
-		ConcertDate concertDate = concertDates.get(0);
-		assertEquals(sampleConcertDate.getId(), concertDate.getId());
-		assertEquals(sampleConcertDate.getPlace(), concertDate.getPlace());
-		assertEquals(sampleConcertDate.getProgressDate(), concertDate.getProgressDate());
-		assertEquals(sampleConcertDate.isAvailable(), concertDate.isAvailable());
+		List<ConcertInfo.GetConcertDateListDto> concertDates = info.concertDates();
+		ConcertInfo.GetConcertDateListDto concertDate = concertDates.get(0);
+		assertEquals(sampleConcertDate.getId(), concertDate.id());
+		assertEquals(sampleConcertDate.getPlace(), concertDate.place());
+		assertEquals(sampleConcertDate.getProgressDate(), concertDate.progressDate());
 
 		// 예약가능한 좌석개수 확인
-		assertEquals(50, concertDate.countAvailableSeats());
+		assertEquals(50, concertDate.concertSeats().size());
+	}
+	@Test
+	@Order(4)
+	void 콘서트일정_목록조회_요청시_캐시히트면_바로_응답하고_캐시미스면_DB에서_조회후에_캐시에_저장한다(){
+		// given
+		long concertId = sampleConcert.getId();
+
+		// when
+		ConcertInfo.GetConcertDateList result1 = concertService.getConcertDateList(ConcertCommand.GetConcertDateList.of(concertId));
+		ConcertInfo.GetConcertDateList result2 = concertService.getConcertDateList(ConcertCommand.GetConcertDateList.of(concertId));
+
+		// then
+		assertThat(result1).isEqualTo(result2);
+		assertThat(redisTemplate.opsForValue().get(CONCERT_DATE_LIST_CACHE_KEY)).isNotNull();
 	}
 	@Order(4)
 	@Test

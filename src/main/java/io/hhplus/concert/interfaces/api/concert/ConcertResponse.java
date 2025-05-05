@@ -65,13 +65,13 @@ public record ConcertResponse(long id, String name, String artistName) { // Page
 	 * @param currentSize - 현재 페이지의 공연일정 개수
 	 */
 	public record GetAvailableConcertDates(
-		List<ConcertDate> concertDates,
+		List<ConcertInfo.GetConcertDateListDto> concertDates,
 		long totalElements,
 		int totalPages,
 		int currentPage,
 		int currentSize
 	) {
-		public static GetAvailableConcertDates from(Page<ConcertDate> concertDatePage) { // from절에는 페이징처리 결과를 넣으면 된다.
+		public static GetAvailableConcertDates from(Page<ConcertInfo.GetConcertDateListDto> concertDatePage) { // from절에는 페이징처리 결과를 넣으면 된다.
 
 			return new GetAvailableConcertDates(
 				concertDatePage.getContent(),
