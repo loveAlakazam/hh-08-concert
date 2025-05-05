@@ -56,18 +56,44 @@ public class ConcertInfo {
 			);
 		}
 	}
+	/* 콘서트 좌석 목록조회 - GetConcertSeatList */
+	public record GetConcertSeatList(List<ConcertSeatListDto> concertSeatList) {
+		public static GetConcertSeatList from(List<ConcertSeat> concertSeats) {
+			List<ConcertSeatListDto> concertSeatListDtos = concertSeats.stream().map(ConcertSeatListDto::from).toList();
+			return new GetConcertSeatList(concertSeatListDtos);
 		}
 	}
-	public record GetConcertSeatList(List<ConcertSeat> concertSeatList) {
-		public static GetConcertSeatList from(List<ConcertSeat> concertSeatList) {
-			return new GetConcertSeatList(concertSeatList);
+	public record ConcertSeatListDto(
+		long id,
+		int number,
+		long price,
+		boolean isAvailable,
+		long concertId,
+		long concertDateId,
+		long version
+	) {
+		public static ConcertSeatListDto from(ConcertSeat concertSeat) {
+			if(concertSeat.getConcert() == null || concertSeat.getConcertDate() == null)
+				throw new BusinessException(NOT_NULLABLE);
+
+			return new ConcertSeatListDto(
+				concertSeat.getId(),
+				concertSeat.getNumber(),
+				concertSeat.getPrice(),
+				concertSeat.isAvailable(),
+				concertSeat.getConcert().getId(),
+				concertSeat.getConcertDate().getId(),
+				concertSeat.getVersion()
+			);
 		}
 	}
+	/* 콘서트 좌석 단건 조회 - GetConcertSeat */
 	public record GetConcertSeat(ConcertSeat concertSeat) {
 		public static GetConcertSeat from(ConcertSeat concert) {
 			return new GetConcertSeat(concert);
 		}
 	}
+	/* 콘서트 생성 - CreateConcert */
 	public record CreateConcert(Concert concert) {
 		public static CreateConcert from(Concert concert) {
 			return new CreateConcert(concert);

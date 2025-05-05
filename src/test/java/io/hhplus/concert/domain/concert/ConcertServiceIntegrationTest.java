@@ -169,7 +169,7 @@ public class ConcertServiceIntegrationTest {
 		);
 
 		// then
-		List<ConcertSeat> concertSeats = info.concertSeatList();
+		List<ConcertInfo.ConcertSeatListDto> concertSeats = info.concertSeatList();
 		assertEquals(50, concertSeats.size()); // 공연좌석 개수는 최대 50개이다.
 	}
 	@Order(6)

@@ -24,7 +24,7 @@ public record ConcertResponse(long id, String name, String artistName) { // Page
 	 * @param concertSeatList - 콘서트 좌석리스트
 	 */
 	public record GetAvailableSeats (
-		List<ConcertSeat> concertSeatList
+		List<ConcertInfo.ConcertSeatListDto> concertSeatList
 	) {
 		public static GetAvailableSeats from(ConcertInfo.GetConcertSeatList info) {
 			return new GetAvailableSeats(info.concertSeatList());

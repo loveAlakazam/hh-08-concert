@@ -55,13 +55,13 @@ public class ConcertSeat extends BaseEntity {
 	// 콘서트좌석:콘서트=N:1
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "concert_id", foreignKey = @ForeignKey(value = ConstraintMode.NO_CONSTRAINT))
-	@JsonBackReference
+	@JsonBackReference("concert-seats")
 	private Concert concert;
 
 	// 콘서트좌석:콘서트날짜=N:1
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name= "concert_date_id", foreignKey = @ForeignKey(value = ConstraintMode.NO_CONSTRAINT))
-	@JsonBackReference
+	@JsonBackReference("concertDate-seats")
 	private ConcertDate concertDate;
 
 	// 콘서트좌석:예약=1:1

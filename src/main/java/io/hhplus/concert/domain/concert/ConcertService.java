@@ -25,11 +25,16 @@ public class ConcertService {
 
     private final RedisTemplate<String, Object> redisTemplate;
     private final ObjectMapper objectMapper;
+
     private static final String CONCERT_LIST_CACHE_KEY = "concert:list";
     private static final Duration CONCERT_LIST_CACHE_TTL = Duration.ofHours(1);
 
     private static final String CONCERT_DATE_LIST_CACHE_KEY= "concert_date:list";
     private static final Duration CONCERT_DATE_LIST_CACHE_TTL = Duration.ofMinutes(30);
+
+    private static final String CONCERT_SEAT_LIST_CACHE_KEY= "concert_seat:list";
+    private static final Duration CONCERT_SEAT_LIST_CACHE_TTL= Duration.ofMinutes(5);
+
     /**
      * 콘서트 목록조회
      *
@@ -71,11 +76,19 @@ public class ConcertService {
      * @return ConcertInfo.GetConcertSeatList
      */
     public ConcertInfo.GetConcertSeatList getConcertSeatList(ConcertCommand.GetConcertSeatList command) {
-        List<ConcertSeat> concertSeatList = concertSeatRepository.findConcertSeats(
+        // 캐시조회
+        Object cachedRaw = redisTemplate.opsForValue().get(CONCERT_SEAT_LIST_CACHE_KEY);
+        if(cachedRaw != null) {
+            return objectMapper.convertValue(cachedRaw, ConcertInfo.GetConcertSeatList.class);
+        }
+
+        // 캐시 미스일경우 - 데이터베이스로부터 리스트결과를 가져온후에 캐시에 저장한다.
+        ConcertInfo.GetConcertSeatList concertSeats = concertSeatRepository.findConcertSeats(
             command.concertId(),
             command.concertDateId()
         );
-        return ConcertInfo.GetConcertSeatList.from(concertSeatList);
+        redisTemplate.opsForValue().set(CONCERT_SEAT_LIST_CACHE_KEY, concertSeats, CONCERT_SEAT_LIST_CACHE_TTL);
+        return concertSeats;
     }
     /**
      * 콘서트 좌석 세부 정보 조회

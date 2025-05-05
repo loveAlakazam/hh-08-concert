@@ -51,6 +51,7 @@ public class ConcertServiceTest {
 
 	private static final String CONCERT_LIST_CACHE_KEY = "concert:list";
 	private static final String CONCERT_DATE_LIST_CACHE_KEY= "concert_date:list";
+	private static final String CONCERT_SEAT_LIST_CACHE_KEY = "concert_seat:list";
 
 	@BeforeEach
 	void setUp() {
@@ -100,7 +101,7 @@ public class ConcertServiceTest {
 	}
 
 	@Test
-	void 콘서트아이디1_콘서트날짜아이디2인_콘서트좌석_조회에_성공한다() {
+	void 캐시스토어에_콘서트아이디1_콘서트날짜아이디2인_콘서트좌석목록이_캐시히트일경우_바로_캐시히트된_데이터를_리턴한다() {
 		// given
 		long concertId = 1L;
 		long concertDateId = 2L;
@@ -116,37 +117,44 @@ public class ConcertServiceTest {
 		* | 81~90  | 31~40       |   4000    |
 		* | 91~100 | 41~50       |   5000    |
 		* */
-		List<ConcertSeat> list = new ArrayList<>();
+		List<ConcertSeat> dbConcertSeats = new ArrayList<>();
 		for(int i = 0 ; i < 50; i++) {
 			int number = i + 1;
 			long price = 1000 * ( i / 10 + 1);
 			boolean isAvailable = true;
 			if( number % 5 == 0) isAvailable = false; // 5의배수인 좌석번호는 예약불가능 상태
 
-			list.add(ConcertSeat.of(concert, concertDate, number, price, isAvailable));
+			dbConcertSeats.add(ConcertSeat.of(concert, concertDate, number, price, isAvailable));
 		}
-		when(concertSeatRepository.findConcertSeats(concertId, concertDateId)).thenReturn(list);
+
+		ConcertInfo.GetConcertSeatList cached = ConcertInfo.GetConcertSeatList.from(dbConcertSeats);
+
+		when(redisTemplate.opsForValue()).thenReturn(valueOps);
+		when(valueOps.get(CONCERT_SEAT_LIST_CACHE_KEY)).thenReturn(new Object());
+		when(objectMapper.convertValue(any(), eq(ConcertInfo.GetConcertSeatList.class))).thenReturn(cached);
 
 		// when
 		ConcertInfo.GetConcertSeatList result = concertService.getConcertSeatList(
 			ConcertCommand.GetConcertSeatList.of(concertId, concertDateId)
 		);
-		List<ConcertSeat> concertSeatList = result.concertSeatList();
+		List<ConcertInfo.ConcertSeatListDto> concertSeatList = result.concertSeatList();
 
 		// then
+		assertEquals(cached, result);
+		verify(concertSeatRepository, never()).findConcertSeats(concertId, concertDateId);
 		assertEquals(50, concertSeatList.size());
 		// 1번 좌석
-		assertEquals(1, concertSeatList.get(0).getNumber());
-		assertEquals(1000, concertSeatList.get(0).getPrice());
-		assertEquals(true, concertSeatList.get(0).isAvailable());
+		assertEquals(1, concertSeatList.get(0).number());
+		assertEquals(1000, concertSeatList.get(0).price());
+		assertTrue(concertSeatList.get(0).isAvailable());
 		// 25번 좌석
-		assertEquals(25, concertSeatList.get(24).getNumber());
-		assertEquals(3000, concertSeatList.get(24).getPrice());
-		assertEquals(false, concertSeatList.get(24).isAvailable());
+		assertEquals(25, concertSeatList.get(24).number());
+		assertEquals(3000, concertSeatList.get(24).price());
+		assertFalse(concertSeatList.get(24).isAvailable());
 		// 50번 좌석
-		assertEquals(50, concertSeatList.get(49).getNumber());
-		assertEquals(5000, concertSeatList.get(49).getPrice());
-		assertEquals(false, concertSeatList.get(49).isAvailable());
+		assertEquals(50, concertSeatList.get(49).number());
+		assertEquals(5000, concertSeatList.get(49).price());
+		assertFalse(concertSeatList.get(49).isAvailable());
 	}
 	@Test
 	void 콘서트좌석_정보조회요청시_콘서트좌석ID에_대응되는_콘서트좌석_정보가_존재하지않으면_BusinessException_예외발생() {
@@ -198,7 +206,7 @@ public class ConcertServiceTest {
 		);
 		assertEquals(1, result.concertSeat().getNumber());
 		assertEquals(1500, result.concertSeat().getPrice());
-		assertEquals(true, result.concertSeat().isAvailable());
+		assertTrue(result.concertSeat().isAvailable());
 		assertEquals("테스트 콘서트", result.concertSeat().getConcert().getName());
 		assertEquals("테스트 장소", result.concertSeat().getConcertDate().getPlace());
 		assertEquals(LocalDate.now(), result.concertSeat().getConcertDate().getProgressDate());
