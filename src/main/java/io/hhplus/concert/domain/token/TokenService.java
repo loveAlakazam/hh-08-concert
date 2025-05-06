@@ -71,8 +71,11 @@ public class TokenService {
         // 현재 토큰의 대기순서를 알려준다.
         int position = waitingQueue.getPosition(token.getUuid());
 
-        // 토큰을 저장한다
+        // DB에 토큰정보를 저장한다
         tokenRepository.saveOrUpdate(token);
+        // 캐시를 동기화한다(write-through)
+        String tokenKey = TOKEN_CACHE_KEY + token.getUuid().toString();
+        redisTemplate.opsForValue().set(tokenKey, token, TOKEN_CACHE_TTL);
 
         // 토큰정보와 대기순서를 같이 리턴한다
         return TokenInfo.IssueWaitingToken.of(token, position);

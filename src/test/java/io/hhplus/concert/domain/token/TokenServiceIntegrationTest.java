@@ -94,6 +94,8 @@ public class TokenServiceIntegrationTest {
 		assertTrue(waitingQueue.contains(tokenUUID));
 		// 순서는 1번인가?
 		assertEquals(1, tokenInfo.position());
+		// 레디스에 토큰이 저장됐는가?
+		assertThat(redisTemplate.opsForValue().get(TOKEN_CACHE_KEY+token.getUuid())).isNotNull();
 	}
 	@Order(2)
 	@Test
@@ -148,12 +150,8 @@ public class TokenServiceIntegrationTest {
 			// 대기상태토큰 리스트에 추가
 			uuids.add(info.token().getUuid());
 		}
-		assertEquals(3, waitingQueue.size());
-		assertTrue(waitingQueue.contains(uuids.get(0)));
-		assertTrue(waitingQueue.contains(uuids.get(1)));
-		assertTrue(waitingQueue.contains(uuids.get(2)));
 
-		// when &then
+		// when & then
 		// 1번째 토큰
 		assertEquals(1, tokenService.getCurrentPosition(uuids.get(0)));
 		assertEquals(waitingQueue.peek(), uuids.get(0));

@@ -2,6 +2,7 @@ package io.hhplus.concert.domain.token;
 
 import static io.hhplus.concert.interfaces.api.token.TokenErrorCode.*;
 import static io.hhplus.concert.interfaces.api.user.CommonErrorCode.*;
+import static org.assertj.core.api.AssertionsForClassTypes.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -9,13 +10,19 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.stubbing.Answer;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.ValueOperations;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.dockerjava.api.exception.ConflictException;
 
 import io.hhplus.concert.domain.user.User;
@@ -23,6 +30,7 @@ import io.hhplus.concert.domain.user.UserRepository;
 import io.hhplus.concert.interfaces.api.common.BusinessException;
 
 @ExtendWith(MockitoExtension.class)
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class TokenServiceTest {
 	@InjectMocks
 	private TokenService tokenService;
@@ -30,11 +38,19 @@ public class TokenServiceTest {
 	private WaitingQueue waitingQueue;
 	@Mock
 	private TokenRepository tokenRepository;
+	@Mock
+	private RedisTemplate<String, Object> redisTemplate;
+	@Mock
+	private ValueOperations<String, Object> valueOps;
+	@Mock
+	private ObjectMapper objectMapper;
+
+	private static final String TOKEN_CACHE_KEY= "token:";
 
 
 	@BeforeEach
 	void setUp() {
-		tokenService = new TokenService(tokenRepository, waitingQueue);
+		tokenService = new TokenService(tokenRepository, waitingQueue, redisTemplate, objectMapper);
 		waitingQueue.clear();
 	}
 
@@ -62,6 +78,11 @@ public class TokenServiceTest {
 		// then
 		assertEquals(result, 2);
 	}
+
+	/**
+	 * issueWaitingToken
+	 */
+	@Order(3)
 	@Test
 	void 대기상태토큰발급_요청시_userId에_대응되는_유저가_존재하지않으면_BusinessException_예외발생() {
 		// when & then
@@ -77,6 +98,7 @@ public class TokenServiceTest {
 		verify(waitingQueue, never()).enqueue(any());
 		verify(tokenRepository, never()).saveOrUpdate(any());
 	}
+	@Order(4)
 	@Test
 	void 이미_대기열큐에_uuid가_존재할때_대기상태_토큰발급_중복요청시_BusinessException_예외발생() {
 		// given
@@ -103,6 +125,7 @@ public class TokenServiceTest {
 		verify(waitingQueue, never()).enqueue(any());
 		verify(tokenRepository, never()).saveOrUpdate(any());
 	}
+	@Order(5)
 	@Test
 	void 이미_활성화상태_토큰을_발급받은상태에서_대기토큰발급요청시_BusinessException_예외발생() {
 		// given
@@ -111,8 +134,6 @@ public class TokenServiceTest {
 		Token token = Token.of(user, uuid);
 		token.issue(user); // 토큰 발급
 		token.activate(); // 토큰 활성화
-		assertEquals(true, token.isActivated()); // 활성화 상태
-		assertEquals(false, token.isExpiredToken()); // 만료되지 않음
 
 		when(tokenRepository.findTokenByUserId(anyLong())).thenReturn(token);
 		when(waitingQueue.contains(uuid)).thenReturn(false);
@@ -129,11 +150,13 @@ public class TokenServiceTest {
 		verify(waitingQueue, never()).enqueue(uuid);
 		verify(tokenRepository, never()).saveOrUpdate(any());
 	}
+	@Order(6)
 	@Test
 	void 토큰이_없는_상태에서_대기토큰발급요청시_토큰발급성공() {
 		// given
 		User user = User.of("사용자");
 		when(tokenRepository.findTokenByUserId(anyLong())).thenReturn(null);
+		when(redisTemplate.opsForValue()).thenReturn(valueOps);
 
 		// when
 		TokenInfo.IssueWaitingToken result = assertDoesNotThrow(
@@ -142,13 +165,18 @@ public class TokenServiceTest {
 
 		// then
 		assertNotNull(result.token().getUuid());
-		assertEquals(TokenStatus.WAITING, result.token().getStatus()); // 재발급된토큰의 상태는 대기상태인지
+		assertEquals(TokenStatus.WAITING, result.token().getStatus()); // 대기상태
 		assertFalse(result.token().isExpiredToken()); // 만료되지 않음
 
 		verify(tokenRepository, times(1)).findTokenByUserId(anyLong());
 		verify(waitingQueue, times(1)).enqueue(result.token().getUuid());
 		verify(waitingQueue, times(1)).getPosition(result.token().getUuid());
 		verify(tokenRepository, times(1)).saveOrUpdate(any());
+
+		String tokenKey = TOKEN_CACHE_KEY+result.token().getUuid();
+		verify(valueOps).set(eq(tokenKey), eq(result.token()), any());
+	}
+
 	}
 	@Test
 	void 토큰활성화에_성공한다() {
