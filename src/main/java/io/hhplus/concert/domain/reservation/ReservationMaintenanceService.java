@@ -3,6 +3,7 @@ package io.hhplus.concert.domain.reservation;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import io.hhplus.concert.domain.concert.ConcertSeat;
 import io.hhplus.concert.domain.concert.ConcertSeatRepository;
@@ -17,6 +18,7 @@ public class ReservationMaintenanceService {
 	/**
 	 * 임시예약 취소처리된 예약은 soft-delete 된다.
 	 */
+	@Transactional
 	public void deleteCanceledReservations() {
 		reservationRepository.deleteCanceledReservations();
 	}
@@ -24,6 +26,7 @@ public class ReservationMaintenanceService {
 	/**
 	 * 임시예약만료일자가 지나면 예약의 상태는 PENDING_PAYMENT -> CANCELED 로 취소 상태로 변경된다.
 	 */
+	@Transactional
 	public void cancel() {
 		// 임시예약 만료일자가 지난 예약정보를 가져온다
 		List<Reservation> expiredReservations = reservationRepository.findExpiredTempReservations();
@@ -31,7 +34,6 @@ public class ReservationMaintenanceService {
 		// 임시예약 만료일자가 이미 지난 예약들은 모두 취소상태로 변경한다
 		reservationRepository.updateCanceledExpiredTempReservations();
 
-		//
 		for(Reservation expiredReservation : expiredReservations) {
 			ConcertSeat concertSeat = expiredReservation.getConcertSeat();
 
