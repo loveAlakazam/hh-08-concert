@@ -1,18 +1,23 @@
 package io.hhplus.concert.domain.reservation;
 
+import static io.hhplus.concert.domain.reservation.Reservation.*;
 import static io.hhplus.concert.interfaces.api.reservation.ReservationErrorCode.*;
 
 import io.hhplus.concert.domain.concert.Concert;
 import io.hhplus.concert.domain.concert.ConcertDate;
 import io.hhplus.concert.domain.concert.ConcertSeatRepository;
+import io.hhplus.concert.infrastructure.distributedlock.DistributedSimpleLock;
 import io.hhplus.concert.interfaces.api.common.BusinessException;
 import io.hhplus.concert.domain.concert.ConcertSeat;
 import io.hhplus.concert.domain.user.User;
 
+import io.hhplus.concert.interfaces.api.common.DistributedLockException;
 import jakarta.persistence.OptimisticLockException;
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 
 @Service
 @RequiredArgsConstructor
@@ -26,6 +31,7 @@ public class ReservationService {
      * @return ReservationInfo.TemporaryReserve
      * @throws BusinessException
      */
+    @DistributedSimpleLock(key="#command.concertSeat().id", ttlSeconds = TEMPORARY_RESERVATION_DURATION_SECOND)
     @Transactional
     public ReservationInfo.TemporaryReserve temporaryReserve(ReservationCommand.TemporaryReserve command) {
         try{
@@ -45,6 +51,8 @@ public class ReservationService {
 
         } catch(OptimisticLockException e) {
             // 좌석의 version이 일치하지 않으면 예외발생
+            throw new BusinessException(ALREADY_RESERVED);
+        } catch(DistributedLockException e) {
             throw new BusinessException(ALREADY_RESERVED);
         }
     }
@@ -69,6 +77,7 @@ public class ReservationService {
      * @return ReservationInfo.Cancel
      * @throws BusinessException
      */
+    @Transactional
     public ReservationInfo.Cancel cancel(ReservationCommand.Cancel command) {
         // 예약이력확인
         Reservation reservation = reservationRepository.findById(command.reservationId());
