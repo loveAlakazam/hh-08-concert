@@ -54,6 +54,10 @@ public class TokenServiceTest {
 		waitingQueue.clear();
 	}
 
+	/**
+	 * getCurrentPosition
+	 */
+	@Order(1)
 	@Test
 	void 대기큐에_요청_uuid가_존재하지않으면_BusinessException_예외발생() {
 		// given
@@ -68,6 +72,7 @@ public class TokenServiceTest {
 		assertEquals(UUID_NOT_FOUND.getMessage(), ex.getMessage());
 		assertEquals(UUID_NOT_FOUND.getHttpStatus(), ex.getHttpStatus());
 	}
+	@Order(2)
 	@Test
 	void 대기큐에_요청_uuid가_존재하면_대기번호_조회에_성공한다() {
 		// given
@@ -76,7 +81,7 @@ public class TokenServiceTest {
 		// when
 		int result = assertDoesNotThrow(() -> tokenService.getCurrentPosition(uuid));
 		// then
-		assertEquals(result, 2);
+		assertEquals(2, result);
 	}
 
 	/**
