@@ -269,5 +269,55 @@ public class TokenServiceTest {
 		assertFalse(token.isExpiredToken());
 		assertTrue(token.isActivated());
 	}
+	/**
+	 * getTokenByUUID
+	 */
+	@Order(17)
+	@Test
+	void 캐시스토어에서_캐시미스일경우_데이터베이스에서_uuid에_매핑되는_토큰정보를_조회후_리턴한다() {
+		// given
+		UUID uuid = UUID.randomUUID();
+		User user = User.of("테스트");
+		Token expectedToken = Token.of(user, uuid);
+		expectedToken.issue(user);
+
+		String tokenKey = TOKEN_CACHE_KEY+uuid;
+		when(redisTemplate.opsForValue()).thenReturn(valueOps);
+		when(valueOps.get(tokenKey)).thenReturn(null);
+		when(tokenRepository.findTokenByUUID(uuid)).thenReturn(expectedToken);
+
+		// when
+		TokenInfo.GetTokenByUUID result = assertDoesNotThrow(
+			() -> tokenService.getTokenByUUID(TokenCommand.GetTokenByUUID.of(uuid))
+		);
+
+		// then
+		assertThat(result.token()).isEqualTo(expectedToken);
+		verify(tokenRepository, times(1)).findTokenByUUID(uuid);
+	}
+	@Order(18)
+	@Test
+	void 캐시스토어에서_캐시히트일경우_바로_토큰정보를_리턴한다() {
+		// given
+		UUID uuid = UUID.randomUUID();
+		User user = User.of("테스트");
+		Token expectedToken = Token.of(user, uuid);
+		expectedToken.issue(user);
+		expectedToken.activate();
+
+		String tokenKey = TOKEN_CACHE_KEY+uuid;
+		when(redisTemplate.opsForValue()).thenReturn(valueOps);
+		when(valueOps.get(tokenKey)).thenReturn(new Object());
+		when(objectMapper.convertValue(any(), eq(Token.class))).thenReturn(expectedToken);
+
+		// when
+		TokenInfo.GetTokenByUUID result = assertDoesNotThrow(
+			() -> tokenService.getTokenByUUID(TokenCommand.GetTokenByUUID.of(uuid))
+		);
+
+		// then
+		assertThat(result.token()).isEqualTo(expectedToken);
+		verify(tokenRepository, never()).findTokenByUUID(uuid);
+	}
 
 }

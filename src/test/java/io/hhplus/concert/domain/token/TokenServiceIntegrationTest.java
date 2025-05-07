@@ -1,16 +1,15 @@
 package io.hhplus.concert.domain.token;
 
-
-
-
 import static io.hhplus.concert.interfaces.api.common.validators.DateValidator.*;
 import static io.hhplus.concert.interfaces.api.token.TokenErrorCode.*;
+import static org.assertj.core.api.AssertionsForClassTypes.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -23,6 +22,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.test.context.jdbc.Sql;
 
 import io.hhplus.concert.TestcontainersConfiguration;
@@ -45,7 +45,10 @@ public class TokenServiceIntegrationTest {
 	@Autowired private TokenRepository tokenRepository;
 	@Autowired private WaitingQueue waitingQueue;
 	@Autowired private UserRepository userRepository;
+	@Autowired private RedisTemplate<String, Object> redisTemplate;
+
 	private static final Logger log = LoggerFactory.getLogger(TokenServiceIntegrationTest.class);
+	private static final String TOKEN_CACHE_KEY= "token:";
 
 	User sampleUser;
 	@BeforeEach
@@ -57,6 +60,13 @@ public class TokenServiceIntegrationTest {
 		// 테스트용 데이터 초기셋팅
 		sampleUser = User.of("테스트 유저");
 		userRepository.save(sampleUser);
+
+		// 캐시저장소를 초기화한다
+		clearCacheTokens();
+	}
+	public void clearCacheTokens() {
+		Set<String> keys = redisTemplate.keys("token:*");
+		if(!keys.isEmpty()) redisTemplate.delete(keys);
 	}
 
 	/**
@@ -314,6 +324,53 @@ public class TokenServiceIntegrationTest {
 		assertTrue(isPastDateTime(token.getExpiredAt()));
 		assertEquals(EXPIRED_OR_UNAVAILABLE_TOKEN.getMessage(), exception.getMessage());
 	}
+	/**
+	 * getTokenByUUID 테스트
+	 */
+	@Order(13)
+	@Test
+	void 캐시스토어에_존재하여_캐시히트이면_해당_uuid로_토큰정보를_반환한다(){
+		// given
+		User user = userRepository.save(User.of("테스트"));
+		TokenInfo.IssueWaitingToken info = tokenService.issueWaitingToken(TokenCommand.IssueWaitingToken.from(user));
+		Token token = info.token();
+		UUID uuid = token.getUuid();
+
+		// when
+		TokenInfo.GetTokenByUUID result = assertDoesNotThrow(() -> tokenService.getTokenByUUID(TokenCommand.GetTokenByUUID.of(uuid)));
+
+		// then
+		assertThat(result.token().getId()).isEqualTo(token.getId());
+		assertThat(result.token().getUuid()).isEqualTo(token.getUuid());
+		assertThat(result.token().getStatus()).isEqualTo(token.getStatus());
+		assertThat(result.token().getExpiredAt()).isEqualTo(token.getExpiredAt());
+		assertThat(result.token().getCreatedAt()).isEqualTo(token.getCreatedAt());
+
+		assertThat(redisTemplate.opsForValue().get(TOKEN_CACHE_KEY+uuid)).isNotNull();
+	}
+	@Order(14)
+	@Test
+	void 캐시스토어에_존재하여_캐시미스이면_데이터베이스로부터_토큰정보조회결과를_반환한다(){
+		// given
+		UUID uuid = UUID.randomUUID();
+		User user = userRepository.save(User.of("테스트"));
+		Token token = Token.of(user, uuid);
+		token.issue(user);
+		tokenRepository.saveOrUpdate(token);
+
+		// when
+		TokenInfo.GetTokenByUUID result = assertDoesNotThrow(() -> tokenService.getTokenByUUID(TokenCommand.GetTokenByUUID.of(uuid)));
+
+		// then
+		assertThat(result.token().getId()).isEqualTo(token.getId());
+		assertThat(result.token().getUuid()).isEqualTo(token.getUuid());
+		assertThat(result.token().getStatus()).isEqualTo(token.getStatus());
+		assertThat(result.token().getExpiredAt()).isEqualTo(token.getExpiredAt());
+		assertThat(result.token().getCreatedAt()).isEqualTo(token.getCreatedAt());
+
+		assertThat(redisTemplate.opsForValue().get(TOKEN_CACHE_KEY+uuid)).isNull();
+	}
+
 
 
 }

@@ -2,18 +2,19 @@ package io.hhplus.concert.domain.token;
 
 import static io.hhplus.concert.interfaces.api.token.TokenErrorCode.*;
 
-import java.time.LocalDateTime;
-import java.util.List;
+import java.time.Duration;
 import java.util.UUID;
 
 import io.hhplus.concert.domain.user.User;
-import io.hhplus.concert.domain.user.UserRepository;
 import io.hhplus.concert.interfaces.api.common.BusinessException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Slf4j
 @Service
@@ -21,12 +22,22 @@ import org.springframework.transaction.annotation.Transactional;
 public class TokenService {
     private final TokenRepository tokenRepository;
     private final WaitingQueue waitingQueue;
+    private final RedisTemplate<String, Object> redisTemplate;
+    private final ObjectMapper objectMapper;
 
-    public TokenInfo.GetTokenByUserId getTokenByUserId(TokenCommand.GetTokenByUserId command) {
-        Token token = tokenRepository.findTokenByUserId(command.userId());
-        return TokenInfo.GetTokenByUserId.from(token);
-    }
+    private static final String TOKEN_CACHE_KEY= "token:";
+    private static final Duration TOKEN_CACHE_TTL = Duration.ofMinutes(5);
+
+
     public TokenInfo.GetTokenByUUID getTokenByUUID(TokenCommand.GetTokenByUUID command) {
+        // 캐시저장소에서 찾는다
+        Object cachedRaw = redisTemplate.opsForValue().get(TOKEN_CACHE_KEY+command.uuid());
+        if(cachedRaw != null) {
+            Token token = objectMapper.convertValue(cachedRaw, Token.class);
+            return TokenInfo.GetTokenByUUID.from(token);
+        }
+
+        // 캐시 미스일경우
         Token token = tokenRepository.findTokenByUUID(command.uuid());
         return TokenInfo.GetTokenByUUID.from(token);
     }
