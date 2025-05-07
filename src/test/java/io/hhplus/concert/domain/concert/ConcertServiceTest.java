@@ -121,8 +121,7 @@ public class ConcertServiceTest {
 		for(int i = 0 ; i < 50; i++) {
 			int number = i + 1;
 			long price = 1000 * ( i / 10 + 1);
-			boolean isAvailable = true;
-			if( number % 5 == 0) isAvailable = false; // 5의배수인 좌석번호는 예약불가능 상태
+			boolean isAvailable = number % 5 != 0; // 5의배수인 좌석번호는 예약불가능 상태
 
 			dbConcertSeats.add(ConcertSeat.of(concert, concertDate, number, price, isAvailable));
 		}
