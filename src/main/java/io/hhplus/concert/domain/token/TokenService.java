@@ -1,5 +1,6 @@
 package io.hhplus.concert.domain.token;
 
+import static io.hhplus.concert.domain.token.Token.*;
 import static io.hhplus.concert.interfaces.api.token.TokenErrorCode.*;
 
 import java.time.Duration;
@@ -26,7 +27,7 @@ public class TokenService {
     private final ObjectMapper objectMapper;
 
     private static final String TOKEN_CACHE_KEY= "token:";
-    private static final Duration TOKEN_CACHE_TTL = Duration.ofMinutes(5);
+    private static final Duration TOKEN_CACHE_TTL = Duration.ofMinutes(VALID_TOKEN_DURATION_MINUTE_UNIT);
 
 
     public TokenInfo.GetTokenByUUID getTokenByUUID(TokenCommand.GetTokenByUUID command) {
