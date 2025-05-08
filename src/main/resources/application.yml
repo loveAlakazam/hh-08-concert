@@ -20,6 +20,11 @@ spring:
     properties:
       hibernate.timezone.default_storage: NORMALIZE_UTC
       hibernate.jdbc.time_zone: UTC
+redisson:
+  config:
+    singleServerConfig:
+      address: "redis://localhost:6379"
+    
 
 ---
 spring:
