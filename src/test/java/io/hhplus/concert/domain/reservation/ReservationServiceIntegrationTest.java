@@ -22,8 +22,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.jdbc.Sql;
 
+import io.hhplus.concert.RedisTestContainerConfiguration;
 import io.hhplus.concert.TestcontainersConfiguration;
 import io.hhplus.concert.domain.concert.Concert;
 import io.hhplus.concert.domain.concert.ConcertDate;
@@ -37,7 +40,11 @@ import io.hhplus.concert.interfaces.api.common.BusinessException;
 import io.hhplus.concert.interfaces.api.common.InvalidValidationException;
 
 @SpringBootTest
-@Import(TestcontainersConfiguration.class)
+@ActiveProfiles("test")
+@ContextConfiguration(classes = {
+	TestcontainersConfiguration.class,
+	RedisTestContainerConfiguration.class
+})
 @Sql(statements = {
 	"SET FOREIGN_KEY_CHECKS=0",
 	"TRUNCATE TABLE reservations",
