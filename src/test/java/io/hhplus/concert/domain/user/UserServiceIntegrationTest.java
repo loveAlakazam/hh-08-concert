@@ -14,12 +14,23 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.jdbc.Sql;
+
 import io.hhplus.concert.TestcontainersConfiguration;
 import io.hhplus.concert.interfaces.api.common.BusinessException;
 import io.hhplus.concert.interfaces.api.common.InvalidValidationException;
 
 @SpringBootTest
+@ActiveProfiles("test")
 @Import(TestcontainersConfiguration.class)
+@Sql(statements = {
+	"SET FOREIGN_KEY_CHECKS=0",
+	"TRUNCATE TABLE user_point_histories",
+	"TRUNCATE TABLE user_points",
+	"TRUNCATE TABLE users",
+	"SET FOREIGN_KEY_CHECKS=1"
+}, executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
 public class UserServiceIntegrationTest {
 	@Autowired private UserService userService;
 	@Autowired private UserRepository userRepository;
@@ -33,11 +44,6 @@ public class UserServiceIntegrationTest {
 
 	@BeforeEach
 	void setUp() {
-		// 테스트 실행전 항상 데이터베이스 초기화
-		userPointHistoryRepository.deleteAll();
-		userPointRepository.deleteAll();
-		userRepository.deleteAll();
-
 		user = User.of("테스트 유저");
 		userRepository.save(user);
 
@@ -259,18 +265,14 @@ public class UserServiceIntegrationTest {
 		userService.chargePoint(UserPointCommand.ChargePoint.of(userId, amount));
 
 		// when
-		UserInfo.GetUserPoint info = assertDoesNotThrow(
-			() -> userService.getUserPoint(UserPointCommand.GetUserPoint.of(userId))
+		UserInfo.GetCurrentPoint info = assertDoesNotThrow(
+			() -> userService.getCurrentPoint(UserPointCommand.GetCurrentPoint.of(userId))
 		);
 		// then
-		UserPoint userPoint = info.userPoint();
-		List<UserPointHistory> userPointHistories = userPoint.getHistories();
-
-		assertNotNull(userPoint);
-		assertNotNull(userPointHistories);
-		assertEquals(1, userPointHistories.size());
-		assertEquals(UserPointHistoryStatus.CHARGE, userPointHistories.get(0).getStatus());
-		assertEquals(5000L, userPoint.getPoint());
+		assertNotNull(info.histories());
+		assertEquals(1, info.histories().size());
+		assertEquals(UserPointHistoryStatus.CHARGE, info.histories().get(0).getStatus());
+		assertEquals(5000L, info.point());
 	}
 	@Test
 	@Order(14)

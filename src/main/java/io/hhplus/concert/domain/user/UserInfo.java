@@ -1,10 +1,17 @@
 package io.hhplus.concert.domain.user;
 
+import java.util.List;
 
 public class UserInfo {
-	public record GetCurrentPoint(long point){
-		public static GetCurrentPoint of(long point) {
-			return new GetCurrentPoint(point);
+	public record GetCurrentPoint(
+		long point, // 현재포인트
+		List<UserPointHistory> histories // 히스토리
+	){
+		public static GetCurrentPoint of(UserPoint userPoint) {
+			return new GetCurrentPoint(
+				userPoint.getPoint(),
+				userPoint.getHistories()
+			);
 		}
 	}
 	public record GetUserPoint(UserPoint userPoint) {

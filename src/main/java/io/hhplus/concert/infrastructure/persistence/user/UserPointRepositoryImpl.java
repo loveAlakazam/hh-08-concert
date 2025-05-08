@@ -28,7 +28,6 @@ public class UserPointRepositoryImpl implements UserPointRepository {
 	}
 
 	@Override
-	@Transactional
 	public UserPoint findUserPointWithExclusiveLock(long userId) {
 		return userPointJpaRepository.findUserPointWithExclusiveLock(userId);
 	}

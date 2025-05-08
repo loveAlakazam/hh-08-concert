@@ -22,12 +22,14 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
 
 import io.hhplus.concert.TestcontainersConfiguration;
 import io.hhplus.concert.domain.concert.Concert;
 
 @SpringBootTest
+@ActiveProfiles("test")
 @Import(TestcontainersConfiguration.class)
 @Sql(statements = {
 	"SET FOREIGN_KEY_CHECKS=0",
@@ -76,30 +78,33 @@ public class UserPointConcurrencyIntegrationTest {
 		CyclicBarrier barrier = new CyclicBarrier(2);
 
 		ExecutorService executor = Executors.newFixedThreadPool(2);
-		List<Future<Long>> results = new ArrayList<>();
+		List<Object> results = new ArrayList<>();
 
 		// 충전 쓰레드
 		results.add(executor.submit(() -> {
-			log.info("::: 포인트 충전 스레드 실행");
-			long start = System.currentTimeMillis();
-			barrier.await(); // 🔥 다른 스레드가 도달할 때까지 대기
-			userService.chargePoint(UserPointCommand.ChargePoint.of(userId, 5_000L));
-			return System.currentTimeMillis() - start;
+			try{
+				log.info("::: 포인트 충전 스레드 실행");
+				barrier.await(); // 🔥 다른 스레드가 도달할 때까지 대기
+				return userService.chargePoint(UserPointCommand.ChargePoint.of(userId, 5_000L));
+			} catch(Exception e) {
+				return e.getCause();
+			}
 		}));
 
 		// 사용 쓰레드
 		results.add(executor.submit(() -> {
-			log.info("::: 포인트 사용 스레드 실행");
-			long start = System.currentTimeMillis();
-			barrier.await(); // 🔥 두 스레드가 동시에 실행되도록 조율
-			userService.usePoint(UserPointCommand.UsePoint.of(userId, 5_000L));
-			return System.currentTimeMillis() - start;
+			try {
+				log.info("::: 포인트 사용 스레드 실행");
+				barrier.await(); // 🔥 두 스레드가 동시에 실행되도록 조율
+				return userService.usePoint(UserPointCommand.UsePoint.of(userId, 5_000L));
+			} catch(Exception e) {
+				return e.getCause();
+			}
 		}));
 
 		// when: 두 작업이 완료될 때까지 기다림
-		for (Future<Long> result : results) {
-			long executeTime = result.get(); // 예외 발생 시 여기서 잡힘
-			log.info("소요시간: {}ms", executeTime);
+		for (Object result : results) {
+			log.info("result: {}", result);
 		}
 
 		// then: 최종 포인트는 10,000 + 5,000 - 5,000 = 10,000

@@ -1,10 +1,12 @@
-package io.hhplus.concert.domain.payment;
+package io.hhplus.concert.application.usecase.payment;
 
 import static org.assertj.core.api.AssertionsForClassTypes.*;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.MethodOrderer;
@@ -16,18 +18,19 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
 
 import io.hhplus.concert.TestcontainersConfiguration;
-import io.hhplus.concert.application.usecase.payment.PaymentCriteria;
-import io.hhplus.concert.application.usecase.payment.PaymentResult;
-import io.hhplus.concert.application.usecase.payment.PaymentUsecase;
 import io.hhplus.concert.domain.concert.Concert;
 import io.hhplus.concert.domain.concert.ConcertDate;
 import io.hhplus.concert.domain.concert.ConcertDateRepository;
 import io.hhplus.concert.domain.concert.ConcertRepository;
 import io.hhplus.concert.domain.concert.ConcertSeat;
 import io.hhplus.concert.domain.concert.ConcertSeatRepository;
+import io.hhplus.concert.domain.payment.Payment;
+import io.hhplus.concert.domain.payment.PaymentRepository;
+import io.hhplus.concert.domain.payment.PaymentService;
 import io.hhplus.concert.domain.reservation.Reservation;
 import io.hhplus.concert.domain.reservation.ReservationCommand;
 import io.hhplus.concert.domain.reservation.ReservationInfo;
@@ -43,6 +46,7 @@ import io.hhplus.concert.domain.user.UserRepository;
 import io.hhplus.concert.domain.user.UserService;
 
 @SpringBootTest
+@ActiveProfiles("test")
 @Import(TestcontainersConfiguration.class)
 @Sql(statements = {
 	"SET FOREIGN_KEY_CHECKS=0",

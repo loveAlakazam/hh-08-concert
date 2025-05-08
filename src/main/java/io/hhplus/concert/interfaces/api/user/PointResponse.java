@@ -1,6 +1,9 @@
 package io.hhplus.concert.interfaces.api.user;
 
+import java.util.List;
+
 import io.hhplus.concert.domain.user.UserInfo;
+import io.hhplus.concert.domain.user.UserPointHistory;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -12,9 +15,13 @@ public record PointResponse() {
 			return new ChargePoint(info.point());
 		}
 	}
-	public record GetCurrentPoint(long point) {
+	public record GetCurrentPoint(
+		long point,
+		List<UserPointHistory> histories
+	) {
 		public static GetCurrentPoint from(UserInfo.GetCurrentPoint info) {
-			return new GetCurrentPoint(info.point());
+
+			return new GetCurrentPoint(info.point(), info.histories());
 		}
 	}
 }
