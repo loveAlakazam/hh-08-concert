@@ -4,6 +4,7 @@ package io.hhplus.concert.domain.user;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import io.hhplus.concert.infrastructure.distributedlock.DistributedSpinLock;
 import io.hhplus.concert.interfaces.api.common.BusinessException;
 import io.hhplus.concert.interfaces.api.user.UserErrorCode;
 import lombok.RequiredArgsConstructor;
@@ -15,12 +16,18 @@ public class UserService {
     private final UserPointRepository userPointRepository;
     private final UserPointHistoryRepository userPointHistoryRepository;
 
+    private static final String CHARGE_POINT_KEY = "'user:' + #command.userId() + ':chargePoint'";
+    private static final String USE_POINT_KEY = "'user:' + #command.userId() + ':usePoint'";
+
     /**
      * 포인트 충전
      *
+     * 분산락 key 표기 - lock:user:{userId}:chargePoint
      * @param command
      * @return UserInfo.UserPoint
+     *
      */
+    @DistributedSpinLock(key=CHARGE_POINT_KEY)
     @Transactional
     public UserInfo.ChargePoint chargePoint(UserPointCommand.ChargePoint command) {
         // 유저 포인트정보 조회
@@ -42,10 +49,13 @@ public class UserService {
     }
     /**
      * 포인트 사용
+     * 분산락 key 표기 - lock:user:{userId}:usePoint
      *
      * @param command
      * @return UserInfo.UserPoint
+     *
      */
+    @DistributedSpinLock(key=USE_POINT_KEY)
     @Transactional
     public UserInfo.UsePoint usePoint(UserPointCommand.UsePoint command) {
         // 유저 정보 조회
