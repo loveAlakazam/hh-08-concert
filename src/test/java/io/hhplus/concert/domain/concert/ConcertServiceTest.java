@@ -49,10 +49,6 @@ public class ConcertServiceTest {
 	@Mock
 	private ObjectMapper objectMapper;
 
-	private static final String CONCERT_LIST_CACHE_KEY = "concert:list";
-	private static final String CONCERT_DATE_LIST_CACHE_KEY= "concert_date:list";
-	private static final String CONCERT_SEAT_LIST_CACHE_KEY = "concert_seat:list";
-
 	@BeforeEach
 	void setUp() {
 		concertService = new ConcertService(concertRepository, concertDateRepository, concertSeatRepository, redisTemplate, objectMapper);
@@ -127,9 +123,10 @@ public class ConcertServiceTest {
 		}
 
 		ConcertInfo.GetConcertSeatList cached = ConcertInfo.GetConcertSeatList.from(dbConcertSeats);
+		String cacheKey = CONCERT_SEAT_LIST_CACHE_KEY + "-" + "concert_id:" + concertId + "-" + "concert_date_id:" + concertDateId;
 
 		when(redisTemplate.opsForValue()).thenReturn(valueOps);
-		when(valueOps.get(CONCERT_SEAT_LIST_CACHE_KEY)).thenReturn(new Object());
+		when(valueOps.get(cacheKey)).thenReturn(new Object());
 		when(objectMapper.convertValue(any(), eq(ConcertInfo.GetConcertSeatList.class))).thenReturn(cached);
 
 		// when
@@ -141,6 +138,61 @@ public class ConcertServiceTest {
 		// then
 		assertEquals(cached, result);
 		verify(concertSeatRepository, never()).findConcertSeats(concertId, concertDateId);
+		assertEquals(50, concertSeatList.size());
+		// 1번 좌석
+		assertEquals(1, concertSeatList.get(0).number());
+		assertEquals(1000, concertSeatList.get(0).price());
+		assertTrue(concertSeatList.get(0).isAvailable());
+		// 25번 좌석
+		assertEquals(25, concertSeatList.get(24).number());
+		assertEquals(3000, concertSeatList.get(24).price());
+		assertFalse(concertSeatList.get(24).isAvailable());
+		// 50번 좌석
+		assertEquals(50, concertSeatList.get(49).number());
+		assertEquals(5000, concertSeatList.get(49).price());
+		assertFalse(concertSeatList.get(49).isAvailable());
+	}
+	@Test
+	void 캐시스토어에_콘서트아이디1_콘서트날짜아이디2인_콘서트좌석목록이_캐시미스일경우_데이터베이스에서_조회하여_리턴한다() {
+		// given
+		long concertId = 1L;
+		long concertDateId = 2L;
+
+		Concert concert = Concert.of("테스트 콘서트", "테스트 아티스트");
+		ConcertDate concertDate = ConcertDate.of( concert, LocalDate.now(), true, "테스트 장소");
+
+		/*
+		 * | 좌석 ID | 좌석번호 범위  |    가격    |
+		 * | 51~60  | 1~ 10       |   1000    |
+		 * | 61~70  | 11~20       |   2000    |
+		 * | 71~80  | 21~30       |   3000    |
+		 * | 81~90  | 31~40       |   4000    |
+		 * | 91~100 | 41~50       |   5000    |
+		 * */
+		List<ConcertSeat> dbConcertSeats = new ArrayList<>();
+		for(int i = 0 ; i < 50; i++) {
+			int number = i + 1;
+			long price = 1000 * ( i / 10 + 1);
+			boolean isAvailable = number % 5 != 0; // 5의배수인 좌석번호는 예약불가능 상태
+
+			dbConcertSeats.add(ConcertSeat.of(concert, concertDate, number, price, isAvailable));
+		}
+
+		ConcertInfo.GetConcertSeatList expected = ConcertInfo.GetConcertSeatList.from(dbConcertSeats);
+		String cacheKey = CONCERT_SEAT_LIST_CACHE_KEY + "-" + "concert_id:" + concertId +"-" + "concert_date_id:" + concertDateId;
+
+		when(redisTemplate.opsForValue()).thenReturn(valueOps);
+		when(valueOps.get(cacheKey)).thenReturn(null);
+		when(concertSeatRepository.findConcertSeats(concertId, concertDateId)).thenReturn(expected);
+
+		// when
+		ConcertInfo.GetConcertSeatList result = concertService.getConcertSeatList(
+			ConcertCommand.GetConcertSeatList.of(concertId, concertDateId)
+		);
+		List<ConcertInfo.ConcertSeatListDto> concertSeatList = result.concertSeatList();
+
+		// then
+		verify(concertSeatRepository, times(1)).findConcertSeats(concertId, concertDateId);
 		assertEquals(50, concertSeatList.size());
 		// 1번 좌석
 		assertEquals(1, concertSeatList.get(0).number());
@@ -252,5 +304,6 @@ public class ConcertServiceTest {
 		assertEquals(PRICE_SHOULD_BE_LESS_THAN_MAXIMUM_PRICE.getMessage(), ex.getMessage());
 		assertEquals(PRICE_SHOULD_BE_LESS_THAN_MAXIMUM_PRICE.getHttpStatus(), ex.getHttpStatus());
 	}
-
+	// 일정목록조회 캐시미스
+	// 일정목록조회 캐시히트
 }

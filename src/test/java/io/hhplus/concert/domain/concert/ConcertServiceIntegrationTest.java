@@ -7,7 +7,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import java.time.LocalDate;
 import java.util.List;
-
+import java.util.Set;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.MethodOrderer;
@@ -29,6 +29,7 @@ import io.hhplus.concert.RedisTestContainerConfiguration;
 import io.hhplus.concert.TestcontainersConfiguration;
 import io.hhplus.concert.interfaces.api.common.InvalidValidationException;
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.SecondaryTable;
 
 @ActiveProfiles("test")
 @SpringBootTest
@@ -53,8 +54,6 @@ public class ConcertServiceIntegrationTest {
 	@Autowired private RedisTemplate<String, Object> redisTemplate;
 
 	private static final Logger log = LoggerFactory.getLogger(ConcertServiceIntegrationTest.class);
-	private static final String CONCERT_LIST_CACHE_KEY = "concert:list";
-	private static final String CONCERT_DATE_LIST_CACHE_KEY = "concert_date:list";
 
 	Concert sampleConcert;
 	ConcertDate sampleConcertDate;
@@ -62,21 +61,25 @@ public class ConcertServiceIntegrationTest {
 	@BeforeEach
 	void setUp() {
 		// truncate -> setUp -> 테스트케이스 수행 순으로 이뤄지고 있음.
-		sampleConcert = Concert.create(
+		sampleConcert = concertRepository.saveOrUpdate(Concert.create(
 			"TDD와 함께하는 테스트 콘서트",
 			"아티스트",
 			LocalDate.now(),
 			"공연 장소",
 			10000
-		);
-		concertRepository.saveOrUpdate(sampleConcert);
+		));
 		sampleConcertDate = sampleConcert.getDates().get(0);
 		sampleConcertSeat = sampleConcertDate.getSeats().get(0);
 
-		// 캐시 초기화
-		redisTemplate.delete(CONCERT_LIST_CACHE_KEY); // 콘서트목록
-		redisTemplate.delete(CONCERT_DATE_LIST_CACHE_KEY); // 콘서트일정 목록
+		// 콘서트목록/콘서트일정목록/콘서트좌석목록 캐시 초기화
+		clearCacheTokens("concert");
+
 	}
+	public void clearCacheTokens(String prefix) {
+		Set<String> keys = redisTemplate.keys(prefix + "*");
+		if(!keys.isEmpty()) redisTemplate.delete(keys);
+	}
+
 	@Test
 	@Order(1)
 	void 콘서트_목록조회에_성공한다(){
@@ -130,19 +133,40 @@ public class ConcertServiceIntegrationTest {
 	}
 	@Test
 	@Order(4)
-	void 콘서트일정_목록조회_요청시_캐시히트면_바로_응답하고_캐시미스면_DB에서_조회후에_캐시에_저장한다(){
+	void 콘서트일정_목록조회_요청시_캐시히트면_바로_응답한다(){
 		// given
 		long concertId = sampleConcert.getId();
+		String cacheKey = CONCERT_DATE_LIST_CACHE_KEY + "-" + "concert_id:" + concertId;
+		redisTemplate.opsForValue().set(cacheKey, ConcertInfo.GetConcertDateList.from(sampleConcert.getDates()));
+		ConcertInfo.GetConcertDateList expected = concertDateRepository.findAllAvailable(concertId);
 
 		// when
-		ConcertInfo.GetConcertDateList result1 = concertService.getConcertDateList(ConcertCommand.GetConcertDateList.of(concertId));
-		ConcertInfo.GetConcertDateList result2 = concertService.getConcertDateList(ConcertCommand.GetConcertDateList.of(concertId));
+		ConcertInfo.GetConcertDateList result = concertService.getConcertDateList(
+			ConcertCommand.GetConcertDateList.of(concertId)
+		);
 
 		// then
-		assertThat(result1).isEqualTo(result2);
-		assertThat(redisTemplate.opsForValue().get(CONCERT_DATE_LIST_CACHE_KEY)).isNotNull();
+		assertThat(redisTemplate.opsForValue().get(cacheKey)).isNotNull(); // 캐시저장소에 등록됨
+		assertThat(result).isEqualTo(expected); // 응답확인
 	}
-	@Order(4)
+	@Test
+	@Order(5)
+	void 콘서트일정_목록조회_요청시_캐시미스면_데이터베이스에서_조회후_캐시에_저장한다(){
+		// given
+		long concertId = sampleConcert.getId();
+		String cacheKey = CONCERT_DATE_LIST_CACHE_KEY + "-" + "concert_id:" + concertId;
+		ConcertInfo.GetConcertDateList expected = ConcertInfo.GetConcertDateList.from(sampleConcert.getDates());
+
+		// when
+		ConcertInfo.GetConcertDateList result = concertService.getConcertDateList(
+			ConcertCommand.GetConcertDateList.of(concertId)
+		);
+
+		// then
+		assertThat(result).isEqualTo(expected); // 응답확인
+		assertThat(redisTemplate.opsForValue().get(cacheKey)).isNotNull(); // 호출후 캐시저장소에 키가 등록됨을 확인
+	}
+	@Order(6)
 	@Test
 	void 콘서트_일정목록조회_요청시_concertId가_0이하의_음수이면_InvalidValidationException_예외발생() {
 		// given
@@ -158,7 +182,7 @@ public class ConcertServiceIntegrationTest {
 		assertEquals(ID_SHOULD_BE_POSITIVE_NUMBER.getMessage(), ex.getMessage());
 		assertEquals(ID_SHOULD_BE_POSITIVE_NUMBER.getHttpStatus(), ex.getHttpStatus());
 	}
-	@Order(5)
+	@Order(7)
 	@Test
 	void 콘서트_공연일정의_좌석목록조회를_성공한다() {
 		// given
@@ -174,7 +198,7 @@ public class ConcertServiceIntegrationTest {
 		List<ConcertInfo.ConcertSeatListDto> concertSeats = info.concertSeatList();
 		assertEquals(50, concertSeats.size()); // 공연좌석 개수는 최대 50개이다.
 	}
-	@Order(6)
+	@Order(8)
 	@Test
 	void 좌석목록조회_요청시_concertId가_0이하의_음수이면_InvalidValidationException_예외발생() {
 		// given
@@ -191,7 +215,7 @@ public class ConcertServiceIntegrationTest {
 		assertEquals(ID_SHOULD_BE_POSITIVE_NUMBER.getMessage(), ex.getMessage());
 		assertEquals(ID_SHOULD_BE_POSITIVE_NUMBER.getHttpStatus(), ex.getHttpStatus());
 	}
-	@Order(7)
+	@Order(9)
 	@Test
 	void 좌석목록조회_요청시_concertDateId가_0이하의_음수이면_InvalidValidationException_예외발생() {
 		// given
@@ -208,7 +232,7 @@ public class ConcertServiceIntegrationTest {
 		assertEquals(ID_SHOULD_BE_POSITIVE_NUMBER.getMessage(), ex.getMessage());
 		assertEquals(ID_SHOULD_BE_POSITIVE_NUMBER.getHttpStatus(), ex.getHttpStatus());
 	}
-	@Order(8)
+	@Order(10)
 	@Test
 	void 콘서트좌석정보_조회하면_좌석에대한_정보를_조회할_수있다() {
 		// given
@@ -227,4 +251,46 @@ public class ConcertServiceIntegrationTest {
 		assertEquals(sampleConcertSeat.getPrice(), concertSeat.getPrice());
 		assertTrue(concertSeat.isAvailable());
 	}
+	@Test
+	@Order(11)
+	void 콘서트좌석_목록조회_요청시_캐시히트면_바로_응답한다(){
+		// given
+		long concertId = sampleConcert.getId();
+		long concertDateId = sampleConcertDate.getId();
+
+		String cacheKey = CONCERT_SEAT_LIST_CACHE_KEY + "-" + "concert_id:" + concertId+"-" + "concert_date_id:" + concertDateId;
+		redisTemplate.opsForValue().set(cacheKey, ConcertInfo.GetConcertSeatList.from(sampleConcertDate.getSeats()));
+
+		ConcertInfo.GetConcertSeatList expected = concertSeatRepository.findConcertSeats(concertId, concertDateId);
+
+		// when
+		ConcertInfo.GetConcertSeatList result = concertService.getConcertSeatList(
+			ConcertCommand.GetConcertSeatList.of(concertId, concertDateId)
+		);
+
+		// then
+		assertThat(redisTemplate.opsForValue().get(cacheKey)).isNotNull(); // 캐시저장소에 등록됨
+		assertThat(result).isEqualTo(expected); // 응답확인
+
+	}
+	@Test
+	@Order(12)
+	void 콘서트좌석_목록조회_요청시_캐시미스면_데이터베이스에서_조회후_캐시에_저장한다(){
+		// given
+		long concertId = sampleConcert.getId();
+		long concertDateId = sampleConcertDate.getId();
+		String cacheKey = CONCERT_SEAT_LIST_CACHE_KEY + "-" + "concert_id:" + concertId+"-" + "concert_date_id:" + concertDateId;
+
+		ConcertInfo.GetConcertSeatList expected = concertSeatRepository.findConcertSeats(concertId, concertDateId);
+
+		// when
+		ConcertInfo.GetConcertSeatList result = concertService.getConcertSeatList(
+			ConcertCommand.GetConcertSeatList.of(concertId, concertDateId)
+		);
+
+		// then
+		assertThat(redisTemplate.opsForValue().get(cacheKey)).isNotNull(); // 응답이후 해당키가 캐시스토어에 등록됐는지 확인
+		assertThat(result).isEqualTo(expected); // 응답확인
+	}
+
 }

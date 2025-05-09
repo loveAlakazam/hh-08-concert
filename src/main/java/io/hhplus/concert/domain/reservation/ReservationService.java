@@ -51,6 +51,8 @@ public class ReservationService {
             reservation.temporaryReserve();
             // 임시예약 상태면 좌석도 점유되어있으므로 데이터베이스에 저장
             concertSeatRepository.saveOrUpdate(reservation.getConcertSeat());
+            // 좌석상태가 변경되었으므로, 좌석목록 캐시스토어에 바로 반영한다.
+
             // 임시예약 상태의 예약 정보를 데이터베이스에 저장
             reservationRepository.saveOrUpdate(reservation);
             return ReservationInfo.TemporaryReserve.from(reservation);
