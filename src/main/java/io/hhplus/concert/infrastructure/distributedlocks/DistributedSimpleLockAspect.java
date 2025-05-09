@@ -24,7 +24,7 @@ import lombok.RequiredArgsConstructor;
 @Component
 @Order(0)
 @RequiredArgsConstructor
-public class DistributedLockAspect {
+public class DistributedSimpleLockAspect {
 	private final RedissonClient redissonClient;
 
 	@Around("@annotation(distributedLock)")

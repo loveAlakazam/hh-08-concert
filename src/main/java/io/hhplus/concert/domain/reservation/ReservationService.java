@@ -28,6 +28,8 @@ public class ReservationService {
 
     @Autowired
     private RedissonClient redissonClient;
+    private static final String TEMPORARY_RESERVE_KEY = "'concertSeat:' + #command.concertSeat().id + ':temporaryReserve'";
+
 
     /**
      * 임시예약 상태
@@ -35,7 +37,7 @@ public class ReservationService {
      * @return ReservationInfo.TemporaryReserve
      * @throws BusinessException
      */
-    @DistributedSimpleLock(key= "#command.concertSeat().id", ttlSeconds = TEMPORARY_RESERVATION_DURATION_SECOND)
+    @DistributedSimpleLock(key= TEMPORARY_RESERVE_KEY, ttlSeconds = TEMPORARY_RESERVATION_DURATION_SECOND)
     @Transactional
     public ReservationInfo.TemporaryReserve temporaryReserve(ReservationCommand.TemporaryReserve command) {
         try{
