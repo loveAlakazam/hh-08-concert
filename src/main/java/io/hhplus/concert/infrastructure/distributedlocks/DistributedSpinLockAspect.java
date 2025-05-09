@@ -7,6 +7,7 @@ import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.reflect.MethodSignature;
+import org.redisson.RedissonSpinLock;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 import org.springframework.core.annotation.Order;
@@ -24,28 +25,35 @@ import lombok.RequiredArgsConstructor;
 @Component
 @Order(0)
 @RequiredArgsConstructor
-public class DistributedSimpleLockAspect {
+public class DistributedSpinLockAspect {
 	private final RedissonClient redissonClient;
 
-	@Around("@annotation(distributedLock)")
-	public Object around(ProceedingJoinPoint joinPoint, DistributedSimpleLock distributedLock) throws Throwable{
-		String key = resolveKey(joinPoint, distributedLock);
-		RLock lock = redissonClient.getLock(key);
-		boolean isLocked = false;
-		try {
-			// 락 시도 (waitTime 0초, leaseTime = ttl)
-			isLocked =  lock.tryLock(0, distributedLock.ttlSeconds(), TimeUnit.SECONDS);
-			if(!isLocked) {
-				throw new DistributedLockException("Redisson Lock failed for key: " + key);
-			}
+	@Around("annotation(lock)")
+	public Object around(ProceedingJoinPoint joinPoint, DistributedSpinLock lock) throws Throwable {
+		String key = resolveKey(joinPoint, lock);
+		RLock rLock = redissonClient.getLock(key);
+		boolean acquired = false;
+		long waitDeadLine = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(lock.waitSeconds());
+		while(System.currentTimeMillis() <= waitDeadLine ) {
+			acquired = rLock.tryLock(0, lock.ttlSeconds(), TimeUnit.SECONDS);
+			if(acquired) break;
+			Thread.sleep(lock.retryMillis());
+		}
 
+		if(!acquired) {
+			throw new DistributedLockException("Redisson SpinLock 획득실패: "+ key);
+		}
+
+		try {
 			return joinPoint.proceed();
 		} finally {
-			if(isLocked && lock.isHeldByCurrentThread()) lock.unlock();
+			if(rLock.isHeldByCurrentThread()) {
+				rLock.unlock();
+			}
 		}
 	}
 
-	private String resolveKey(ProceedingJoinPoint joinPoint, DistributedSimpleLock lock) {
+	private String resolveKey(ProceedingJoinPoint joinPoint, DistributedSpinLock lock) {
 		MethodSignature signature = (MethodSignature) joinPoint.getSignature();
 		Method method = signature.getMethod();
 
@@ -53,10 +61,9 @@ public class DistributedSimpleLockAspect {
 		String[] paramNames = signature.getParameterNames();
 		Object[] args = joinPoint.getArgs();
 
-		for (int i = 0; i < args.length; i++) {
+		for(int i=0; i<args.length; i++) {
 			context.setVariable(paramNames[i], args[i]);
 		}
-
 		ExpressionParser parser = new SpelExpressionParser();
 		Expression expression = parser.parseExpression(lock.key());
 		return lock.prefix() + ":" + expression.getValue(context, String.class);
