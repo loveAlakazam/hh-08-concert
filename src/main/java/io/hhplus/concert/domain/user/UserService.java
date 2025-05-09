@@ -31,8 +31,11 @@ public class UserService {
         // amount 값만큼 포인트 충전
         userPoint.charge(command.amount());
 
-        // 유저 포인트 + 포인트 내역 저장
+        // 유저 포인트 저장
         userPointRepository.save(userPoint);
+        // 유저포인트 가장 최근 내역 저장
+        UserPointHistory latestHistory = userPoint.getLatestUserPointHistory();
+        userPointHistoryRepository.save(latestHistory);
 
         // 충전후 유저정보를 리턴
        return UserInfo.ChargePoint.of(userPoint.getPoint());
@@ -52,8 +55,11 @@ public class UserService {
         // amount 값만큼 포인트 사용
         userPoint.use(command.amount());
 
-        // 유저 포인트 + 포인트 내역 저장
+        // 유저 포인트 저장
         userPointRepository.save(userPoint);
+        // 유저포인트 가장 최근 내역 저장
+        UserPointHistory lastestHistory = userPoint.getLatestUserPointHistory();
+        userPointHistoryRepository.save(lastestHistory);
 
         // 사용후 포인트정보를 리턴
         return  UserInfo.UsePoint.of(userPoint.getPoint());
