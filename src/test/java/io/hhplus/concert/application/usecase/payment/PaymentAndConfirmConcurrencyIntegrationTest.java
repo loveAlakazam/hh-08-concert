@@ -1,4 +1,4 @@
-package io.hhplus.concert.domain.payment;
+package io.hhplus.concert.application.usecase.payment;
 
 import static org.assertj.core.api.AssertionsForClassTypes.*;
 
@@ -16,18 +16,18 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
 
 import io.hhplus.concert.TestcontainersConfiguration;
-import io.hhplus.concert.application.usecase.payment.PaymentCriteria;
-import io.hhplus.concert.application.usecase.payment.PaymentResult;
-import io.hhplus.concert.application.usecase.payment.PaymentUsecase;
 import io.hhplus.concert.domain.concert.Concert;
 import io.hhplus.concert.domain.concert.ConcertDate;
 import io.hhplus.concert.domain.concert.ConcertDateRepository;
 import io.hhplus.concert.domain.concert.ConcertRepository;
 import io.hhplus.concert.domain.concert.ConcertSeat;
 import io.hhplus.concert.domain.concert.ConcertSeatRepository;
+import io.hhplus.concert.domain.payment.PaymentRepository;
+import io.hhplus.concert.domain.payment.PaymentService;
 import io.hhplus.concert.domain.reservation.Reservation;
 import io.hhplus.concert.domain.reservation.ReservationCommand;
 import io.hhplus.concert.domain.reservation.ReservationInfo;
@@ -42,6 +42,7 @@ import io.hhplus.concert.domain.user.UserPointRepository;
 import io.hhplus.concert.domain.user.UserRepository;
 import io.hhplus.concert.domain.user.UserService;
 
+@ActiveProfiles("test")
 @SpringBootTest
 @Import(TestcontainersConfiguration.class)
 @Sql(statements = {
