@@ -26,7 +26,7 @@ import lombok.RequiredArgsConstructor;
 @Component
 @Order(0) // 트랜잭션보다 먼저 실행되도록 가장 앞 순서로 한다.
 @RequiredArgsConstructor
-public class DistributedLockAspect {
+public class DistributedSimpleLockAspect {
 	private final RedisTemplate<String, String> redisTemplate;
 
 	@Around("@annotation(distributedLock)")

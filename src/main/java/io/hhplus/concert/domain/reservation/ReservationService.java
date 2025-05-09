@@ -24,14 +24,17 @@ import org.springframework.transaction.annotation.Transactional;
 public class ReservationService {
     private final ReservationRepository reservationRepository;
     private final ConcertSeatRepository concertSeatRepository;
+    private static final String TEMPORARY_RESERVE_KEY = "'concertSeat:' + #command.concertSeat().id + ':temporaryReserve'";
 
     /**
      * 임시예약 상태
+     * 분산락 키 표기 - lock:concertSeat:{concertSeatId}:temporaryReserve
      * @param command
      * @return ReservationInfo.TemporaryReserve
      * @throws BusinessException
+     *
      */
-    @DistributedSimpleLock(key="#command.concertSeat().id", ttlSeconds = TEMPORARY_RESERVATION_DURATION_SECOND)
+    @DistributedSimpleLock(key=TEMPORARY_RESERVE_KEY, ttlSeconds = TEMPORARY_RESERVATION_DURATION_SECOND)
     @Transactional
     public ReservationInfo.TemporaryReserve temporaryReserve(ReservationCommand.TemporaryReserve command) {
         try{
