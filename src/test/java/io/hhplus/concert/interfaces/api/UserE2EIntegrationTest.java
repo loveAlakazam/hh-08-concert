@@ -167,6 +167,7 @@ public class UserE2EIntegrationTest {
 		// then
 		assertEquals(HttpStatus.OK, response.getStatusCode());
 		assertEquals(0, response.getBody().getData().point());
+		assertEquals(0, response.getBody().getData().histories().size());
 	}
 	@Test
 	void 포인트_충전을_성공한다() {

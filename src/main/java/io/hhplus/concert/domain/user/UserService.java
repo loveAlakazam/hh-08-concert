@@ -67,7 +67,7 @@ public class UserService {
     public UserInfo.GetCurrentPoint getCurrentPoint(UserPointCommand.GetCurrentPoint command) {
         UserPoint userPoint = userPointRepository.findByUserId(command.userId());
         if(userPoint == null) throw new BusinessException(UserErrorCode.NOT_EXIST_USER);
-        return UserInfo.GetCurrentPoint.of(userPoint.getPoint());
+        return UserInfo.GetCurrentPoint.of(userPoint);
     }
 
     public UserInfo.GetUserPoint getUserPoint(UserPointCommand.GetUserPoint command) {
