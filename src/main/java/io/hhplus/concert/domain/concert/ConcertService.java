@@ -26,17 +26,18 @@ public class ConcertService {
     private final RedisTemplate<String, Object> redisTemplate;
     private final ObjectMapper objectMapper;
 
-    private static final String CONCERT_LIST_CACHE_KEY = "concert:list";
+    public static final String CONCERT_LIST_CACHE_KEY = "concert:list";
     private static final Duration CONCERT_LIST_CACHE_TTL = Duration.ofHours(1);
 
-    private static final String CONCERT_DATE_LIST_CACHE_KEY= "concert_date:list";
+    public static final String CONCERT_DATE_LIST_CACHE_KEY= "concert_date:list";
     private static final Duration CONCERT_DATE_LIST_CACHE_TTL = Duration.ofMinutes(30);
 
-    private static final String CONCERT_SEAT_LIST_CACHE_KEY= "concert_seat:list";
+    public static final String CONCERT_SEAT_LIST_CACHE_KEY= "concert_seat:list";
     private static final Duration CONCERT_SEAT_LIST_CACHE_TTL= Duration.ofMinutes(5);
 
     /**
      * 콘서트 목록조회
+     * - 레디스키: concert:list
      *
      */
     @Transactional(readOnly = true)
@@ -54,30 +55,38 @@ public class ConcertService {
     }
     /**
      * 예약가능한 콘서트 날짜 목록 조회
+     * * 레디스키: concert_date:list-concert_id:{concertId}
+     * * 콘서트별로 콘서트날짜목록을 가지고 있으므로 concertId 로 구분이 필요.
      *
      * @return ConcertInfo.GetConcertDateList
+     *
+     *
      */
     public ConcertInfo.GetConcertDateList getConcertDateList(ConcertCommand.GetConcertDateList command) {
         // 캐시 조회
-        Object cachedRaw = redisTemplate.opsForValue().get(CONCERT_DATE_LIST_CACHE_KEY);
+        String cacheKey = CONCERT_DATE_LIST_CACHE_KEY + "-" + "concert_id:" + command.concertId();
+        Object cachedRaw = redisTemplate.opsForValue().get(cacheKey);
         if(cachedRaw != null) {
             return objectMapper.convertValue(cachedRaw, ConcertInfo.GetConcertDateList.class);
         }
 
         // 캐시미스일 경우 - 데이터베이스로부터 리스트결과를 가져온후에 캐시에 저장한다.
         ConcertInfo.GetConcertDateList concertDates =  concertDateRepository.findAllAvailable(command.concertId());
-        redisTemplate.opsForValue().set(CONCERT_DATE_LIST_CACHE_KEY, concertDates, CONCERT_DATE_LIST_CACHE_TTL);
+        redisTemplate.opsForValue().set(cacheKey, concertDates, CONCERT_DATE_LIST_CACHE_TTL);
         return concertDates;
     }
     /**
      * 콘서트 좌석 목록 조회
+     * * 레디스키: concert_seat:list-concert_id:{concertId}-concert_date_id:{concertDateId}
+     * * 콘서트별로 콘서트날짜목록을 갖고, 콘서트날짜별로 콘서트좌석목록(좌석50개)를 가지므로 concertId와 concertDate 로 구분이 필요.
      *
      * @param command
      * @return ConcertInfo.GetConcertSeatList
      */
     public ConcertInfo.GetConcertSeatList getConcertSeatList(ConcertCommand.GetConcertSeatList command) {
         // 캐시조회
-        Object cachedRaw = redisTemplate.opsForValue().get(CONCERT_SEAT_LIST_CACHE_KEY);
+        String cacheKey = CONCERT_SEAT_LIST_CACHE_KEY + "-" + "concert_id:" + command.concertId() +"-" + "concert_date_id:" + command.concertDateId();
+        Object cachedRaw = redisTemplate.opsForValue().get(cacheKey);
         if(cachedRaw != null) {
             return objectMapper.convertValue(cachedRaw, ConcertInfo.GetConcertSeatList.class);
         }
@@ -87,7 +96,7 @@ public class ConcertService {
             command.concertId(),
             command.concertDateId()
         );
-        redisTemplate.opsForValue().set(CONCERT_SEAT_LIST_CACHE_KEY, concertSeats, CONCERT_SEAT_LIST_CACHE_TTL);
+        redisTemplate.opsForValue().set(cacheKey, concertSeats, CONCERT_SEAT_LIST_CACHE_TTL);
         return concertSeats;
     }
     /**
