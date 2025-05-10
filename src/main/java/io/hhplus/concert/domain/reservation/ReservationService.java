@@ -1,10 +1,12 @@
 package io.hhplus.concert.domain.reservation;
 
+import static io.hhplus.concert.domain.concert.ConcertService.*;
 import static io.hhplus.concert.domain.reservation.Reservation.*;
 import static io.hhplus.concert.interfaces.api.reservation.ReservationErrorCode.*;
 
 import io.hhplus.concert.domain.concert.Concert;
 import io.hhplus.concert.domain.concert.ConcertDate;
+import io.hhplus.concert.domain.concert.ConcertInfo;
 import io.hhplus.concert.domain.concert.ConcertSeatRepository;
 import io.hhplus.concert.infrastructure.distributedlocks.DistributedSimpleLock;
 import io.hhplus.concert.interfaces.api.common.BusinessException;
@@ -17,14 +19,20 @@ import lombok.RequiredArgsConstructor;
 
 import org.redisson.api.RedissonClient;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Service
 @RequiredArgsConstructor
 public class ReservationService {
     private final ReservationRepository reservationRepository;
     private final ConcertSeatRepository concertSeatRepository;
+
+    private final RedisTemplate<String, Object> redisTemplate;
+    private final ObjectMapper objectMapper;
 
     @Autowired
     private RedissonClient redissonClient;
@@ -55,6 +63,15 @@ public class ReservationService {
 
             // 임시예약 상태의 예약 정보를 데이터베이스에 저장
             reservationRepository.saveOrUpdate(reservation);
+
+            // 좌석상태가 변경되었으므로, 데이터베이스에서 좌석목록조회후에 캐시스토어에 바로 반영한다.
+            long concertId = command.concertSeat().getConcert().getId();
+            long concertDateId = command.concertSeat().getConcertDate().getId();
+            String cacheKey = CONCERT_SEAT_LIST_CACHE_KEY + "-" + "concert_id:" + concertId +"-" + "concert_date_id:" + concertDateId;
+
+            ConcertInfo.GetConcertSeatList concertSeats = concertSeatRepository.findConcertSeats(concertId, concertDateId);
+            redisTemplate.opsForValue().set(cacheKey, concertSeats, CONCERT_SEAT_LIST_CACHE_TTL);
+
             return ReservationInfo.TemporaryReserve.from(reservation);
 
         } catch(OptimisticLockException e) {

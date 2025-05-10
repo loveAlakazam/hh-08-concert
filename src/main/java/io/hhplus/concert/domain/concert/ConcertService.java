@@ -33,7 +33,7 @@ public class ConcertService {
     private static final Duration CONCERT_DATE_LIST_CACHE_TTL = Duration.ofMinutes(30);
 
     public static final String CONCERT_SEAT_LIST_CACHE_KEY= "concert_seat:list";
-    private static final Duration CONCERT_SEAT_LIST_CACHE_TTL= Duration.ofMinutes(5);
+    public static final Duration CONCERT_SEAT_LIST_CACHE_TTL= Duration.ofMinutes(5);
 
     /**
      * 콘서트 목록조회
