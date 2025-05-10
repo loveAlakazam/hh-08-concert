@@ -10,9 +10,9 @@ public record TokenRequest() {
 			return new IssueWaitingToken(userId);
 		}
 	}
-	public record GetWaitingTokenPositionAndActivateWaitingToken(long userId) {
-		public static GetWaitingTokenPositionAndActivateWaitingToken of(long userId, UUID uuid) {
-			return new GetWaitingTokenPositionAndActivateWaitingToken(userId);
+	public record GetWaitingTokenPositionAndActivateWaitingToken(UUID uuid) {
+		public static GetWaitingTokenPositionAndActivateWaitingToken of(UUID uuid) {
+			return new GetWaitingTokenPositionAndActivateWaitingToken(uuid);
 		}
 	}
 }

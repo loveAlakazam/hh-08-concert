@@ -7,6 +7,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
 import io.hhplus.concert.domain.concert.Concert;
+import io.hhplus.concert.domain.concert.ConcertInfo;
 import io.hhplus.concert.domain.concert.ConcertRepository;
 import lombok.RequiredArgsConstructor;
 
@@ -16,8 +17,9 @@ public class ConcertRepositoryImpl implements ConcertRepository {
     private final ConcertJpaRepository concertJpaRepository;
 
     @Override
-    public List<Concert> findAll() {
-        return concertJpaRepository.findAll();
+    public ConcertInfo.GetConcertList findAll() {
+        List<Concert> concerts = concertJpaRepository.findAll();
+        return ConcertInfo.GetConcertList.from(concerts);
     }
 
     @Override

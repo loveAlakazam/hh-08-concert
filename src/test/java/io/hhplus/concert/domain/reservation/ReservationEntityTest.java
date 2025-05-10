@@ -7,6 +7,7 @@ import static io.hhplus.concert.interfaces.api.user.CommonErrorCode.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -183,9 +184,9 @@ public class ReservationEntityTest {
 		assertNull(reservation.getReservedAt()); // 임시예약상태 - 예약확정일자 없음
 		assertEquals(true, reservation.isTemporary()); // 임시예약상태
 
-		// 임시예약상태로 6분간 sleep 한다
-		log.info("6분간 sleep 상태로 대기");
-		Thread.sleep(6 * 60 * 1000);
+		// 임시예약 기간이 만료된다
+		log.info("임시예약일자 만료");
+		reservation.expireTemporaryReserve(LocalDateTime.now().minusSeconds(1));
 		assertTrue( DateValidator.isPastDateTime(reservation.getTempReservationExpiredAt()) );
 
 		// when

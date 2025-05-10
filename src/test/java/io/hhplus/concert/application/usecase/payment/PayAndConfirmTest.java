@@ -118,9 +118,11 @@ public class PayAndConfirmTest {
 
 		long reservationId = 1L;
 		Reservation reservation = Reservation.of(user,concert,concertDate, concertSeat);
-		reservation.temporaryReserve(); // 임시예약상태
-		log.info("6분 대기하여 예약기간이 만료되어 취소처리됨");
-		Thread.sleep(6 * 60 * 1000);
+		// 임시예약상태
+		reservation.temporaryReserve();
+		// 임시예약상태를 만료시킨다.
+		reservation.expireTemporaryReserve(LocalDateTime.now().minusSeconds(1));
+
 		reservation.cancel(); // 취소처리
 		ReservationCommand.Get getReservationCommand = ReservationCommand.Get.of(reservationId);
 		when(reservationService.get(getReservationCommand)).thenReturn(ReservationInfo.Get.from(reservation));
@@ -170,6 +172,10 @@ public class PayAndConfirmTest {
 		when(reservationService.get(getReservationCommand)).thenReturn(ReservationInfo.Get.from(reservation));
 
 		log.info("결제 내역 데이터 생성");
+		userPoint.use(concertSeat.getPrice());
+		UserPointCommand.UsePoint usePointCommand = UserPointCommand.UsePoint.of(userId, concertSeat.getPrice());
+		when(userService.usePoint(usePointCommand)).thenReturn(UserInfo.UsePoint.of(userPoint.getPoint()));
+
 		Payment payment = Payment.of(reservation);
 		PaymentCommand.CreatePayment createPaymentCommand = PaymentCommand.CreatePayment.of(reservation);
 		when(paymentService.create(createPaymentCommand)).thenReturn(PaymentInfo.CreatePayment.of(payment));

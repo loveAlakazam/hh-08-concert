@@ -5,7 +5,7 @@ import java.util.Optional;
 
 
 public interface ConcertSeatRepository {
-	List<ConcertSeat> findConcertSeats(long concertId, long concertDateId);
+	ConcertInfo.GetConcertSeatList findConcertSeats(long concertId, long concertDateId);
 	ConcertSeat getConcertSeatInfo(long id);
 	Optional<ConcertSeat> findById(long id);
 	ConcertSeat saveOrUpdate(ConcertSeat concertSeat);

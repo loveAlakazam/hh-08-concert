@@ -1,36 +1,40 @@
 package io.hhplus.concert;
 
+import java.time.Duration;
+
 import jakarta.annotation.PreDestroy;
 
 import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.MySQLContainer;
+import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
 @TestConfiguration
 public class TestcontainersConfiguration {
+	private static final String DATABASE_NAME="hhplus";
+	private static final String USERNAME="test";
+	private static final String PASSWORD="test";
 
 	@Container
 	public static final MySQLContainer<?> MYSQL_CONTAINER = new MySQLContainer<>(DockerImageName.parse("mysql:8.0"))
-		.withDatabaseName("hhplus")
-			.withUsername("test")
-			.withPassword("test");
+		.withDatabaseName(DATABASE_NAME)
+			.withUsername(USERNAME)
+			.withPassword(PASSWORD)
+		;
 
 	static  {
-		MYSQL_CONTAINER.start();
-
-		System.setProperty("spring.datasource.url", MYSQL_CONTAINER.getJdbcUrl() + "?characterEncoding=UTF-8&serverTimezone=UTC");
-		System.setProperty("spring.datasource.username", MYSQL_CONTAINER.getUsername());
-		System.setProperty("spring.datasource.password", MYSQL_CONTAINER.getPassword());
-		System.setProperty("spring.jpa.hibernate.ddl-auto", "create");
-		System.setProperty("spring.jpa.show-sql", "true");
-		System.setProperty("spring.jpa.properties.hibernate.format-sql", "true");
+		MYSQL_CONTAINER.start(); // 컨테이너를 static 블록에서 시작
 	}
 
-	@PreDestroy
-	public void preDestroy() {
-		if ( MYSQL_CONTAINER.isRunning() ) {
-			MYSQL_CONTAINER.stop();
-		}
+	@DynamicPropertySource
+	static void registerMySQLProperties(DynamicPropertyRegistry registry) {
+		registry.add("spring.datasource.url", () -> MYSQL_CONTAINER.getJdbcUrl()+"?characterEncoding=UTF-8&serverTimezone=UTC");
+		registry.add("spring.datasource.username", MYSQL_CONTAINER::getUsername);
+		registry.add("spring.datasource.password", MYSQL_CONTAINER::getPassword);
 	}
 }

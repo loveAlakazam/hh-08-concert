@@ -57,7 +57,7 @@ public class PaymentUsecase {
 		// 임시예약상태일 경우에 결제 가능
 		if(reservation.isTemporary()) {
 			// 포인트 사용
-			userPoint.use(concertSeatPrice);
+			userService.usePoint(UserPointCommand.UsePoint.of(criteria.userId(), concertSeatPrice));
 
 			// 예약 확정 변경
 			reservation.confirm();

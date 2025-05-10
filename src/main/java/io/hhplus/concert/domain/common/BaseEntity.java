@@ -4,6 +4,7 @@ package io.hhplus.concert.domain.common;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
@@ -16,7 +17,8 @@ import lombok.Getter;
 @MappedSuperclass
 @EntityListeners(AuditingEntityListener.class)
 public abstract class BaseEntity {
-	@Column(name="created_at")
+	@CreatedDate
+	@Column(name="created_at", updatable = false)
 	protected LocalDateTime createdAt;
 
 	@LastModifiedDate

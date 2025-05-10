@@ -8,7 +8,7 @@ import org.springframework.data.domain.Pageable;
 import io.hhplus.concert.domain.concert.Concert;
 
 public interface ConcertRepository {
-	List<Concert> findAll();
+	ConcertInfo.GetConcertList findAll();
 	Concert findById(long id);
 	Concert saveOrUpdate(Concert concert);
 

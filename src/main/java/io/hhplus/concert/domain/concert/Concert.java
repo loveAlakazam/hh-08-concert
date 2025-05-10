@@ -9,6 +9,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+
 import io.hhplus.concert.domain.common.BaseEntity;
 import io.hhplus.concert.domain.reservation.Reservation;
 import io.hhplus.concert.interfaces.api.common.BusinessException;
@@ -68,12 +71,17 @@ public class Concert extends BaseEntity {
 	 */
 	// 콘서트:콘서트날짜 = 1:N
 	@OneToMany(mappedBy = "concert", cascade = CascadeType.ALL, orphanRemoval = true )
+	@JsonIgnore
 	private List<ConcertDate> dates = new ArrayList<>();
+
 	// 콘서트:콘서트좌석 = 1:N
 	@OneToMany(mappedBy = "concert", cascade = CascadeType.ALL, orphanRemoval = true )
+	@JsonIgnore
 	private List<ConcertSeat> seats = new ArrayList<>();
+
 	// 콘서트:예약 = 1:N
 	@OneToMany(mappedBy = "concert")
+	@JsonIgnore
 	private List<Reservation> reservations = new ArrayList<>();
 
 	/**

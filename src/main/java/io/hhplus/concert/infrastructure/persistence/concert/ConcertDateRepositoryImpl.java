@@ -9,6 +9,7 @@ import org.springframework.stereotype.Repository;
 
 import io.hhplus.concert.domain.concert.ConcertDate;
 import io.hhplus.concert.domain.concert.ConcertDateRepository;
+import io.hhplus.concert.domain.concert.ConcertInfo;
 import lombok.RequiredArgsConstructor;
 @Repository
 @RequiredArgsConstructor
@@ -16,8 +17,9 @@ public class ConcertDateRepositoryImpl implements ConcertDateRepository {
     private final ConcertDateJpaRepository concertDateJpaRepository;
 
     @Override
-    public List<ConcertDate> findAllAvailable(long concertId) {
-        return concertDateJpaRepository.findUpcomingConcertDates(concertId, LocalDate.now());
+    public ConcertInfo.GetConcertDateList findAllAvailable(long concertId) {
+        List<ConcertDate> concertDates = concertDateJpaRepository.findUpcomingConcertDates(concertId, LocalDate.now());
+        return ConcertInfo.GetConcertDateList.from(concertDates);
     }
 
     @Override

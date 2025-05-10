@@ -1,18 +1,29 @@
 package io.hhplus.concert.domain.reservation;
 
+import static io.hhplus.concert.domain.concert.ConcertService.*;
+import static io.hhplus.concert.domain.reservation.Reservation.*;
 import static io.hhplus.concert.interfaces.api.reservation.ReservationErrorCode.*;
+
+import java.util.Optional;
 
 import io.hhplus.concert.domain.concert.Concert;
 import io.hhplus.concert.domain.concert.ConcertDate;
+import io.hhplus.concert.domain.concert.ConcertInfo;
 import io.hhplus.concert.domain.concert.ConcertSeatRepository;
+import io.hhplus.concert.infrastructure.distributedlock.DistributedSimpleLock;
 import io.hhplus.concert.interfaces.api.common.BusinessException;
 import io.hhplus.concert.domain.concert.ConcertSeat;
 import io.hhplus.concert.domain.user.User;
 
+import io.hhplus.concert.interfaces.api.common.DistributedLockException;
 import jakarta.persistence.OptimisticLockException;
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Service
 @RequiredArgsConstructor
@@ -20,15 +31,24 @@ public class ReservationService {
     private final ReservationRepository reservationRepository;
     private final ConcertSeatRepository concertSeatRepository;
 
+    private final RedisTemplate<String, Object> redisTemplate;
+    private final ObjectMapper objectMapper;
+
+    private static final String TEMPORARY_RESERVE_KEY = "'concertSeat:' + #command.concertSeat().id + ':temporaryReserve'";
+
     /**
      * 임시예약 상태
+     * 분산락 키 표기 - lock:concertSeat:{concertSeatId}:temporaryReserve
      * @param command
      * @return ReservationInfo.TemporaryReserve
      * @throws BusinessException
+     *
      */
+    @DistributedSimpleLock(key=TEMPORARY_RESERVE_KEY, ttlSeconds = TEMPORARY_RESERVATION_DURATION_SECOND)
     @Transactional
     public ReservationInfo.TemporaryReserve temporaryReserve(ReservationCommand.TemporaryReserve command) {
         try{
+
             // 기존 예약 이력 확인
             Reservation reservation = reservationRepository.findByConcertSeatIdAndUserId(
                 command.user().getId(), command.concertSeat().getId()
@@ -39,12 +59,24 @@ public class ReservationService {
             reservation.temporaryReserve();
             // 임시예약 상태면 좌석도 점유되어있으므로 데이터베이스에 저장
             concertSeatRepository.saveOrUpdate(reservation.getConcertSeat());
+
             // 임시예약 상태의 예약 정보를 데이터베이스에 저장
             reservationRepository.saveOrUpdate(reservation);
+
+            // 좌석상태가 변경되었으므로, 데이터베이스에서 좌석목록조회후에 캐시스토어에 바로 반영한다.
+            long concertId = command.concertSeat().getConcert().getId();
+            long concertDateId = command.concertSeat().getConcertDate().getId();
+            String cacheKey = CONCERT_SEAT_LIST_CACHE_KEY + "-" + "concert_id:" + concertId +"-" + "concert_date_id:" + concertDateId;
+
+            ConcertInfo.GetConcertSeatList concertSeats = concertSeatRepository.findConcertSeats(concertId, concertDateId);
+            redisTemplate.opsForValue().set(cacheKey, concertSeats, CONCERT_SEAT_LIST_CACHE_TTL);
+
             return ReservationInfo.TemporaryReserve.from(reservation);
 
         } catch(OptimisticLockException e) {
             // 좌석의 version이 일치하지 않으면 예외발생
+            throw new BusinessException(ALREADY_RESERVED);
+        } catch(DistributedLockException e) {
             throw new BusinessException(ALREADY_RESERVED);
         }
     }
@@ -69,6 +101,7 @@ public class ReservationService {
      * @return ReservationInfo.Cancel
      * @throws BusinessException
      */
+    @Transactional
     public ReservationInfo.Cancel cancel(ReservationCommand.Cancel command) {
         // 예약이력확인
         Reservation reservation = reservationRepository.findById(command.reservationId());

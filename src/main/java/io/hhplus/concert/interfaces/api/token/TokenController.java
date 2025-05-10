@@ -40,7 +40,7 @@ public class TokenController implements TokenApiDocs {
 	) {
 		TokenResult.GetWaitingTokenPositionAndActivateWaitingToken result =
 			tokenUsecase.getWaitingTokenPositionAndActivateWaitingToken(
-				TokenCriteria.GetWaitingTokenPositionAndActivateWaitingToken.of(request.userId())
+				TokenCriteria.GetWaitingTokenPositionAndActivateWaitingToken.of(request.uuid())
 			);
 		return ApiResponseEntity.ok(TokenResponse.GetWaitingTokenPositionAndActivateWaitingToken.of(result));
 	}

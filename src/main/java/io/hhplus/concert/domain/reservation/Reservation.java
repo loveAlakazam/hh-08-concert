@@ -188,7 +188,7 @@ public class Reservation extends BaseEntity {
 		if(this.concertSeat.isAvailable()) return false;
 		// 에약 상태를 검증
 		// 좌석이 임시대기 상태인지확인
-		if(this.status != PENDING_PAYMENT)return false;
+		if(this.status != PENDING_PAYMENT) return false;
 		// 현재를 기준으로 좌석의 임시예약 만료일자가 아직 유효한지
 		if(DateValidator.isPastDateTime(this.tempReservationExpiredAt)) return false;
 		return true;
@@ -198,5 +198,16 @@ public class Reservation extends BaseEntity {
 		if(this.status != CONFIRMED) return false;
 		if(this.reservedAt == null) return false;
 		return true;
+	}
+
+	/**
+	 * 문제점: 만료를 재현시키다보니 테스트에서도 만료될때까지 기다려야되는 문제발생.
+	 * 만료일자를 지정하여 인스턴스함수로 만료상태로 변경하고자한다.
+	 */
+	public void expireTemporaryReserve(LocalDateTime expiredAt) {
+		if(!DateValidator.isPastDateTime(expiredAt))
+			throw new InvalidValidationException(EXPIRED_DATE_SHOULD_BE_PAST_DATETIME);
+		this.tempReservationExpiredAt = expiredAt;
+
 	}
 }
