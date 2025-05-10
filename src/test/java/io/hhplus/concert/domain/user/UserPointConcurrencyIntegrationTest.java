@@ -2,11 +2,8 @@ package io.hhplus.concert.domain.user;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.BrokenBarrierException;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -25,8 +22,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
 
-import io.hhplus.concert.TestcontainersConfiguration;
-import io.hhplus.concert.domain.concert.Concert;
+import io.hhplus.concert.infrastructure.containers.TestcontainersConfiguration;
 
 @ActiveProfiles("test")
 @SpringBootTest

@@ -18,18 +18,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.Import;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.jdbc.Sql;
 
-import io.hhplus.concert.RedisTestContainerConfiguration;
-import io.hhplus.concert.TestcontainersConfiguration;
+import io.hhplus.concert.infrastructure.containers.RedisTestContainerConfiguration;
+import io.hhplus.concert.infrastructure.containers.TestcontainersConfiguration;
 import io.hhplus.concert.interfaces.api.common.InvalidValidationException;
 import jakarta.persistence.EntityManager;
-import jakarta.persistence.SecondaryTable;
 
 @ActiveProfiles("test")
 @SpringBootTest

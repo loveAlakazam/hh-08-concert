@@ -8,7 +8,7 @@ import io.hhplus.concert.domain.concert.Concert;
 import io.hhplus.concert.domain.concert.ConcertDate;
 import io.hhplus.concert.domain.concert.ConcertInfo;
 import io.hhplus.concert.domain.concert.ConcertSeatRepository;
-import io.hhplus.concert.infrastructure.distributedlocks.DistributedSimpleLock;
+import io.hhplus.concert.domain.support.DistributedSimpleLock;
 import io.hhplus.concert.interfaces.api.common.BusinessException;
 import io.hhplus.concert.domain.concert.ConcertSeat;
 import io.hhplus.concert.domain.user.User;

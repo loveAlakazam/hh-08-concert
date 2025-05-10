@@ -1,4 +1,4 @@
-package io.hhplus.concert;
+package io.hhplus.concert.infrastructure.containers;
 
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.test.context.DynamicPropertyRegistry;

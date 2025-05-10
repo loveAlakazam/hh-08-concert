@@ -1,6 +1,5 @@
 package io.hhplus.concert.domain.reservation;
 
-import static io.hhplus.concert.domain.reservation.Reservation.*;
 import static io.hhplus.concert.domain.reservation.ReservationStatus.*;
 import static io.hhplus.concert.interfaces.api.common.validators.DateValidator.*;
 import static io.hhplus.concert.interfaces.api.concert.ConcertErrorCode.*;
@@ -21,13 +20,12 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.jdbc.Sql;
 
-import io.hhplus.concert.RedisTestContainerConfiguration;
-import io.hhplus.concert.TestcontainersConfiguration;
+import io.hhplus.concert.infrastructure.containers.RedisTestContainerConfiguration;
+import io.hhplus.concert.infrastructure.containers.TestcontainersConfiguration;
 import io.hhplus.concert.domain.concert.Concert;
 import io.hhplus.concert.domain.concert.ConcertDate;
 import io.hhplus.concert.domain.concert.ConcertDateRepository;

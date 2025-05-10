@@ -4,7 +4,7 @@ package io.hhplus.concert.domain.user;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import io.hhplus.concert.infrastructure.distributedlocks.DistributedSpinLock;
+import io.hhplus.concert.domain.support.DistributedSpinLock;
 import io.hhplus.concert.interfaces.api.common.BusinessException;
 import io.hhplus.concert.interfaces.api.user.UserErrorCode;
 import lombok.RequiredArgsConstructor;
