@@ -10,6 +10,8 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -30,6 +32,7 @@ import io.hhplus.concert.domain.concert.ConcertSeat;
 import io.hhplus.concert.domain.concert.ConcertSeatRepository;
 import io.hhplus.concert.domain.reservation.ReservationService;
 import io.hhplus.concert.domain.reservation.ReservationRepository;
+import io.hhplus.concert.domain.support.CacheStore;
 import io.hhplus.concert.domain.user.User;
 import io.hhplus.concert.interfaces.api.common.BusinessException;
 import io.hhplus.concert.interfaces.api.common.validators.DateValidator;
@@ -45,86 +48,100 @@ public class ReservationServiceTest {
 	@Mock
 	private ConcertSeatRepository concertSeatRepository;
 	@Mock
-	private RedisTemplate<String, Object> redisTemplate;
-	@Mock
-	private ValueOperations<String, Object> valueOps;
-	@Mock
-	private ObjectMapper objectMapper;
+	private CacheStore cacheStore;
 
 
 	@BeforeEach
 	void setUp() {
-		reservationService = new ReservationService(reservationRepository,concertSeatRepository, redisTemplate, objectMapper);
+		reservationService = new ReservationService(reservationRepository,concertSeatRepository, cacheStore);
 	}
 
 	private static final Logger log = LoggerFactory.getLogger(ReservationServiceTest.class);
 
-	@Test
-	void 해당좌석에_대한_예약이력이_없는경우_임시예약을_신청한다() {
-		// given
-		User user = User.of("테스트");
-		Concert concert = Concert.create("테스트 콘서트", "테스트 아티스트", LocalDate.now(), "테스트 장소", 15000);
-		ConcertDate concertDate = concert.getDates().get(0);
-		ConcertSeat concertSeat = concertDate.getSeats().get(0);
-		assertTrue(concertSeat.isAvailable()); // 예약가능
 
-		log.info("예약내역이 없음");
-		when(reservationRepository.findByConcertSeatIdAndUserId(anyLong(), anyLong()))
-			.thenReturn(null);
+	@Nested
+	@DisplayName("temporaryReserve")
+	class TemporaryReserve {
+		@Test
+		void 해당좌석에_대한_예약이력이_없는경우_임시예약을_신청한다() {
+			// given
+			long userId = 1L;
+			long concertId = 1L;
+			long concertDateId = 1L;
+			long concertSeatId = 1L;
 
-		when(redisTemplate.opsForValue()).thenReturn(valueOps);
+			User user = User.of("테스트");
+			Concert concert = Concert.create("테스트 콘서트", "테스트 아티스트", LocalDate.now(), "테스트 장소", 15000);
+			ConcertDate concertDate = concert.getDates().get(0);
+			ConcertSeat concertSeat = concertDate.getSeats().get(0);
 
-		// when
-		log.info("when: 임시예약 요청");
-		ReservationCommand.TemporaryReserve command = ReservationCommand.TemporaryReserve.of(user, concertSeat);
-		ReservationInfo.TemporaryReserve info = assertDoesNotThrow(() -> reservationService.temporaryReserve(command));
+			// id 설정
+			ReflectionTestUtils.setField(user, "id", userId); // user 아이디 수동설정
+			ReflectionTestUtils.setField(concert, "id", concertId); // concert 아이디 수동설정
+			ReflectionTestUtils.setField(concertDate, "id", concertDateId); // concertDate 아이디 수동설정
+			ReflectionTestUtils.setField(concertSeat, "id", concertSeatId); // concertSeat 아이디 수동설정
 
-		// then
-		assertTrue(info.reservation().isTemporary()); // 임시예약상태인지 확인
-		assertEquals(ReservationStatus.PENDING_PAYMENT, info.reservation().getStatus());
-		assertFalse(concertSeat.isAvailable()); // 좌석은 이미 예약된 상태
+
+			log.info("예약내역이 없음");
+			when(reservationRepository.findByConcertSeatIdAndUserId(anyLong(), anyLong()))
+				.thenReturn(null);
+
+			// when
+			log.info("when: 임시예약 요청");
+			ReservationCommand.TemporaryReserve command = ReservationCommand.TemporaryReserve.of(user, concertSeat);
+			ReservationInfo.TemporaryReserve info = reservationService.temporaryReserve(command);
+
+			// then
+			assertTrue(info.reservation().isTemporary()); // 임시예약상태인지 확인
+			assertEquals(ReservationStatus.PENDING_PAYMENT, info.reservation().getStatus());
+			assertFalse(concertSeat.isAvailable()); // 좌석은 이미 예약된 상태
+
+			String cacheKey = CONCERT_SEAT_LIST_CACHE_KEY + "-" + "concert_id:" + concertId +"-" + "concert_date_id:" + concertDateId;
+			verify(cacheStore).evict(eq(cacheKey)); // 캐시삭제 여부 검증
+		}
+		@Test
+		void 예약이_취소상태일때_예약하려는좌석이_예약가능한상태라면_다시_예약할수있다()  {
+			// given
+			long userId = 1L;
+			long concertId = 1L;
+			long concertDateId = 1L;
+			long concertSeatId = 1L;
+
+			User user = User.of("테스트");
+			Concert concert = Concert.create("테스트 콘서트", "테스트 아티스트", LocalDate.now(), "테스트 장소", 15000);
+			ConcertDate concertDate = concert.getDates().get(0);
+			ConcertSeat concertSeat = concertDate.getSeats().get(0);
+
+			// id 설정
+			ReflectionTestUtils.setField(user, "id", userId); // user 아이디 수동설정
+			ReflectionTestUtils.setField(concert, "id", concertId); // concert 아이디 수동설정
+			ReflectionTestUtils.setField(concertDate, "id", concertDateId); // concertDate 아이디 수동설정
+			ReflectionTestUtils.setField(concertSeat, "id", concertSeatId); // concertSeat 아이디 수동설정
+
+			// 예약 이력 설정: 취소상태
+			Reservation reservation = Reservation.of(user, concert, concertDate, concertSeat);
+			reservation.temporaryReserve();
+			reservation.expireTemporaryReserve(LocalDateTime.now().minusSeconds(1));
+			reservation.cancel();
+
+			when(reservationRepository.findByConcertSeatIdAndUserId(userId, concertSeatId)).thenReturn(reservation);
+
+			// when
+			ReservationCommand.TemporaryReserve command = ReservationCommand.TemporaryReserve.of(user, concertSeat);
+			ReservationInfo.TemporaryReserve info = reservationService.temporaryReserve(command);
+
+			// then
+			assertTrue(info.reservation().isTemporary()); // 임시예약상태인지 확인
+			assertEquals(ReservationStatus.PENDING_PAYMENT, info.reservation().getStatus());
+			assertFalse(concertSeat.isAvailable()); // 좌석은 이미 예약된 상태
+
+			String cacheKey = CONCERT_SEAT_LIST_CACHE_KEY + "-" + "concert_id:" + concertId +"-" + "concert_date_id:" + concertDateId;
+			verify(cacheStore).evict(eq(cacheKey)); // 캐시삭제 여부 검증
+		}
+
 	}
-	@Test
-	void 예약이_취소상태일때_예약하려는좌석이_예약가능한상태라면_다시_예약할수있다()  {
-		// given
-		long userId = 1L;
-		long concertId = 1L;
-		long concertDateId = 1L;
-		long concertSeatId = 1L;
 
-		User user = User.of("테스트");
-		Concert concert = Concert.create("테스트 콘서트", "테스트 아티스트", LocalDate.now(), "테스트 장소", 15000);
-		ConcertDate concertDate = concert.getDates().get(0);
-		ConcertSeat concertSeat = concertDate.getSeats().get(0);
 
-		ReflectionTestUtils.setField(user, "id", userId); // user 아이디 수동설정
-		ReflectionTestUtils.setField(concert, "id", concertId); // concert 아이디 수동설정
-		ReflectionTestUtils.setField(concertDate, "id", concertDateId); // concertDate 아이디 수동설정
-		ReflectionTestUtils.setField(concertSeat, "id", concertSeatId); // concertSeat 아이디 수동설정
-
-		Reservation reservation = Reservation.of(user, concert, concertDate, concertSeat);
-		reservation.temporaryReserve();
-		reservation.expireTemporaryReserve(LocalDateTime.now().minusSeconds(1));
-		reservation.cancel();
-
-		when(reservationRepository.findByConcertSeatIdAndUserId(userId, concertSeatId)).thenReturn(reservation);
-		when(concertSeatRepository.findConcertSeats(concertId, concertDateId)).thenReturn(
-			ConcertInfo.GetConcertSeatList.from(concertDate.getSeats())
-		);
-
-		String cacheKey = CONCERT_SEAT_LIST_CACHE_KEY + "-" + "concert_id:" + concertId +"-" + "concert_date_id:" + concertDateId;
-		when(redisTemplate.opsForValue()).thenReturn(valueOps);
-
-		// when
-		ReservationCommand.TemporaryReserve command = ReservationCommand.TemporaryReserve.of(user, concertSeat);
-		ReservationInfo.TemporaryReserve info = reservationService.temporaryReserve(command);
-
-		// then
-		assertTrue(info.reservation().isTemporary()); // 임시예약상태인지 확인
-		assertEquals(ReservationStatus.PENDING_PAYMENT, info.reservation().getStatus());
-		assertFalse(concertSeat.isAvailable()); // 좌석은 이미 예약된 상태
-		verify(valueOps).set(eq(cacheKey), any(ConcertInfo.GetConcertSeatList.class), any());
-	}
 	@Test
 	void 임시예약이_만료되면_예약취소상태로_변경할_수_있다() throws InterruptedException {
 		// given
@@ -174,6 +191,7 @@ public class ReservationServiceTest {
 		assertFalse(reservation.isTemporary()); // 임시예약상태가 아님
 
 		when(reservationRepository.findById(reservationId)).thenReturn(reservation);
+
 		// when & then
 		log.info("when: 임시예약이 유효일자가 만료된 상태에서 예약확정 상태로 변경을 요청한다");
 		BusinessException ex = assertThrows(

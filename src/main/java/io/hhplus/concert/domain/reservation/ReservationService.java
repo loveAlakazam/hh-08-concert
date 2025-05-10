@@ -8,6 +8,7 @@ import io.hhplus.concert.domain.concert.Concert;
 import io.hhplus.concert.domain.concert.ConcertDate;
 import io.hhplus.concert.domain.concert.ConcertInfo;
 import io.hhplus.concert.domain.concert.ConcertSeatRepository;
+import io.hhplus.concert.domain.support.CacheStore;
 import io.hhplus.concert.domain.support.DistributedSimpleLock;
 import io.hhplus.concert.interfaces.api.common.BusinessException;
 import io.hhplus.concert.domain.concert.ConcertSeat;
@@ -31,11 +32,8 @@ public class ReservationService {
     private final ReservationRepository reservationRepository;
     private final ConcertSeatRepository concertSeatRepository;
 
-    private final RedisTemplate<String, Object> redisTemplate;
-    private final ObjectMapper objectMapper;
-
-    @Autowired
-    private RedissonClient redissonClient;
+    private final CacheStore cacheStore;
+    @Autowired private RedissonClient redissonClient;
     private static final String TEMPORARY_RESERVE_KEY = "'concertSeat:' + #command.concertSeat().id + ':temporaryReserve'";
 
 
@@ -59,18 +57,17 @@ public class ReservationService {
             reservation.temporaryReserve();
             // 임시예약 상태면 좌석도 점유되어있으므로 데이터베이스에 저장
             concertSeatRepository.saveOrUpdate(reservation.getConcertSeat());
-            // 좌석상태가 변경되었으므로, 좌석목록 캐시스토어에 바로 반영한다.
 
             // 임시예약 상태의 예약 정보를 데이터베이스에 저장
             reservationRepository.saveOrUpdate(reservation);
 
-            // 좌석상태가 변경되었으므로, 데이터베이스에서 좌석목록조회후에 캐시스토어에 바로 반영한다.
+            // 좌석1개의 상태가 변경되었으므로 해당 좌석리스트에 대한 캐싱을 evict 시키고 해당콘서트일정 좌석목록을 조회할때 캐시를 갱신시키는 방안으로한다.
+            // 하지만 동시에 여러개의 좌석이 예약되버려서 상태변경이 잦으면 계속 지우게되고 조회할때마다 또 갱신해야되므로 DB 성능저하가 발생할 수 있다.
+            // 트래픽증가로 인해 캐싱의 잦은 변경으로 성능이 저하되면, 비동기캐시갱신을 사용하거나 kafka를 사용해야한다.
             long concertId = command.concertSeat().getConcert().getId();
             long concertDateId = command.concertSeat().getConcertDate().getId();
             String cacheKey = CONCERT_SEAT_LIST_CACHE_KEY + "-" + "concert_id:" + concertId +"-" + "concert_date_id:" + concertDateId;
-
-            ConcertInfo.GetConcertSeatList concertSeats = concertSeatRepository.findConcertSeats(concertId, concertDateId);
-            redisTemplate.opsForValue().set(cacheKey, concertSeats, CONCERT_SEAT_LIST_CACHE_TTL);
+            cacheStore.evict(cacheKey);
 
             return ReservationInfo.TemporaryReserve.from(reservation);
 

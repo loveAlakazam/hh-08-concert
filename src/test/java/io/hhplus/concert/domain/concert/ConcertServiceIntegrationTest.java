@@ -23,6 +23,8 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.jdbc.Sql;
 
+import io.hhplus.concert.domain.support.CacheCleaner;
+import io.hhplus.concert.domain.support.CacheStore;
 import io.hhplus.concert.infrastructure.containers.RedisTestContainerConfiguration;
 import io.hhplus.concert.infrastructure.containers.TestcontainersConfiguration;
 import io.hhplus.concert.interfaces.api.common.InvalidValidationException;
@@ -48,7 +50,11 @@ public class ConcertServiceIntegrationTest {
 	@Autowired private ConcertRepository concertRepository;
 	@Autowired private ConcertDateRepository concertDateRepository;
 	@Autowired private ConcertSeatRepository concertSeatRepository;
+
+	@Autowired private CacheCleaner cacheCleaner;
+	// @Autowired private CacheStore cacheStore;
 	@Autowired private RedisTemplate<String, Object> redisTemplate;
+
 
 	private static final Logger log = LoggerFactory.getLogger(ConcertServiceIntegrationTest.class);
 
@@ -68,13 +74,8 @@ public class ConcertServiceIntegrationTest {
 		sampleConcertDate = sampleConcert.getDates().get(0);
 		sampleConcertSeat = sampleConcertDate.getSeats().get(0);
 
-		// 콘서트목록/콘서트일정목록/콘서트좌석목록 캐시 초기화
-		clearCacheTokens("concert");
-
-	}
-	public void clearCacheTokens(String prefix) {
-		Set<String> keys = redisTemplate.keys(prefix + "*");
-		if(!keys.isEmpty()) redisTemplate.delete(keys);
+		// 캐시초기화
+		cacheCleaner.cleanAll();
 	}
 
 	@Test
