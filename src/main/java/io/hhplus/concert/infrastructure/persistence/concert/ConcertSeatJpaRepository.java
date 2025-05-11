@@ -7,6 +7,7 @@ import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import io.hhplus.concert.domain.concert.ConcertSeat;
+import io.hhplus.concert.domain.reservation.ReservationStatus;
 
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -21,11 +22,11 @@ public interface ConcertSeatJpaRepository extends JpaRepository<ConcertSeat, Lon
 			JOIN FETCH cs.concert c
 			JOIN FETCH cs.concertDate cd
 		WHERE  
-			c.deleted = false
+			c.id = :concertId
+			AND cd.id = :concertDateId 
+			AND c.deleted = false
 			AND cd.deleted = false
 			AND cs.deleted = false
-			AND c.id = :concertId
-			AND cd.id = :concertDateId 
 		"""
 	)
 	List<ConcertSeat> findAllSeats(@Param("concertId") Long concertId, @Param("concertDateId") Long concertDateId);
