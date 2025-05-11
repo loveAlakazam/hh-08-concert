@@ -24,7 +24,7 @@ public record ConcertResponse(long id, String name, String artistName) { // Page
 	 * @param concertSeatList - 콘서트 좌석리스트
 	 */
 	public record GetAvailableSeats (
-		List<ConcertSeat> concertSeatList
+		List<ConcertInfo.ConcertSeatListDto> concertSeatList
 	) {
 		public static GetAvailableSeats from(ConcertInfo.GetConcertSeatList info) {
 			return new GetAvailableSeats(info.concertSeatList());
@@ -39,13 +39,13 @@ public record ConcertResponse(long id, String name, String artistName) { // Page
 	 * @param currentSize - 현재 페이지의 공연 개수
 	 */
 	public record GetConcerts(
-		List<Concert> concerts,
+		List<ConcertInfo.GetConcertListDto> concerts,
 		long totalElements,
 		int totalPages,
 		int currentPage,
 		int currentSize
 	) {
-		public static GetConcerts from(Page<Concert> concertPage) {
+		public static GetConcerts from(Page<ConcertInfo.GetConcertListDto> concertPage) {
 			return new GetConcerts(
 				concertPage.getContent(),
 				concertPage.getTotalElements(),
@@ -65,13 +65,13 @@ public record ConcertResponse(long id, String name, String artistName) { // Page
 	 * @param currentSize - 현재 페이지의 공연일정 개수
 	 */
 	public record GetAvailableConcertDates(
-		List<ConcertDate> concertDates,
+		List<ConcertInfo.GetConcertDateListDto> concertDates,
 		long totalElements,
 		int totalPages,
 		int currentPage,
 		int currentSize
 	) {
-		public static GetAvailableConcertDates from(Page<ConcertDate> concertDatePage) { // from절에는 페이징처리 결과를 넣으면 된다.
+		public static GetAvailableConcertDates from(Page<ConcertInfo.GetConcertDateListDto> concertDatePage) { // from절에는 페이징처리 결과를 넣으면 된다.
 
 			return new GetAvailableConcertDates(
 				concertDatePage.getContent(),

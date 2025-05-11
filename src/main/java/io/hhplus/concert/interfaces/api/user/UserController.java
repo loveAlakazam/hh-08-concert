@@ -15,6 +15,7 @@ import io.hhplus.concert.domain.user.UserPointCommand;
 import io.hhplus.concert.domain.user.UserService;
 import io.hhplus.concert.interfaces.api.common.ApiResponse;
 import io.hhplus.concert.interfaces.api.common.ApiResponseEntity;
+import io.hhplus.concert.interfaces.api.token.UserContextHolder;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
@@ -48,7 +49,7 @@ public class UserController implements UserPointApiDocs {
 		@RequestHeader("token") @Valid String token
 	) {
 		// 토큰을 통해서 userId 를 추출.
-		long userId = 1L;
+		long userId = UserContextHolder.get().getUserId();
 		UserInfo.GetCurrentPoint result = userService.getCurrentPoint(UserPointCommand.GetCurrentPoint.of(userId));
 		PointResponse.GetCurrentPoint response = PointResponse.GetCurrentPoint.from(result);
 		return ApiResponseEntity.ok(response);

@@ -13,6 +13,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
 
 import io.hhplus.concert.TestcontainersConfiguration;
@@ -34,7 +35,7 @@ import io.hhplus.concert.domain.user.UserRepository;
 import io.hhplus.concert.domain.user.UserService;
 import io.hhplus.concert.interfaces.api.common.BusinessException;
 import io.hhplus.concert.interfaces.api.common.InvalidValidationException;
-
+@ActiveProfiles("test")
 @SpringBootTest
 @Import(TestcontainersConfiguration.class)
 @Sql(statements = {
@@ -70,7 +71,7 @@ public class ReservationUsecaseIntegrationTest {
 	User sampleUser;
 	@BeforeEach
 	void setUp() {
-		// truncate -> serUp -> 테스트케이스 수행 순으로 진행
+		// truncate -> setUp -> 테스트케이스 수행 순으로 진행
 		// 유저 테스트 데이터 셋팅
 		sampleUser = User.of("최은강");
 		userRepository.save(sampleUser);

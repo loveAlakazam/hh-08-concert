@@ -2,6 +2,7 @@ package io.hhplus.concert.domain.user;
 
 
 import static io.hhplus.concert.interfaces.api.user.CommonErrorCode.*;
+import static io.hhplus.concert.interfaces.api.user.UserErrorCode.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -96,4 +97,13 @@ public class UserPoint{
 		histories.add(UserPointHistory.of(this, amount, UserPointHistoryStatus.USE)); // 사용 내역기록
 	}
 
+	public UserPointHistory getLatestUserPointHistory() {
+		try {
+			int latestIdx = this.histories.size() -1;
+			return this.histories.get(latestIdx);
+
+		} catch(IndexOutOfBoundsException e) {
+			throw new BusinessException(EMPTY_POINT_HISTORIES);
+		}
+	}
 }

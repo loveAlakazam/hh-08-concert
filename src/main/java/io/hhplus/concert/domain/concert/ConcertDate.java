@@ -8,6 +8,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+
 import io.hhplus.concert.domain.common.BaseEntity;
 import io.hhplus.concert.domain.reservation.Reservation;
 import io.hhplus.concert.interfaces.api.common.BusinessException;
@@ -81,12 +85,15 @@ public class ConcertDate extends BaseEntity {
 	// 콘서트날짜:콘서트=N:1
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name ="concert_id", foreignKey = @ForeignKey(value = ConstraintMode.NO_CONSTRAINT))
+	@JsonBackReference("concert-dates")
 	private Concert concert;
 	// 콘서트날짜:좌석=1:N
 	@OneToMany(mappedBy = "concertDate", cascade = CascadeType.ALL, orphanRemoval = true)
+	@JsonManagedReference("concertDate-seats")
 	private List<ConcertSeat> seats = new ArrayList<>();
 	// 콘서트날짜:예약=1:N
 	@OneToMany(mappedBy = "concertDate")
+	@JsonIgnore
 	private List<Reservation> reservations = new ArrayList<>();
 
 	/**

@@ -18,6 +18,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
 
 import io.hhplus.concert.TestcontainersConfiguration;
@@ -30,6 +31,7 @@ import io.hhplus.concert.domain.concert.ConcertSeatRepository;
 import io.hhplus.concert.domain.user.User;
 import io.hhplus.concert.domain.user.UserRepository;
 
+@ActiveProfiles("test")
 @SpringBootTest
 @Import(TestcontainersConfiguration.class)
 @Sql(statements = {
@@ -38,6 +40,8 @@ import io.hhplus.concert.domain.user.UserRepository;
 	"TRUNCATE TABLE concert_seats",
 	"TRUNCATE TABLE concert_dates",
 	"TRUNCATE TABLE concerts",
+	"TRUNCATE TABLE user_point_histories",
+	"TRUNCATE TABLE user_points",
 	"TRUNCATE TABLE users",
 	"SET FOREIGN_KEY_CHECKS=1"
 }, executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)

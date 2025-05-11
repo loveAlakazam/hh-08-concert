@@ -21,7 +21,8 @@ public enum UserErrorCode implements BusinessErrorCode {
 	CHARGE_AMOUNT_SHOULD_BE_MORE_THAN_MINIMUM(HttpStatus.BAD_REQUEST, "충전금액의 최소값("+CHARGE_POINT_MINIMUM+"원)보다 커야 합니다."),
 	CHARGE_AMOUNT_SHOULD_BE_LESS_THAN_MAXIMUM(HttpStatus.BAD_REQUEST, "충전금액의 최대값("+CHARGE_POINT_MAXIMUM+"원)보다 작아야 합니다."),
 	LACK_OF_YOUR_POINT(HttpStatus.BAD_REQUEST, "잔액이 부족합니다."),
-	NOT_EXIST_USER(HttpStatus.NOT_FOUND, "존재하지 않은 유저입니다.")
+	NOT_EXIST_USER(HttpStatus.NOT_FOUND, "존재하지 않은 유저입니다."),
+	EMPTY_POINT_HISTORIES(HttpStatus.BAD_REQUEST, "포인트 내역이 비어있습니다.")
 	;
 
 	private final HttpStatus httpStatus;

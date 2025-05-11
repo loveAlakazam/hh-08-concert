@@ -1,15 +1,15 @@
 package io.hhplus.concert.domain.token;
 
-
-
-
 import static io.hhplus.concert.interfaces.api.common.validators.DateValidator.*;
 import static io.hhplus.concert.interfaces.api.token.TokenErrorCode.*;
+import static org.assertj.core.api.AssertionsForClassTypes.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -22,6 +22,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
 
 import io.hhplus.concert.TestcontainersConfiguration;
@@ -29,7 +31,7 @@ import io.hhplus.concert.domain.user.User;
 import io.hhplus.concert.domain.user.UserRepository;
 import io.hhplus.concert.interfaces.api.common.BusinessException;
 
-
+@ActiveProfiles("test")
 @SpringBootTest
 @Import(TestcontainersConfiguration.class)
 @Sql(statements = {
@@ -44,7 +46,10 @@ public class TokenServiceIntegrationTest {
 	@Autowired private TokenRepository tokenRepository;
 	@Autowired private WaitingQueue waitingQueue;
 	@Autowired private UserRepository userRepository;
+	@Autowired private RedisTemplate<String, Object> redisTemplate;
+
 	private static final Logger log = LoggerFactory.getLogger(TokenServiceIntegrationTest.class);
+	private static final String TOKEN_CACHE_KEY= "token:";
 
 	User sampleUser;
 	@BeforeEach
@@ -56,6 +61,13 @@ public class TokenServiceIntegrationTest {
 		// 테스트용 데이터 초기셋팅
 		sampleUser = User.of("테스트 유저");
 		userRepository.save(sampleUser);
+
+		// 캐시저장소를 초기화한다
+		clearCacheTokens();
+	}
+	public void clearCacheTokens() {
+		Set<String> keys = redisTemplate.keys("token:*");
+		if(!keys.isEmpty()) redisTemplate.delete(keys);
 	}
 
 	/**
@@ -83,6 +95,8 @@ public class TokenServiceIntegrationTest {
 		assertTrue(waitingQueue.contains(tokenUUID));
 		// 순서는 1번인가?
 		assertEquals(1, tokenInfo.position());
+		// 레디스에 토큰이 저장됐는가?
+		assertThat(redisTemplate.opsForValue().get(TOKEN_CACHE_KEY+token.getUuid())).isNotNull();
 	}
 	@Order(2)
 	@Test
@@ -137,12 +151,8 @@ public class TokenServiceIntegrationTest {
 			// 대기상태토큰 리스트에 추가
 			uuids.add(info.token().getUuid());
 		}
-		assertEquals(3, waitingQueue.size());
-		assertTrue(waitingQueue.contains(uuids.get(0)));
-		assertTrue(waitingQueue.contains(uuids.get(1)));
-		assertTrue(waitingQueue.contains(uuids.get(2)));
 
-		// when &then
+		// when & then
 		// 1번째 토큰
 		assertEquals(1, tokenService.getCurrentPosition(uuids.get(0)));
 		assertEquals(waitingQueue.peek(), uuids.get(0));
@@ -158,27 +168,19 @@ public class TokenServiceIntegrationTest {
 	 */
 	@Order(6)
 	@Test
-	void 대기상태_토큰을_활성화_시키는데_성공한다() {
+	void 캐시저장소에서_토큰이_캐시히트일때_대기상태_토큰을_활성화_시키는데_성공한다() {
 		// given
 		TokenInfo.IssueWaitingToken waitingTokenInfo = tokenService.issueWaitingToken(TokenCommand.IssueWaitingToken.from(sampleUser));
 		Token waitingToken = waitingTokenInfo.token();
-		// 활성화 요청 대기상태토큰이 대기열에 들어있는지 확인
-		assertTrue(waitingQueue.contains(waitingToken.getUuid()));
-		// 활성화 요청 대기상태토큰이 대기열의 맨앞에 있는지 확인
-		assertEquals(waitingQueue.peek(), waitingToken.getUuid());
-		assertEquals(1, waitingTokenInfo.position());
-		// 아직 유효한지 확인
-		assertFalse(waitingToken.isExpiredToken());
-		// 토큰상태가 대기상태인지 확인
-		assertEquals(TokenStatus.WAITING, waitingToken.getStatus());
+
 		// when
 		TokenInfo.ActivateToken info = assertDoesNotThrow(
 			() -> tokenService.activateToken(TokenCommand.ActivateToken.of(waitingToken.getUuid()))
 		);
+
 		// then
 		Token activatedToken = info.token();
-		// 활성화 상태인지 확인
-		assertTrue(activatedToken.isActivated());
+		assertTrue(activatedToken.isActivated()); // 활성화 상태인지 확인
 		assertFalse(activatedToken.isExpiredToken()); // 유효함
 		assertEquals(TokenStatus.ACTIVE, activatedToken.getStatus()); // 활성화 상태
 		assertFalse(waitingQueue.contains(activatedToken.getUuid())); // 대기열큐에 없음
@@ -187,13 +189,9 @@ public class TokenServiceIntegrationTest {
 	@Test
 	void 이미활성화된_토큰을_발급받은상태에서_토큰활성화를_중복_요청하게되면_BusinessException_예외발생() {
 		// given
-		// 이미 활성화된 토큰을 받았음
 		TokenInfo.IssueWaitingToken tokenInfo = tokenService.issueWaitingToken(TokenCommand.IssueWaitingToken.from(sampleUser));
 		UUID tokenUUID = tokenInfo.token().getUuid();
-		assertEquals(1, waitingQueue.getPosition(tokenUUID));
-		// 이미 활성화된 토큰을 가지고있음
-		tokenService.activateToken(TokenCommand.ActivateToken.of(tokenUUID));
-		assertFalse(waitingQueue.contains(tokenUUID));
+		tokenService.activateToken(TokenCommand.ActivateToken.of(tokenUUID)); // 이미 활성화된 토큰을 가지고있음
 
 		// when & then
 		// 이미 요청자는 활성화된 토큰을 받았는데도 중복으로 활성화를 요청함
@@ -211,10 +209,8 @@ public class TokenServiceIntegrationTest {
 		List<User> users = new ArrayList<>();
 		List<UUID> uuids = new ArrayList<>();
 		for( int i = 1; i <= 3; i++ ) {
-			// 유저객체 초기화
-			User user = User.of("테스트" + i);
-			// 유저를 DB에 저장
-			userRepository.save(user);
+			// 유저객체 초기화 및 DB에 저장
+			User user = userRepository.save(User.of("테스트" + i));
 			// 유저리스트에 추가
 			users.add(user);
 			// 대기열토큰 생성
@@ -245,21 +241,21 @@ public class TokenServiceIntegrationTest {
 	@Test
 	void 콘서트예약_서비스이용시_이용자의_토큰이_활성화상태라면_검증완료로_활성화된_토큰을_리턴한다() {
 		// given
-		// 이미 활성화된 토큰을 받았음
 		TokenInfo.IssueWaitingToken tokenInfo = tokenService.issueWaitingToken(
 			TokenCommand.IssueWaitingToken.from(sampleUser)
 		);
-		Token token = tokenInfo.token();
-		tokenService.activateToken(TokenCommand.ActivateToken.of(token.getUuid()));
+		UUID uuid = tokenInfo.token().getUuid();
+		tokenService.activateToken(TokenCommand.ActivateToken.of(uuid));
+
 		// when
 		TokenInfo.ValidateActiveToken validateActiveTokenInfo = assertDoesNotThrow(
-			() -> tokenService.validateActiveToken(token.getUuid())
+			() -> tokenService.validateActiveToken(uuid)
 		);
 		// then
 		assertEquals(sampleUser.getId(), validateActiveTokenInfo.userId()); // 유저아이디 검증
 		assertEquals(TokenStatus.ACTIVE, validateActiveTokenInfo.status()); // 토큰상태 검증
 		assertNotNull(validateActiveTokenInfo.uuid()); // 토큰 UUID 검증 (null 이 아님)
-		assertEquals(token.getUuid(), validateActiveTokenInfo.uuid()); // 토큰 UUID 검증
+		assertEquals(uuid, validateActiveTokenInfo.uuid()); // 토큰 UUID 검증
 		assertNotNull(validateActiveTokenInfo.expiredAt()); // 토큰 유효만료일자 검증 (null 이 아님)
 		assertFalse(isPastDateTime(validateActiveTokenInfo.expiredAt())); // 토큰이 유효기간 검증
 	}
@@ -268,6 +264,7 @@ public class TokenServiceIntegrationTest {
 	void 콘서트예약_서비스이용시_이용자의_토큰이_활성상태인지_검증요청하는데_토큰이_없으면_BusinessException_예외발생() {
 		// given
 		UUID notExistUUID = UUID.randomUUID();
+
 		// when & then
 		BusinessException exception = assertThrows(
 			BusinessException.class,
@@ -279,7 +276,6 @@ public class TokenServiceIntegrationTest {
 	@Test
 	void 콘서트예약_서비스이용시_이용자의_토큰이_대기상태_라면_BusinessException_예외발생() {
 		// given
-		// 대기상태 토큰발급
 		TokenInfo.IssueWaitingToken tokenInfo = tokenService.issueWaitingToken(
 			TokenCommand.IssueWaitingToken.from(sampleUser)
 		);
@@ -295,13 +291,17 @@ public class TokenServiceIntegrationTest {
 	@Test
 	void 콘서트예약_서비스이용시_이용자의_토큰이_만료되어있다면_BusinessException_예외발생() throws InterruptedException {
 		// given
-		// 대기상태 토큰발급
 		TokenInfo.IssueWaitingToken tokenInfo = tokenService.issueWaitingToken(
 			TokenCommand.IssueWaitingToken.from(sampleUser)
 		);
 		Token token = tokenInfo.token();
-		log.info("만료여부를 확인하기 위해 6분 대기");
-		Thread.sleep(6 * 60 * 1000);
+
+		log.info("토큰 만료");
+		token.expire(LocalDateTime.now().minusSeconds(1));
+		redisTemplate.delete(TOKEN_CACHE_KEY+token.getUuid());
+		tokenRepository.saveOrUpdate(token);
+
+
 		// when & then
 		BusinessException exception = assertThrows(
 			BusinessException.class,
@@ -310,6 +310,53 @@ public class TokenServiceIntegrationTest {
 		assertTrue(isPastDateTime(token.getExpiredAt()));
 		assertEquals(EXPIRED_OR_UNAVAILABLE_TOKEN.getMessage(), exception.getMessage());
 	}
+	/**
+	 * getTokenByUUID 테스트
+	 */
+	@Order(13)
+	@Test
+	void 캐시스토어에_존재하여_캐시히트이면_해당_uuid로_토큰정보를_반환한다(){
+		// given
+		User user = userRepository.save(User.of("테스트"));
+		TokenInfo.IssueWaitingToken info = tokenService.issueWaitingToken(TokenCommand.IssueWaitingToken.from(user));
+		Token token = info.token();
+		UUID uuid = token.getUuid();
+
+		// when
+		TokenInfo.GetTokenByUUID result = assertDoesNotThrow(() -> tokenService.getTokenByUUID(TokenCommand.GetTokenByUUID.of(uuid)));
+
+		// then
+		assertThat(result.token().getId()).isEqualTo(token.getId());
+		assertThat(result.token().getUuid()).isEqualTo(token.getUuid());
+		assertThat(result.token().getStatus()).isEqualTo(token.getStatus());
+		assertThat(result.token().getExpiredAt()).isEqualTo(token.getExpiredAt());
+		assertThat(result.token().getCreatedAt()).isEqualTo(token.getCreatedAt());
+
+		assertThat(redisTemplate.opsForValue().get(TOKEN_CACHE_KEY+uuid)).isNotNull();
+	}
+	@Order(14)
+	@Test
+	void 캐시스토어에_존재하여_캐시미스이면_데이터베이스로부터_토큰정보조회결과를_반환한다(){
+		// given
+		UUID uuid = UUID.randomUUID();
+		User user = userRepository.save(User.of("테스트"));
+		Token token = Token.of(user, uuid);
+		token.issue(user);
+		tokenRepository.saveOrUpdate(token);
+
+		// when
+		TokenInfo.GetTokenByUUID result = assertDoesNotThrow(() -> tokenService.getTokenByUUID(TokenCommand.GetTokenByUUID.of(uuid)));
+
+		// then
+		assertThat(result.token().getId()).isEqualTo(token.getId());
+		assertThat(result.token().getUuid()).isEqualTo(token.getUuid());
+		assertThat(result.token().getStatus()).isEqualTo(token.getStatus());
+		assertThat(result.token().getExpiredAt()).isEqualTo(token.getExpiredAt());
+		assertThat(result.token().getCreatedAt()).isEqualTo(token.getCreatedAt());
+
+		assertThat(redisTemplate.opsForValue().get(TOKEN_CACHE_KEY+uuid)).isNull();
+	}
+
 
 
 }

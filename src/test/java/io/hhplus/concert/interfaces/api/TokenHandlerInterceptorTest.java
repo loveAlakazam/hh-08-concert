@@ -4,8 +4,13 @@ import static io.hhplus.concert.interfaces.api.token.TokenErrorCode.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.UUID;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.servlet.ServletOutputStream;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -24,6 +29,7 @@ import io.hhplus.concert.interfaces.api.token.TokenHandlerInterceptor;
 import io.hhplus.concert.interfaces.api.token.UserContextHolder;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.mock.web.DelegatingServletOutputStream;
 
 @ExtendWith(MockitoExtension.class)
 public class TokenHandlerInterceptorTest {
@@ -40,17 +46,30 @@ public class TokenHandlerInterceptorTest {
 	private Object handler;
 	@Mock
 	private TokenRepository tokenRepository;
+	@Mock
+	private ObjectMapper objectMapper;
 
 	@Test
-	void requestHeader에_토큰이_존재하지않으면_토큰검증인터셉터를_통과하지않고_BusinessException_예외발생() throws Exception {
+	void requestHeader에_토큰이_존재하지않으면_토큰검증인터셉터를_통과하지않아서_false로_리턴한다() throws Exception {
 		// given
 		when(request.getHeader("token")).thenReturn(null);
 
-		// when & then
-		try (MockedStatic<UserContextHolder> mockedContext = Mockito.mockStatic(UserContextHolder.class)){
-			BusinessException ex = assertThrows(BusinessException.class, () -> interceptor.preHandle(request, response, handler));
-			assertEquals(EXPIRED_OR_UNAVAILABLE_TOKEN.getMessage(), ex.getMessage());
+		// 인터셉터의 응답내용을 담고있음
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		ServletOutputStream outputStream = new DelegatingServletOutputStream(baos);
+		when(response.getOutputStream()).thenReturn(outputStream);
 
+		// objectMapper.writeValueAsString(any()) 호출시 안전한값을 반환하도록 Mocking
+		when(objectMapper.writeValueAsString(any())).thenReturn("{}");
+
+		try (MockedStatic<UserContextHolder> mockedContext = Mockito.mockStatic(UserContextHolder.class)){
+			// when
+			 boolean result = interceptor.preHandle(request, response, handler);
+
+			 // then
+			assertFalse(result);
+			// 발생 예외의 응답코드를 확인
+			verify(response).setStatus(EXPIRED_OR_UNAVAILABLE_TOKEN.getHttpStatus().value());
 			mockedContext.verifyNoInteractions(); // 위에서 예외발생으로 UserContextHolder 에 접근하지 않음
 		}
 	}
@@ -63,16 +82,27 @@ public class TokenHandlerInterceptorTest {
 		// 토큰이 활성화되어있지 않으므로 해당예외가 발생한다
 		when(tokenService.validateActiveToken(uuid)).thenThrow(new BusinessException(ALLOW_ACTIVE_TOKEN));
 
-		// when & then
-		try (MockedStatic<UserContextHolder> mockedContext = Mockito.mockStatic(UserContextHolder.class)){
-			BusinessException ex = assertThrows(BusinessException.class, () -> interceptor.preHandle(request, response, handler));
-			assertEquals(ALLOW_ACTIVE_TOKEN.getMessage(), ex.getMessage());
+		// 인터셉터의 응답내용을 담고있음
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		ServletOutputStream outputStream = new DelegatingServletOutputStream(baos);
+		when(response.getOutputStream()).thenReturn(outputStream);
 
+		// objectMapper.writeValueAsString(any()) 호출시 안전한값을 반환하도록 Mocking
+		when(objectMapper.writeValueAsString(any())).thenReturn("{}");
+
+		try (MockedStatic<UserContextHolder> mockedContext = Mockito.mockStatic(UserContextHolder.class)){
+			// when
+			boolean result = interceptor.preHandle(request, response, handler);
+
+			// then
+			assertFalse(result);
+			// 발생예외의 응답코드 확인
+			verify(response).setStatus(ALLOW_ACTIVE_TOKEN.getHttpStatus().value());
 			mockedContext.verifyNoInteractions(); // 위에서 예외발생으로 UserContextHolder 에 접근하지 않음
 		}
 	}
 	@Test
-	void 토큰이_활성화상태지만_유효일자가_만료되면_토큰검증인터셉터를_통과하지않고_BusinessException_예외발생() {
+	void 토큰이_활성화상태지만_유효일자가_만료되면_토큰검증인터셉터를_통과하지않고_BusinessException_예외발생() throws IOException {
 		// given
 		UUID uuid = UUID.randomUUID();
 		when(request.getHeader("token")).thenReturn(uuid.toString());
@@ -80,10 +110,21 @@ public class TokenHandlerInterceptorTest {
 		// 토큰의 유효일자가 만료
 		when(tokenService.validateActiveToken(uuid)).thenThrow(new BusinessException(EXPIRED_OR_UNAVAILABLE_TOKEN));
 
-		// when & then
+		// 인터셉터의 응답내용을 담고있음
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		ServletOutputStream outputStream = new DelegatingServletOutputStream(baos);
+		when(response.getOutputStream()).thenReturn(outputStream);
+
+		// objectMapper.writeValueAsString(any()) 호출시 안전한값을 반환하도록 Mocking
+		when(objectMapper.writeValueAsString(any())).thenReturn("{}");
+
 		try (MockedStatic<UserContextHolder> mockedContext = Mockito.mockStatic(UserContextHolder.class)){
-			BusinessException ex = assertThrows(BusinessException.class, () -> interceptor.preHandle(request, response, handler));
-			assertEquals(EXPIRED_OR_UNAVAILABLE_TOKEN.getMessage(), ex.getMessage());
+			// when
+			boolean result = interceptor.preHandle(request, response, handler);
+
+			// then
+			assertFalse(result);
+			verify(response).setStatus(EXPIRED_OR_UNAVAILABLE_TOKEN.getHttpStatus().value());
 
 			mockedContext.verifyNoInteractions(); // 위에서 예외발생으로 UserContextHolder 에 접근하지 않음
 		}

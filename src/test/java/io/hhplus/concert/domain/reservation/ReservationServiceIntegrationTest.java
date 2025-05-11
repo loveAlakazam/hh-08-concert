@@ -9,6 +9,7 @@ import static io.hhplus.concert.interfaces.api.user.CommonErrorCode.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.MethodOrderer;
@@ -21,8 +22,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.jdbc.Sql;
 
+import io.hhplus.concert.RedisTestContainerConfiguration;
 import io.hhplus.concert.TestcontainersConfiguration;
 import io.hhplus.concert.domain.concert.Concert;
 import io.hhplus.concert.domain.concert.ConcertDate;
@@ -36,7 +40,11 @@ import io.hhplus.concert.interfaces.api.common.BusinessException;
 import io.hhplus.concert.interfaces.api.common.InvalidValidationException;
 
 @SpringBootTest
-@Import(TestcontainersConfiguration.class)
+@ActiveProfiles("test")
+@ContextConfiguration(classes = {
+	TestcontainersConfiguration.class,
+	RedisTestContainerConfiguration.class
+})
 @Sql(statements = {
 	"SET FOREIGN_KEY_CHECKS=0",
 	"TRUNCATE TABLE reservations",
@@ -279,11 +287,12 @@ public class ReservationServiceIntegrationTest {
 		assertNotNull(reservation);
 		assertTrue(reservation.isTemporary()); // 임시예약상태
 		long reservationId = reservation.getId();
-		log.info("5분 + 1ms 대기");
-		Thread.sleep(TEMPORARY_RESERVATION_DURATION_MILLISECOND + 1);
 
 		log.info("임시예약이 만료됨");
-		assertTrue(isPastDateTime(reservation.getTempReservationExpiredAt()));
+		reservation.expireTemporaryReserve(LocalDateTime.now().minusSeconds(1));
+		reservationRepository.saveOrUpdate(reservation);
+		assertTrue(isPastDateTime(reservation.getTempReservationExpiredAt()), "만료일자는 이미 지나간 날짜임을 확인");
+
 		// when & then
 		// 임시예약이 만료되어있는데 예약확정상태로 변경하려는 경우에 비즈니스규칙에 위배
 		BusinessException exception = assertThrows(
@@ -309,11 +318,12 @@ public class ReservationServiceIntegrationTest {
 		assertNotNull(reservation);
 		assertTrue(reservation.isTemporary()); // 임시예약상태
 		long reservationId = reservation.getId();
-		log.info("5분 + 1ms 대기");
-		Thread.sleep(TEMPORARY_RESERVATION_DURATION_MILLISECOND + 1);
 
 		log.info("임시예약이 만료됨");
+		reservation.expireTemporaryReserve(LocalDateTime.now().minusSeconds(1));
+		reservationRepository.saveOrUpdate(reservation);
 		assertTrue(isPastDateTime(reservation.getTempReservationExpiredAt()));
+
 		// when & then
 		// 임시예약이 만료되어있는데 예약확정상태로 변경하려는 경우에 비즈니스규칙에 위배
 		ReservationInfo.Cancel cancelInfo = assertDoesNotThrow(

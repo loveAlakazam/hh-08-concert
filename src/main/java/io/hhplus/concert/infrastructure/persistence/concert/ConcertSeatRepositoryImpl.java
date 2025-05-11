@@ -6,6 +6,7 @@ import java.util.Optional;
 
 import org.springframework.stereotype.Repository;
 
+import io.hhplus.concert.domain.concert.ConcertInfo;
 import io.hhplus.concert.domain.concert.ConcertSeat;
 import io.hhplus.concert.domain.concert.ConcertSeatRepository;
 
@@ -17,8 +18,9 @@ public class ConcertSeatRepositoryImpl implements ConcertSeatRepository {
     private final ConcertSeatJpaRepository concertSeatJpaRepository;
 
     @Override
-    public List<ConcertSeat> findConcertSeats(long concertId, long concertDateId) {
-        return concertSeatJpaRepository.findAllSeats(concertId, concertDateId);
+    public ConcertInfo.GetConcertSeatList findConcertSeats(long concertId, long concertDateId) {
+        List<ConcertSeat> concertSeats =  concertSeatJpaRepository.findAllSeats(concertId, concertDateId);
+        return ConcertInfo.GetConcertSeatList.from(concertSeats);
     }
 
     @Override
