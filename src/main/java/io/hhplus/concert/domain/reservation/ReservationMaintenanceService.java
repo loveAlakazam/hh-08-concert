@@ -2,16 +2,16 @@ package io.hhplus.concert.domain.reservation;
 
 import static io.hhplus.concert.domain.concert.ConcertService.*;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.hhplus.concert.domain.concert.ConcertInfo;
 import io.hhplus.concert.domain.concert.ConcertSeat;
 import io.hhplus.concert.domain.concert.ConcertSeatRepository;
+import io.hhplus.concert.domain.support.CacheStore;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -20,8 +20,7 @@ public class ReservationMaintenanceService {
 	private final ReservationRepository reservationRepository;
 	private final ConcertSeatRepository concertSeatRepository;
 
-	private final RedisTemplate<String, Object> redisTemplate;
-	private final ObjectMapper objectMapper;
+	private final CacheStore cacheStore;
 
 	/**
 	 * 임시예약 취소처리된 예약은 soft-delete 된다.
@@ -40,7 +39,8 @@ public class ReservationMaintenanceService {
 		// 임시예약 만료일자가 이미 지난 예약들은 모두 취소상태로 변경한다
 		reservationRepository.updateCanceledExpiredTempReservations();
 
-		//
+		Set<String> updatedCacheKeys = new HashSet<>();
+
 		for(Reservation expiredReservation : expiredReservations) {
 			ConcertSeat concertSeat = expiredReservation.getConcertSeat();
 
@@ -48,15 +48,17 @@ public class ReservationMaintenanceService {
 			concertSeat.cancel();
 			concertSeatRepository.saveOrUpdate(concertSeat);
 
-			// 좌석의 상태가 변경되었으므로, 데이터베이스에서 좌석목록조회후에 캐시스토어에 바로 반영한다.
 			long concertId = concertSeat.getConcert().getId();
 			long concertDateId = concertSeat.getConcertDate().getId();
 			String cacheKey = CONCERT_SEAT_LIST_CACHE_KEY + "-" + "concert_id:" + concertId +"-" + "concert_date_id:" + concertDateId;
 
-			ConcertInfo.GetConcertSeatList concertSeats = concertSeatRepository.findConcertSeats(concertId, concertDateId);
-			redisTemplate.opsForValue().set(cacheKey, concertSeats, CONCERT_SEAT_LIST_CACHE_TTL);
-
+			// 중복을 제거하여 evict할 cacheKey 수집
+			updatedCacheKeys.add(cacheKey);
 		}
 
+		// 좌석목록 캐싱 evict
+		for(String cacheKey: updatedCacheKeys) {
+			cacheStore.evict(cacheKey);
+		}
 	}
 }
