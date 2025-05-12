@@ -13,4 +13,6 @@ public interface ConcertSeatRepository {
 	void deleteConcertSeatByConcertDateId(long concertDateId);
 
 	void deleteAll();
+
+	List<ConcertSeat> findByConcertDateId(long pastConcertDateId);
 }

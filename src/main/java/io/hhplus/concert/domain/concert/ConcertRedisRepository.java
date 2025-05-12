@@ -16,6 +16,7 @@ public interface ConcertRedisRepository {
 
 	List<SortedSetEntry> getDailyFamousConcertRankingWithScore();
 	List<SortedSetEntry> getDailyFamousConcertRankingWithScore(int end);
+	List<SortedSetEntry> getDailyFamousConcertRankingWithScore(String key);
 	// TODO: 좌석목록 evict
 	// - ReservationService.temporaryReserve
 }

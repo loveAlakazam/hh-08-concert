@@ -62,5 +62,9 @@ public class ConcertRedisRepositoryImpl implements ConcertRedisRepository {
 		String key = DAILY_FAMOUS_CONCERT_RANK_KEY + LocalDate.now(ZoneId.of(ASIA_TIMEZONE_ID));
 		return cacheStore.zRangeWithScores(key, 0 , end);
 	}
+	@Override
+	public List<SortedSetEntry> getDailyFamousConcertRankingWithScore(String key) {
+		return cacheStore.zRangeWithScores(key, 0, -1);
+	}
 
 }

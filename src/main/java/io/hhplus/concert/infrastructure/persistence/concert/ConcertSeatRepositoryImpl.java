@@ -47,4 +47,9 @@ public class ConcertSeatRepositoryImpl implements ConcertSeatRepository {
     public void deleteAll() {
         concertSeatJpaRepository.deleteAll();
     }
+
+    @Override
+    public List<ConcertSeat> findByConcertDateId(long pastConcertDateId) {
+        return concertSeatJpaRepository.findConcertSeatsByConcertDateId(pastConcertDateId);
+    }
 }

@@ -2,6 +2,7 @@ package io.hhplus.concert.infrastructure.persistence.concert;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -55,4 +56,15 @@ public interface ConcertDateJpaRepository extends JpaRepository<ConcertDate, Lon
 		WHERE cd.deleted = false
 	""")
 	List<ConcertDate> findAllNotDeleted();
+
+	@Query("""
+		SELECT cd
+		FROM ConcertDate cd
+			JOIN FETCH cd.seats cs
+			JOIN FETCH cd.concert c
+		WHERE
+			cd.id = :id
+			AND cd.deleted = false
+	""")
+	Optional<ConcertDate> findByIdAndNotDeleted(@Param("id") long id);
 }
