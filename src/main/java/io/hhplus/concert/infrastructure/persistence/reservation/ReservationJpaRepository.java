@@ -97,4 +97,20 @@ public interface ReservationJpaRepository extends JpaRepository<Reservation, Lon
  			AND r.status = :confirmed
 	""")
 	List<Long> findConfirmedConcertSeatIds(@Param("confirmed") ReservationStatus confirmed);
+
+	@Query("""
+		SELECT COUNT(*)
+		FROM Reservation r
+			JOIN r.concert c
+			JOIN r.concertDate cd
+		WHERE
+			r.concert.id = :concertId
+			AND r.concertDate.id  = :concertDateId
+			AND r.status = :status
+	""")
+	Long countConfirmedReservations(
+		@Param("concertId") long concertId,
+		@Param("concertDateId") long concertDateId,
+		@Param("status") ReservationStatus reservationStatus
+	);
 }

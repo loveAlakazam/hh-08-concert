@@ -9,6 +9,8 @@ import static org.mockito.Mockito.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -35,6 +37,7 @@ import io.hhplus.concert.domain.reservation.ReservationService;
 import io.hhplus.concert.domain.reservation.ReservationRepository;
 import io.hhplus.concert.domain.support.CacheStore;
 import io.hhplus.concert.domain.user.User;
+import io.hhplus.concert.domain.user.UserRepository;
 import io.hhplus.concert.interfaces.api.common.BusinessException;
 import io.hhplus.concert.interfaces.api.common.validators.DateValidator;
 
@@ -232,5 +235,24 @@ public class ReservationServiceTest {
 		assertNotNull(info.reservation().getReservedAt());
 		assertNull(info.reservation().getTempReservationExpiredAt());
 		assertFalse(concertSeat.isAvailable()); // 좌석은 예약불가능 상태인지 확인
+	}
+	@Test
+	void 상태가_CONFIRMED_인_예약들의_개수를_구한다() {
+		// given
+		long concertId = 1L;
+		long concertDateId = 1L;
+
+		Concert concert = Concert.create("테스트 콘서트", "테스트 아티스트", LocalDate.now(), "테스트 장소명", 2000);
+		ConcertDate concertDate = concert.getDates().get(0);
+		List<ConcertSeat> concertSeats = concertDate.getSeats();
+
+		when(reservationRepository.countConfirmedReservations(concertId, concertDateId)).thenReturn(50L);
+
+		// when
+		long result = reservationService.countConfirmedSeats(ReservationCommand.CountConfirmedSeats.of(concertId, concertDateId));
+
+		// then
+		assertEquals(concertSeats.size(), result);
+		verify(reservationRepository, times(1)).countConfirmedReservations(concertId, concertDateId);
 	}
 }

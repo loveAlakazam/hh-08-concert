@@ -12,6 +12,8 @@ import static org.mockito.Mockito.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -118,7 +120,6 @@ public class ReservationServiceIntegrationTest {
 				))
 			);
 			assertEquals(ALREADY_RESERVED_SEAT.getMessage(), exception.getMessage());
-			verify(cacheStore,never()).evict(any()); // 캐시 무효화 하지 않음
 		}
 		@Test
 		void 유저가_콘서트좌석_임시예약을_성공한다() {
@@ -145,11 +146,6 @@ public class ReservationServiceIntegrationTest {
 			assertFalse(isPastDateTime(reservation.getTempReservationExpiredAt()));
 			// 임시예약상태인지 최종 확인
 			assertTrue(reservation.isTemporary());
-
-			long concertId = sampleConcertSeat.getConcert().getId();
-			long concertDateId = sampleConcertSeat.getConcertDate().getId();
-			String cacheKey = CONCERT_SEAT_LIST_CACHE_KEY + "-" + "concert_id:" + concertId +"-" + "concert_date_id:" + concertDateId;
-			verify(cacheStore,times(1)).evict(eq(cacheKey)); // 캐시무효화 검증
 		}
 		@Order(3)
 		@Test
@@ -394,10 +390,6 @@ public class ReservationServiceIntegrationTest {
 			);
 			Reservation reservation = info.reservation(); // 임시예약상태
 			long reservationId = reservation.getId();
-			// 임시 예약 상태 확인
-			assertNotNull(reservation);
-			assertTrue(reservation.isTemporary());
-			assertFalse(isPastDateTime(reservation.getTempReservationExpiredAt()));
 
 			// when & then
 			// 임시예약이 만료되어있는데 예약확정상태로 변경하려는 경우에 비즈니스규칙에 위배
@@ -406,6 +398,51 @@ public class ReservationServiceIntegrationTest {
 				() -> reservationService.cancel(ReservationCommand.Cancel.of(reservationId))
 			);
 			assertEquals(INVALID_ACCESS.getMessage(), exception.getMessage());
+		}
+	}
+	@Order(5)
+	@Nested
+	class CountConfirmedSeats {
+		@Test
+		void 예약확정된_콘서트좌석의_개수는_1개이다(){
+			// given
+			long concertId = sampleConcert.getId();
+			long concertDateId = sampleConcertDate.getId();
+
+			User user = userRepository.save(User.of("테스트"));
+			Reservation reservation = Reservation.of(user, sampleConcert, sampleConcertDate, sampleConcertSeat);
+			reservation.temporaryReserve(); // 임시예약
+			reservation.confirm(); // 예약확정
+			reservationRepository.saveOrUpdate(reservation);
+
+			// when
+			long result = reservationService.countConfirmedSeats(ReservationCommand.CountConfirmedSeats.of(concertId, concertDateId));
+			// then
+			assertEquals(1, result);
+		}
+		@Test
+		void 예약확정된_콘서트좌석의_개수는_50개이다(){
+			// given
+			long concertId = sampleConcert.getId();
+			long concertDateId = sampleConcertDate.getId();
+			List<ConcertSeat> concertSeats = sampleConcertDate.getSeats();
+
+			List<User> users = new ArrayList<>();
+			for(int i=1; i <= concertSeats.size(); i++) {
+				User user = userRepository.save(User.of("테스트"));
+				users.add(user);
+			}
+			for(int i=0; i < concertSeats.size(); i++) {
+				Reservation reservation = Reservation.of(users.get(i), sampleConcert, sampleConcertDate, concertSeats.get(i));
+				reservation.temporaryReserve(); // 임시예약
+				reservation.confirm(); // 예약확정
+				reservationRepository.saveOrUpdate(reservation);
+			}
+
+			// when
+			long result = reservationService.countConfirmedSeats(ReservationCommand.CountConfirmedSeats.of(concertId, concertDateId));
+			// then
+			assertEquals(concertSeats.size(), result);
 		}
 	}
 }

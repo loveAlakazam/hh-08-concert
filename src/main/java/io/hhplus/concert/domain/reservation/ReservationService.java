@@ -61,6 +61,7 @@ public class ReservationService {
             // 임시예약 상태의 예약 정보를 데이터베이스에 저장
             reservationRepository.saveOrUpdate(reservation);
 
+            // TODO
             // 좌석1개의 상태가 변경되었으므로 해당 좌석리스트에 대한 캐싱을 evict 시키고 해당콘서트일정 좌석목록을 조회할때 캐시를 갱신시키는 방안으로한다.
             // 하지만 동시에 여러개의 좌석이 예약되버려서 상태변경이 잦으면 계속 지우게되고 조회할때마다 또 갱신해야되므로 DB 성능저하가 발생할 수 있다.
             // 트래픽증가로 인해 캐싱의 잦은 변경으로 성능이 저하되면, 비동기캐시갱신을 사용하거나 kafka를 사용해야한다.
@@ -138,5 +139,8 @@ public class ReservationService {
         Reservation reservation = reservationRepository.findById(command.reservationId());
         if(reservation == null) throw new BusinessException(NOT_FOUND_RESERVATION);
         return ReservationInfo.Get.from(reservation);
+    }
+    public long countConfirmedSeats(ReservationCommand.CountConfirmedSeats command) {
+        return reservationRepository.countConfirmedReservations(command.concertId(), command.concertDateId());
     }
 }
