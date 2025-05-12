@@ -1,11 +1,19 @@
 package io.hhplus.concert.domain.concert;
 
+import static io.hhplus.concert.domain.concert.Concert.*;
+import static io.hhplus.concert.infrastructure.redis.ConcertRedisRepositoryImpl.*;
+
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
 
-import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import jakarta.persistence.PreUpdate;
+import io.hhplus.concert.domain.support.JsonSerializer;
+import io.hhplus.concert.domain.support.RedisRankingSnapshot;
+import io.hhplus.concert.domain.support.SortedSetEntry;
+import io.hhplus.concert.infrastructure.persistence.snapshots.RedisRankingSnapshotJpaRepository;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -13,10 +21,14 @@ import lombok.RequiredArgsConstructor;
 public class ConcertMaintenanceService {
 	private final ConcertDateRepository concertDateRepository;
 	private final ConcertSeatRepository concertSeatRepository;
+	private final ConcertRedisRepository concertRedisRepository;
+	private final JsonSerializer jsonSerializer;
+	private final RedisRankingSnapshotJpaRepository snapshotRepository;
 
 	/**
 	 * 현재기준으로 콘서트일정이 이미 지난날짜이면 soft-delete 한다.
 	 */
+	@Transactional
 	public void deletePastConcertDates() {
 		// 일정이 지난 공연일정의 아이디를 구한다
 		List<Long> finishedConcertDateIds = concertDateRepository.findFinishedConcertDateIds();
@@ -29,25 +41,18 @@ public class ConcertMaintenanceService {
 		}
 	}
 	/**
-	 * 해당 공연일정의 좌석50개 전부가 모두 예약상태(임시예약+예약확정) 라면 매진상태이므로
-	 * 해당 공연일정의 에약가능여부를 false 로 변경한다.
+	 * 0시에 전날 일간랭킹을 DB에 저장한다
 	 */
-	public void checkSoldOut() {
-		// 좌석 콘서트의 일정별로 좌석의 개수를 확인한다.
-		List<ConcertDate> concertDates = concertDateRepository.findAllNotDeleted();
+	public void saveDailySnapshot() {
+		LocalDate pastDate = LocalDate.now(ZoneId.of(ASIA_TIMEZONE_ID)).minusDays(1);
+		String key = DAILY_FAMOUS_CONCERT_RANK_KEY + pastDate;
 
-		for(ConcertDate concertDate : concertDates) {
-			// 콘서트좌석에서 예약가능한 좌석개수를 확인한다.
-			int numberOfAvailableSeat = concertDate.countAvailableSeats();
-
-			// 예약가능한 좌석개수에 따라 공연일정의 isAvailable 값이 변경된다.
-            if (numberOfAvailableSeat == 0) {
-                concertDate.soldOut();
-            } else {
-				concertDate.available();
-			}
-			// 데이터베이스 저장
-			concertDateRepository.save(concertDate);
+		List<SortedSetEntry> ranking = concertRedisRepository.getDailyFamousConcertRankingWithScore(key);
+		if(!ranking.isEmpty()) {
+			// DB에 저장
+			String json = jsonSerializer.toJson(ranking);
+			snapshotRepository.save(RedisRankingSnapshot.of(pastDate, json));
 		}
 	}
+
 }
