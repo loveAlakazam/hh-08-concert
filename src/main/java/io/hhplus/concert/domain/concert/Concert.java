@@ -72,17 +72,14 @@ public class Concert extends BaseEntity {
 	 */
 	// 콘서트:콘서트날짜 = 1:N
 	@OneToMany(mappedBy = "concert", cascade = CascadeType.ALL, orphanRemoval = true )
-	@JsonIgnore
 	private List<ConcertDate> dates = new ArrayList<>();
 
 	// 콘서트:콘서트좌석 = 1:N
 	@OneToMany(mappedBy = "concert", cascade = CascadeType.ALL, orphanRemoval = true )
-	@JsonIgnore
 	private List<ConcertSeat> seats = new ArrayList<>();
 
 	// 콘서트:예약 = 1:N
 	@OneToMany(mappedBy = "concert")
-	@JsonIgnore
 	private List<Reservation> reservations = new ArrayList<>();
 
 	/**
@@ -159,4 +156,10 @@ public class Concert extends BaseEntity {
 	public static final String CONCERT_SEAT_LIST_CACHE_KEY= "concert_seat:list";
 	public static final Duration CONCERT_SEAT_LIST_CACHE_TTL= Duration.ofMinutes(5);
 
+	// 일간 인기콘서트 랭킹
+	public static final String DAILY_FAMOUS_CONCERT_RANK_KEY = "soldout:daily_rank:";
+	public static final Duration DAILY_FAMOUS_CONCERT_RANK_TTL = Duration.ofHours(25);
+	// 주간 인기콘서트 랭킹
+	public static final String WEEKLY_FAMOUS_CONCERT_RANK_KEY = "soldout:weekly_rank:";
+	public static final Duration WEEKLY_FAMOUS_CONCERT_RANK_TTL = Duration.ofHours(25);
 }
