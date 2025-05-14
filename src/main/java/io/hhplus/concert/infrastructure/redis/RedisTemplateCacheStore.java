@@ -3,6 +3,7 @@ package io.hhplus.concert.infrastructure.redis;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -43,16 +44,6 @@ public class RedisTemplateCacheStore implements CacheStore {
 		// TTL이 없음
 		redisTemplate.opsForZSet().add(key, member, score);
 	}
-	@Override
-	public void zAdd(String key, String member, double score, Duration expiration) {
-		redisTemplate.opsForZSet().add(key, member, score);
-
-		// ttl을 최초에만 설정한다
-		long ttl = this.getExpire(key);
-		if(ttl == -1 ) {
-			redisTemplate.expire(key, expiration); // ttl 설정
-		}
-	}
 
 	@Override
 	public Set<Object> zRange(String key, long start, long end) {
@@ -80,4 +71,60 @@ public class RedisTemplateCacheStore implements CacheStore {
 		// 0이상: 레디스에 키에 매핑되는 값이 저장되어있으며 곧 만료예정
 		return redisTemplate.getExpire(key);
 	}
+
+	@Override
+	public void setExpire(String key, Duration ttl) {
+		redisTemplate.expire(key, ttl);
+	}
+
+	@Override
+	public <T> void hSet(String key, String field, T value) {
+		redisTemplate.opsForHash().put(key, field, value);
+	}
+
+	@Override
+	public <T> T hGet(String key, String field, Class<T> type) {
+		Object raw = redisTemplate.opsForHash().get(key, field);
+		return raw == null? null : objectMapper.convertValue(raw, type);
+	}
+
+	@Override
+	public <T> Map<String, T> hGetAll(String key, Class<T> type) {
+		Map<Object, Object> raw = redisTemplate.opsForHash().entries(key);
+		if(raw.isEmpty()) return Collections.emptyMap();
+
+		return raw.entrySet().stream().collect(Collectors.toMap(
+			e -> e.getKey().toString(),
+			e -> objectMapper.convertValue(e.getValue(), type)
+		));
+	}
+
+	@Override
+	public Long zRank(String key, String member) {
+		return redisTemplate.opsForZSet().rank(key, member); // 오름차순기준
+	}
+
+	@Override
+	public Long zRevRank(String key, String member) {
+		return redisTemplate.opsForZSet().reverseRank(key, member); // 내림차순기준
+	}
+
+	@Override
+	public Set<Object> ZmPopMaxFromSortedSet(String key, int count) {
+		Set<Object> members = redisTemplate.opsForZSet().reverseRange(key, 0, count-1);
+		if(members != null && !members.isEmpty()){
+			redisTemplate.opsForZSet().remove(key, members.toArray());
+		}
+		return members != null ? members : Collections.emptySet();
+	}
+
+	@Override
+	public Set<Object> ZmPopMinFromSortedSet(String key, int count) {
+		Set<Object> members = redisTemplate.opsForZSet().range(key, 0, count-1);
+		if(members != null && !members.isEmpty()){
+			redisTemplate.opsForZSet().remove(key, members.toArray());
+		}
+		return members != null ? members : Collections.emptySet();
+	}
+
 }
