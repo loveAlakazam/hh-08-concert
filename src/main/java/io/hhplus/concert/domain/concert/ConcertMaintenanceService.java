@@ -5,15 +5,19 @@ import static io.hhplus.concert.infrastructure.redis.ConcertRedisRepositoryImpl.
 
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import io.hhplus.concert.domain.support.CacheStore;
 import io.hhplus.concert.domain.support.JsonSerializer;
 import io.hhplus.concert.domain.support.RedisRankingSnapshot;
 import io.hhplus.concert.domain.support.SortedSetEntry;
 import io.hhplus.concert.infrastructure.persistence.snapshots.RedisRankingSnapshotJpaRepository;
+import io.hhplus.concert.interfaces.api.common.InvalidValidationException;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -47,12 +51,37 @@ public class ConcertMaintenanceService {
 		LocalDate pastDate = LocalDate.now(ZoneId.of(ASIA_TIMEZONE_ID)).minusDays(1);
 		String key = DAILY_FAMOUS_CONCERT_RANK_KEY + pastDate;
 
-		List<SortedSetEntry> ranking = concertRedisRepository.getDailyFamousConcertRankingWithScore(key);
+		List<SortedSetEntry> ranking = concertRedisRepository.getRankingWithScore(key);
 		if(!ranking.isEmpty()) {
 			// DB에 저장
 			String json = jsonSerializer.toJson(ranking);
 			snapshotRepository.save(RedisRankingSnapshot.of(pastDate, json));
 		}
+	}
+
+	/**
+	 * 매일 0시 - 현재를 기준으로 6일전데이터~1일전데이터들을 불러온다
+	 * - 동일 콘서트별로 여러개의 일정을 가지므로 날마다 매진된 콘서트의 일정은 제각각이다.
+	 * - 콘서트 아이디를 파싱하여 콘서트아이디가 몇번 등장했는지에 따라 인기콘서트의 순위를 정할 수 있다.
+	 */
+	public Map<String, Integer> loadWeeklyBaseRankingFromSnapshots() {
+		LocalDate today = LocalDate.now(ZoneId.of(ASIA_TIMEZONE_ID));
+		LocalDate from = today.minusDays(6);
+		LocalDate to = today.minusDays(1);
+		Map<String, Integer> concertCountMap = new HashMap<>();
+
+		// 6일치: (현재기준) 6일전 ~ 1일전 스냅샷데이터 누적
+		List<RedisRankingSnapshot> snapshots = snapshotRepository.findByDateBetween(from, to);
+		for(RedisRankingSnapshot snapshot : snapshots) {
+			List<SortedSetEntry> entries = jsonSerializer.fromJsonList(snapshot.getJsonData(), SortedSetEntry.class);
+			accumulateConcertCount(entries, concertCountMap);
+		}
+
+		String todayKey = WEEKLY_FAMOUS_CONCERT_RANK_KEY + today;
+		for(Map.Entry<String, Integer> entry : concertCountMap.entrySet()) {
+			concertRedisRepository.recordWeeklyFamousConcertRanking(todayKey, entry.getKey(), entry.getValue());
+		}
+		return concertCountMap;
 	}
 
 }

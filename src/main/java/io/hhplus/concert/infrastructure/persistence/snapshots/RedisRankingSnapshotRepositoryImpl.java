@@ -1,6 +1,7 @@
 package io.hhplus.concert.infrastructure.persistence.snapshots;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.stereotype.Repository;
@@ -22,5 +23,10 @@ public class RedisRankingSnapshotRepositoryImpl implements RedisRankingSnapshotR
 	@Override
 	public RedisRankingSnapshot save(RedisRankingSnapshot snapshot) {
 		return redisRankingSnapshotJpaRepository.save(snapshot);
+	}
+
+	@Override
+	public List<RedisRankingSnapshot> findByDateBetween(LocalDate from, LocalDate to) {
+		return redisRankingSnapshotJpaRepository.findByDateBetween(from, to);
 	}
 }

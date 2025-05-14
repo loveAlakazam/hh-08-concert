@@ -23,4 +23,10 @@ public class ConcertSchedulerImpl implements ConcertScheduler {
 	public void saveYesterdayDailyRanking() {
 		concertMaintenanceService.saveDailySnapshot();
 	}
+
+	@Scheduled(cron = "0 0 0 * * *")
+	@Override
+	public void loadWeeklyBaseRankingFromSnapshots() {
+		concertMaintenanceService.loadWeeklyBaseRankingFromSnapshots();
+	}
 }
