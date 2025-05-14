@@ -1,5 +1,6 @@
 package io.hhplus.concert.domain.concert;
 
+import static io.hhplus.concert.domain.concert.Concert.*;
 import static io.hhplus.concert.domain.concert.ConcertService.*;
 import static io.hhplus.concert.interfaces.api.common.validators.PaginationValidator.*;
 import static io.hhplus.concert.interfaces.api.concert.ConcertErrorCode.*;

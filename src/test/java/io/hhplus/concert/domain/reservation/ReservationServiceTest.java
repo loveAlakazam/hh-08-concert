@@ -1,5 +1,6 @@
 package io.hhplus.concert.domain.reservation;
 
+import static io.hhplus.concert.domain.concert.Concert.*;
 import static io.hhplus.concert.domain.concert.ConcertService.*;
 import static io.hhplus.concert.domain.reservation.ReservationStatus.*;
 import static io.hhplus.concert.interfaces.api.user.CommonErrorCode.*;

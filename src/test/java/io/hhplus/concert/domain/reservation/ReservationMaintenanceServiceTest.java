@@ -25,6 +25,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import static io.hhplus.concert.domain.concert.Concert.*;
 import static io.hhplus.concert.domain.concert.ConcertService.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;

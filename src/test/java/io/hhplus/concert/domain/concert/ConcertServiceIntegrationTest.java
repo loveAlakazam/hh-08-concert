@@ -1,5 +1,6 @@
 package io.hhplus.concert.domain.concert;
 
+import static io.hhplus.concert.domain.concert.Concert.*;
 import static io.hhplus.concert.domain.concert.ConcertService.*;
 import static io.hhplus.concert.interfaces.api.user.CommonErrorCode.*;
 import static org.assertj.core.api.AssertionsForClassTypes.*;
