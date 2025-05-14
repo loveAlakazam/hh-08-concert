@@ -1,5 +1,6 @@
 package io.hhplus.concert.domain.concert;
 
+import static io.hhplus.concert.domain.concert.Concert.*;
 import static io.hhplus.concert.interfaces.api.concert.ConcertErrorCode.*;
 
 import java.time.Duration;
@@ -26,14 +27,6 @@ public class ConcertService {
     private final RedisTemplate<String, Object> redisTemplate;
     private final ObjectMapper objectMapper;
 
-    public static final String CONCERT_LIST_CACHE_KEY = "concert:list";
-    private static final Duration CONCERT_LIST_CACHE_TTL = Duration.ofHours(1);
-
-    public static final String CONCERT_DATE_LIST_CACHE_KEY= "concert_date:list";
-    private static final Duration CONCERT_DATE_LIST_CACHE_TTL = Duration.ofMinutes(30);
-
-    public static final String CONCERT_SEAT_LIST_CACHE_KEY= "concert_seat:list";
-    public static final Duration CONCERT_SEAT_LIST_CACHE_TTL= Duration.ofMinutes(5);
 
     /**
      * 콘서트 목록조회

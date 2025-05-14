@@ -1,5 +1,6 @@
 package io.hhplus.concert.domain.reservation;
 
+import static io.hhplus.concert.domain.concert.Concert.*;
 import static io.hhplus.concert.domain.concert.ConcertService.*;
 import static io.hhplus.concert.domain.reservation.Reservation.*;
 import static io.hhplus.concert.interfaces.api.reservation.ReservationErrorCode.*;
@@ -34,7 +35,6 @@ public class ReservationService {
 
     private final CacheStore cacheStore;
     @Autowired private RedissonClient redissonClient;
-    private static final String TEMPORARY_RESERVE_KEY = "'concertSeat:' + #command.concertSeat().id + ':temporaryReserve'";
 
 
     /**

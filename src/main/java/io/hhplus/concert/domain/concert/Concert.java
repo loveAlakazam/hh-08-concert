@@ -4,6 +4,7 @@ import static io.hhplus.concert.domain.concert.ConcertSeat.*;
 import static io.hhplus.concert.interfaces.api.concert.ConcertErrorCode.*;
 import static io.hhplus.concert.interfaces.api.user.CommonErrorCode.*;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -145,5 +146,17 @@ public class Concert extends BaseEntity {
 	public static int MAXIMUM_LENGTH_OF_ARTIST_NAME = 30;
 	public static int MINIMUM_LENGTH_OF_PLACE_NAME = 2;
 	public static int MAXIMUM_LENGTH_OF_PLACE_NAME= 100;
+
+	/**
+	 * 콘서트 관련 키
+	 */
+	public static final String CONCERT_LIST_CACHE_KEY = "concert:list";
+	public static final Duration CONCERT_LIST_CACHE_TTL = Duration.ofHours(1);
+
+	public static final String CONCERT_DATE_LIST_CACHE_KEY= "concert_date:list";
+	public static final Duration CONCERT_DATE_LIST_CACHE_TTL = Duration.ofMinutes(30);
+
+	public static final String CONCERT_SEAT_LIST_CACHE_KEY= "concert_seat:list";
+	public static final Duration CONCERT_SEAT_LIST_CACHE_TTL= Duration.ofMinutes(5);
 
 }
