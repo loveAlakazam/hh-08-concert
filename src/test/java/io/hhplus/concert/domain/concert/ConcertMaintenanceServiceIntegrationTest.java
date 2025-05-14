@@ -4,12 +4,10 @@ import static io.hhplus.concert.domain.concert.Concert.*;
 import static io.hhplus.concert.infrastructure.redis.ConcertRedisRepositoryImpl.*;
 import static org.assertj.core.api.Assertions.*;
 
-import java.time.Duration;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.MethodOrderer;
@@ -33,7 +31,6 @@ import io.hhplus.concert.domain.support.RedisRankingSnapshotRepository;
 import io.hhplus.concert.domain.support.SortedSetEntry;
 import io.hhplus.concert.infrastructure.containers.RedisTestContainerConfiguration;
 import io.hhplus.concert.infrastructure.containers.TestcontainersConfiguration;
-import io.hhplus.concert.infrastructure.persistence.snapshots.RedisRankingSnapshotJpaRepository;
 
 @ActiveProfiles("test")
 @SpringBootTest
@@ -107,7 +104,7 @@ public class ConcertMaintenanceServiceIntegrationTest {
 
 			String member = "concert:1:2025-05-31";
 			double score = 123456789.0;
-			cacheStore.zAdd(redisKey, member, score, Duration.ofMinutes(3));
+			cacheStore.zAdd(redisKey, member, score);
 
 			// when
 			concertMaintenanceService.saveDailySnapshot();

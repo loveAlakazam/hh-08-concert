@@ -35,14 +35,24 @@ public class ConcertRedisRepositoryImpl implements ConcertRedisRepository {
 		// SortedSet 구성멤버 이름 예시: concert:1:2025-05-15 (concertId: 1 인 콘서트중 콘서트일정은 2025-05-15 )
 		String member = String.format("concert:%s:%s", concertId, concertDate);
 
-		// 일간랭킹의 유효시간을 25시간으로 한다
-		cacheStore.zAdd(key, member, score, Duration.ofHours(25));
+		cacheStore.zAdd(key, member, score);
+
+		// 일간랭킹의 유효시간을 25시간으로 초기화 한다
+		long ttl = cacheStore.getExpire(key);
+		if(ttl == -1) {
+			cacheStore.setExpire(key, Duration.ofHours(25));
+		}
 	}
 
 	@Override
 	public void recordWeeklyFamousConcertRanking(String sortedSetKey, String member, long value) {
+		cacheStore.zAdd(sortedSetKey, member, value);
+
 		// 주간랭킹은 유효시간을 24시간으로 한다
-		cacheStore.zAdd(sortedSetKey, member, value, Duration.ofHours(24));
+		long ttl = cacheStore.getExpire(sortedSetKey);
+		if(ttl == -1) {
+			cacheStore.setExpire(sortedSetKey, Duration.ofHours(24));
+		}
 	}
 
 	@Override
