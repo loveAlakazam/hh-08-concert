@@ -16,10 +16,13 @@ import org.slf4j.LoggerFactory;
 import io.hhplus.concert.domain.concert.Concert;
 import io.hhplus.concert.domain.concert.ConcertCommand;
 import io.hhplus.concert.domain.concert.ConcertDate;
+import io.hhplus.concert.domain.concert.ConcertMaintenanceService;
 import io.hhplus.concert.domain.concert.ConcertRedisRepository;
 import io.hhplus.concert.domain.concert.ConcertService;
 import io.hhplus.concert.domain.reservation.ReservationCommand;
 import io.hhplus.concert.domain.reservation.ReservationService;
+import io.hhplus.concert.domain.support.JsonSerializer;
+import io.hhplus.concert.infrastructure.persistence.snapshots.RedisRankingSnapshotJpaRepository;
 
 @ExtendWith(MockitoExtension.class)
 public class SoldOutConcertDateTest {
@@ -31,12 +34,15 @@ public class SoldOutConcertDateTest {
 	private ConcertService concertService;
 	@Mock
 	private ReservationService reservationService;
+	@Mock
+	private ConcertMaintenanceService concertMaintenanceService;
 
 	@BeforeEach
 	void setUp() {
 		concertUsecase = new ConcertUsecase(
 			concertService,
 			reservationService,
+			concertMaintenanceService,
 			concertRedisRepository
 		);
 	}
