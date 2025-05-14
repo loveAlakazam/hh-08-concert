@@ -1,16 +1,28 @@
 package io.hhplus.concert.application.usecase.concert;
 
+import static io.hhplus.concert.domain.concert.Concert.*;
+import static io.hhplus.concert.infrastructure.redis.ConcertRedisRepositoryImpl.*;
+import static java.util.Map.Entry.*;
+
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import io.hhplus.concert.domain.concert.ConcertCommand;
 import io.hhplus.concert.domain.concert.ConcertDate;
+import io.hhplus.concert.domain.concert.ConcertMaintenanceService;
 import io.hhplus.concert.domain.concert.ConcertRedisRepository;
 import io.hhplus.concert.domain.concert.ConcertService;
 import io.hhplus.concert.domain.reservation.ReservationCommand;
 import io.hhplus.concert.domain.reservation.ReservationService;
+import io.hhplus.concert.domain.support.SortedSetEntry;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -18,6 +30,7 @@ import lombok.RequiredArgsConstructor;
 public class ConcertUsecase {
 	private final ConcertService concertService;
 	private final ReservationService reservationService;
+	private final ConcertMaintenanceService concertMaintenanceService;
 	private final ConcertRedisRepository concertRedisRepository;
 
 	/**
@@ -60,6 +73,31 @@ public class ConcertUsecase {
 	 *
 	 * - 데이터베이스에서 저장되어있는걸 불러온다.
 	 */
-	public void weeklyFamousConcertRanking() {
+	public List<SortedSetEntry> weeklyFamousConcertRanking() {
+		LocalDate today = LocalDate.now(ZoneId.of(ASIA_TIMEZONE_ID));
+		String key = WEEKLY_FAMOUS_CONCERT_RANK_KEY + today;
+
+		List<SortedSetEntry> cached = concertRedisRepository.getRankingWithScore(key);
+		Map<String, Integer> concertCountMap = new HashMap<>();
+
+		if(!cached.isEmpty()) {
+			// 과거6일치 인기콘서트 랭킹 데이터가 레디스에 있는경우
+			accumulateConcertCount(cached, concertCountMap);
+		} else {
+			// 과거6일치 인기콘서트 랭킹 데이터가 레디스에 없는경우
+			concertCountMap = concertMaintenanceService.loadWeeklyBaseRankingFromSnapshots();
+		}
+
+		// 오늘의 실시간 일간랭킹 반영
+		List<SortedSetEntry> todayRaking = concertRedisRepository.getDailyFamousConcertRankingWithScore();
+		accumulateConcertCount(todayRaking, concertCountMap);
+
+		// 누적된 결과를 점수높은순으로 정렬하여 반환한다
+		return concertCountMap
+			.entrySet()
+			.stream()
+			.sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
+			.map(e -> new SortedSetEntry(e.getKey(), e.getValue().doubleValue()))
+			.collect(Collectors.toList());
 	}
 }
