@@ -44,9 +44,14 @@ public class RedisTemplateCacheStore implements CacheStore {
 		redisTemplate.opsForZSet().add(key, member, score);
 	}
 	@Override
-	public void zAdd(String key, String member, double score, Duration ttl) {
+	public void zAdd(String key, String member, double score, Duration expiration) {
 		redisTemplate.opsForZSet().add(key, member, score);
-		redisTemplate.expire(key, ttl); // ttl 설정
+
+		// ttl을 최초에만 설정한다
+		long ttl = this.getExpire(key);
+		if(ttl == -1 ) {
+			redisTemplate.expire(key, expiration); // ttl 설정
+		}
 	}
 
 	@Override
@@ -70,6 +75,9 @@ public class RedisTemplateCacheStore implements CacheStore {
 
 	@Override
 	public long getExpire(String key) {
+		// -2 : 해당 키가 존재하지 않음
+		// -1 : ttl이 설정되어있지않음
+		// 0이상: 레디스에 키에 매핑되는 값이 저장되어있으며 곧 만료예정
 		return redisTemplate.getExpire(key);
 	}
 }
