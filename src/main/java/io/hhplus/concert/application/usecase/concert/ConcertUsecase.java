@@ -28,7 +28,7 @@ public class ConcertUsecase {
 		Long concertId = criteria.concertId();
 		Long concertDateId = criteria.concertDateId();
 
-		// 전체좌석이 모두 예약확정인지 확인
+		// 전체좌석개수를 구한다
 		long totalSeats = concertService.countTotalSeats(ConcertCommand.CountTotalSeats.of(concertId, concertDateId));
 
 		// 확정상태의 예약개수를 구한다
@@ -36,6 +36,7 @@ public class ConcertUsecase {
 
 		if( totalSeats != confirmedSeatsCount) return;
 
+		// 전좌석이 모두 예약확정 상태라면
 		// 전좌석 예약확정이므로 해당콘서트일정은 매진상태이므로 예약불가능한 상태로 변경한다.
 		ConcertDate soldOutConcertDate = concertService.soldOut(concertDateId);
 
