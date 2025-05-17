@@ -8,9 +8,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.UUID;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.servlet.ServletOutputStream;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -18,18 +15,21 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.mock.web.DelegatingServletOutputStream;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.hhplus.concert.domain.token.Token;
 import io.hhplus.concert.domain.token.TokenInfo;
-import io.hhplus.concert.domain.token.TokenRepository;
 import io.hhplus.concert.domain.token.TokenService;
+import io.hhplus.concert.domain.token.TokenStatus;
 import io.hhplus.concert.domain.user.User;
 import io.hhplus.concert.interfaces.api.common.BusinessException;
 import io.hhplus.concert.interfaces.api.token.TokenHandlerInterceptor;
 import io.hhplus.concert.interfaces.api.token.UserContextHolder;
+import jakarta.servlet.ServletOutputStream;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.mock.web.DelegatingServletOutputStream;
 
 @ExtendWith(MockitoExtension.class)
 public class TokenHandlerInterceptorTest {
@@ -44,8 +44,6 @@ public class TokenHandlerInterceptorTest {
 	private HttpServletResponse response;
 	@Mock
 	private Object handler;
-	@Mock
-	private TokenRepository tokenRepository;
 	@Mock
 	private ObjectMapper objectMapper;
 
@@ -137,9 +135,8 @@ public class TokenHandlerInterceptorTest {
 		when(request.getHeader("token")).thenReturn(uuid.toString());
 
 		User user = User.of("테스트");
-		Token token = Token.of(user, uuid);
-		token.issue(user); // 대기상태
-		token.activate(); // 활성화 상태
+		Token token = new Token(uuid, userId, TokenStatus.ACTIVE);
+
 
 		// 토큰이 활성화 상태임을 검증됨
 		TokenInfo.ValidateActiveToken tokenInfo = TokenInfo.ValidateActiveToken.of(token);
