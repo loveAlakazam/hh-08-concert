@@ -3,19 +3,15 @@ package io.hhplus.concert.domain.token;
 import static io.hhplus.concert.domain.token.Token.*;
 import static io.hhplus.concert.interfaces.api.token.TokenErrorCode.*;
 
-import java.time.Duration;
 import java.util.UUID;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import io.hhplus.concert.domain.user.User;
 import io.hhplus.concert.interfaces.api.common.BusinessException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-
-import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Slf4j
 @Service
@@ -23,19 +19,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 public class TokenService {
     private final TokenRepository tokenRepository;
     private final WaitingQueue waitingQueue;
-    private final RedisTemplate<String, Object> redisTemplate;
-    private final ObjectMapper objectMapper;
 
 
     public TokenInfo.GetTokenByUUID getTokenByUUID(TokenCommand.GetTokenByUUID command) {
-        // 캐시저장소에서 찾는다
-        Object cachedRaw = redisTemplate.opsForValue().get(TOKEN_CACHE_KEY+command.uuid());
-        if(cachedRaw != null) {
-            Token token = objectMapper.convertValue(cachedRaw, Token.class);
-            return TokenInfo.GetTokenByUUID.from(token);
-        }
-
-        // 캐시 미스일경우
         Token token = tokenRepository.findTokenByUUID(command.uuid());
         return TokenInfo.GetTokenByUUID.from(token);
     }
@@ -71,9 +57,6 @@ public class TokenService {
 
         // DB에 토큰정보를 저장한다
         tokenRepository.saveOrUpdate(token);
-        // 캐시를 동기화한다(write-through)
-        String tokenKey = TOKEN_CACHE_KEY + token.getUuid().toString();
-        redisTemplate.opsForValue().set(tokenKey, token, TOKEN_CACHE_TTL);
 
         // 토큰정보와 대기순서를 같이 리턴한다
         return TokenInfo.IssueWaitingToken.of(token, position);
@@ -85,17 +68,9 @@ public class TokenService {
     @Transactional
     public TokenInfo.ActivateToken activateToken(TokenCommand.ActivateToken command) {
         UUID uuid = command.uuid();
-        // 캐시저장소 조회
-        String tokenKey = TOKEN_CACHE_KEY + uuid.toString();
-        Object cachedRaw = redisTemplate.opsForValue().get(tokenKey);
-        Token token = objectMapper.convertValue(cachedRaw, Token.class);
 
-        // 캐시 미스일경우
-        if(cachedRaw == null) {
-            // 대상토큰이 유효한 상태인지 확인
-            token = tokenRepository.findTokenByUUID(uuid);
-            if(token == null) throw new BusinessException(TOKEN_NOT_FOUND);
-        }
+        Token token = tokenRepository.findTokenByUUID(uuid);
+        if(token == null) throw new BusinessException(TOKEN_NOT_FOUND);
 
         // 이미 토큰이 activated 됐는지 확인
         if(token.isActivated()) throw new BusinessException(TOKEN_ALREADY_ISSUED);
@@ -114,8 +89,6 @@ public class TokenService {
 
         // DB에 토큰정보 저장
         tokenRepository.saveOrUpdate(token);
-        // 캐시를 동기화한다(write-through)
-        redisTemplate.opsForValue().set(tokenKey,token, TOKEN_CACHE_TTL );
 
         // 활성화 토큰을 반환한다
         return TokenInfo.ActivateToken.of(token);
@@ -137,15 +110,10 @@ public class TokenService {
 	public TokenInfo.ValidateActiveToken validateActiveToken(UUID uuid) {
         // 캐시저장소에서 토큰 조회
         String tokenKey = TOKEN_CACHE_KEY + uuid.toString();
-        Object cachedRaw = redisTemplate.opsForValue().get(tokenKey);
-        Token token = objectMapper.convertValue(cachedRaw, Token.class);
 
-        // 캐시 미스일 경우
-        if(token == null) {
-            // 토큰정보 조회
-            token = tokenRepository.findTokenByUUID(uuid);
-            if(token == null) throw new BusinessException(TOKEN_NOT_FOUND);
-        }
+        // 토큰정보 조회
+        Token token = tokenRepository.findTokenByUUID(uuid);
+        if(token == null) throw new BusinessException(TOKEN_NOT_FOUND);
 
         if(token.isExpiredToken()) throw new BusinessException(EXPIRED_OR_UNAVAILABLE_TOKEN);
         if(!token.isActivated()) throw new BusinessException(ALLOW_ACTIVE_TOKEN);
