@@ -37,7 +37,6 @@ import io.hhplus.concert.interfaces.api.common.BusinessException;
 @Import(TestcontainersConfiguration.class)
 @Sql(statements = {
 	"SET FOREIGN_KEY_CHECKS=0",
-	"TRUNCATE TABLE tokens",
 	"TRUNCATE TABLE users",
 	"SET FOREIGN_KEY_CHECKS=1"
 }, executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)

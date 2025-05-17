@@ -7,11 +7,6 @@ import java.util.UUID;
 import io.hhplus.concert.interfaces.api.common.BusinessException;
 
 public class TokenInfo {
-	public record GetTokenByUserId(TokenEntity token) {
-		public static GetTokenByUserId from(TokenEntity token) {
-			return new GetTokenByUserId(token);
-		}
-	}
 	public record GetTokenByUUID(Token token) {
 		public static GetTokenByUUID from(Token token) {
 			return token == null? null : new GetTokenByUUID(token);

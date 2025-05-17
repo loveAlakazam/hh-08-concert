@@ -3,7 +3,6 @@ package io.hhplus.concert.interfaces.api;
 import static io.hhplus.concert.interfaces.api.token.TokenErrorCode.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-import java.time.LocalDateTime;
 import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -25,9 +24,10 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
 
-import io.hhplus.concert.infrastructure.containers.TestcontainersConfiguration;
-import io.hhplus.concert.domain.token.Token;
-import io.hhplus.concert.domain.token.TokenRepository;
+import io.hhplus.concert.domain.support.CacheCleaner;
+import io.hhplus.concert.domain.token.TokenCommand;
+import io.hhplus.concert.domain.token.TokenInfo;
+import io.hhplus.concert.domain.token.TokenRedisRepository;
 import io.hhplus.concert.domain.token.TokenService;
 import io.hhplus.concert.domain.user.User;
 import io.hhplus.concert.domain.user.UserCommand;
@@ -35,6 +35,7 @@ import io.hhplus.concert.domain.user.UserInfo;
 import io.hhplus.concert.domain.user.UserPointRepository;
 import io.hhplus.concert.domain.user.UserRepository;
 import io.hhplus.concert.domain.user.UserService;
+import io.hhplus.concert.infrastructure.containers.TestcontainersConfiguration;
 import io.hhplus.concert.interfaces.api.common.ApiResponse;
 import io.hhplus.concert.interfaces.api.user.PointRequest;
 import io.hhplus.concert.interfaces.api.user.PointResponse;
@@ -47,7 +48,6 @@ import io.hhplus.concert.interfaces.api.user.UserResponse;
 @Import(TestcontainersConfiguration.class)
 @Sql(statements = {
 	"SET FOREIGN_KEY_CHECKS=0",
-	"TRUNCATE TABLE tokens",
 	"TRUNCATE TABLE users",
 	"TRUNCATE TABLE user_points",
 	"SET FOREIGN_KEY_CHECKS=1"
@@ -55,26 +55,29 @@ import io.hhplus.concert.interfaces.api.user.UserResponse;
 public class UserE2EIntegrationTest {
 	private static final Logger log = LoggerFactory.getLogger(UserE2EIntegrationTest.class);
 	@Autowired private TestRestTemplate restTemplate;
-	@Autowired private TokenRepository tokenRepository;
 	@Autowired private UserPointRepository userPointRepository;
 	@Autowired private UserRepository userRepository;
 	@Autowired private UserService userService;
+
+	@Autowired private CacheCleaner cacheCleaner;
 	@Autowired private TokenService tokenService;
+	@Autowired private TokenRedisRepository tokenRedisRepository;
 
 	private User user;
 	private UUID uuid;
-	private String validToken;
 	@BeforeEach
 	void setUp() {
+		// 이전 테스트 레디스 데이터 삭제
+		cacheCleaner.cleanAll();
+
 		// 1. 유저생성 & 유저포인트 생성
 		UserInfo.CreateNewUser userInfo = userService.createUser(UserCommand.CreateNewUser.from("최은강"));
 		user = userInfo.user();
-		uuid = UUID.randomUUID();
 
 		// 2. 토큰활성화
-		Token activeToken = Token.of(user, uuid);
-		activeToken.activate();
-		tokenRepository.saveOrUpdate(activeToken);
+		TokenInfo.IssueWaitingToken tokenInfo = tokenService.issueWaitingToken(TokenCommand.IssueWaitingToken.from(user));
+		uuid =tokenInfo.token().uuid();
+		tokenService.activateToken();
 	}
 	private HttpHeaders defaultHeaders() {
 		HttpHeaders headers = new HttpHeaders();
@@ -126,17 +129,11 @@ public class UserE2EIntegrationTest {
 	}
 	@Order(3)
 	@Test
-	void 포인트조회_요청중_토큰이_만료되면_401_UnauthorizedException_예외발생() {
+	void 포인트조회_요청중_토큰이_만료되면_404_NotFoundException_예외발생() {
 		// given
 		log.info("토큰만료샘플 유저데이터 생성");
 		UserInfo.CreateNewUser userInfo = userService.createUser(UserCommand.CreateNewUser.from("토큰만료유저"));
-		User expiredUser = userInfo.user();
 		UUID expiredUuid = UUID.randomUUID();
-
-		log.info("토큰의 유효시간을 만료처리");
-		Token expiredToken = Token.of(expiredUser, expiredUuid);
-		expiredToken.expire(LocalDateTime.now().minusMinutes(1));
-		tokenRepository.saveOrUpdate(expiredToken);
 
 		// when
 		var response = restTemplate.exchange(
@@ -147,9 +144,9 @@ public class UserE2EIntegrationTest {
 		);
 
 		// then
-		assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
+		assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
 		assertNotNull(response.getBody());
-		assertTrue(response.getBody().contains(EXPIRED_OR_UNAVAILABLE_TOKEN.getMessage()));
+		assertTrue(response.getBody().contains(TOKEN_NOT_FOUND.getMessage()));
 	}
 	@Order(4)
 	@Test
