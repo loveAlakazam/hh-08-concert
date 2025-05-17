@@ -101,6 +101,31 @@ public class TokenServiceIntegrationTest {
 		assertEquals(TOKEN_IS_WAITING.getHttpStatus(), exception.getHttpStatus());
 		assertEquals(TOKEN_IS_WAITING.getMessage(), exception.getMessage());
 	}
+	@Test
+	void 토큰발급요청을_100번_실행() {
+		long start = System.currentTimeMillis();
+
+		// given
+		List<User> users = new ArrayList<>();
+		List<UUID> uuids = new ArrayList<>();
+		for(int i=1; i<=100; i++) {
+			User user = userRepository.save(User.of("테스트"+i));
+			users.add(user);
+		}
+
+		// when
+		int issuedSuccess =0;
+		for(int i=0; i<users.size(); i++) {
+			User user = users.get(i);
+			TokenInfo.IssueWaitingToken info =tokenService.issueWaitingToken(TokenCommand.IssueWaitingToken.from(user));
+			if(info.token().getStatus() == TokenStatus.WAITING) issuedSuccess++;
+		}
+
+		assertEquals(100, issuedSuccess);
+
+		long end = System.currentTimeMillis();
+		log.info("⏰ 실행시간: {}ms", (end-start));
+	}
 
 	/**
 	 * getCurrentPosition 테스트
