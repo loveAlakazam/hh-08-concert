@@ -29,6 +29,7 @@ public enum ConcertErrorCode implements BusinessErrorCode {
 	// artistName
 	 LENGTH_OF_ARTIST_NAME_SHOULD_BE_MORE_THAN_MINIMUM_LENGTH( HttpStatus.BAD_REQUEST, "아티스트명은 최소 "+MINIMUM_LENGTH_OF_ARTIST_NAME+"자 이상이어야 합니다."),
 	 LENGTH_OF_ARTIST_NAME_SHOULD_BE_LESS_THAN_MAXIMUM_LENGTH( HttpStatus.BAD_REQUEST,  "아티스트명은 최대 "+MAXIMUM_LENGTH_OF_ARTIST_NAME+"자 입니다."),
+	CONCERT_NOT_FOUND(HttpStatus.NOT_FOUND, "콘서트가 존재하지 않습니다."),
 	/**
 	 * ConcertDate
 	 */

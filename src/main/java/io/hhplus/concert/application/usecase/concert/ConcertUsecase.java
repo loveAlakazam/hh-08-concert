@@ -8,12 +8,13 @@ import java.time.ZoneId;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import io.hhplus.concert.domain.concert.Concert;
 import io.hhplus.concert.domain.concert.ConcertCommand;
 import io.hhplus.concert.domain.concert.ConcertDate;
 import io.hhplus.concert.domain.concert.ConcertMaintenanceService;
@@ -61,11 +62,30 @@ public class ConcertUsecase {
 	 * - SortedSet 이용
 	 * - 결제해서 콘서트좌석 매진 상황이 발생했을때 -> 랭킹에 집계한다.
 	 */
-	public Set<Object> dailyFamousConcertRanking() {
-		return concertRankingRepository.getDailyFamousConcertRanking();
+	public List<DailyFamousConcertRankingDto> dailyFamousConcertRanking() {
+		return concertRankingRepository.getDailyFamousConcertRankingWithScore().stream().map(entry -> {
+			String value = entry.getValue().toString(); // member의 value 예: "concert:1:2025-05-15"
+			String[] parts = decomposeRankingMember(value);
+
+			long concertId = Long.parseLong(parts[1]);
+			Concert concert = concertService.findConcertById(concertId);
+			if (concert == null || concert.isDeleted()) return null;
+			return new DailyFamousConcertRankingDto(concert.getName(), concert.getArtistName(), parts[2]);
+		}).filter(Objects::nonNull).toList();
 	}
-	public Set<Object> dailyFamousConcertRanking(int rank) {
-		return concertRankingRepository.getDailyFamousConcertRanking(rank);
+	public List<DailyFamousConcertRankingDto> dailyFamousConcertRanking(int rank) {
+		return concertRankingRepository.getDailyFamousConcertRankingWithScore(rank).stream()
+			.map(entry -> {
+				String value = entry.getValue().toString(); // member의 value 예: "concert:1:2025-05-15"
+				String[] parts = decomposeRankingMember(value);
+
+				long concertId = Long.parseLong(parts[1]);
+				Concert concert = concertService.findConcertById(concertId);
+				if (concert == null || concert.isDeleted()) return null;
+				return new DailyFamousConcertRankingDto(concert.getName(), concert.getArtistName(), parts[2]);
+			})
+			.filter(Objects::nonNull)
+			.toList();
 	}
 	/**
 	 * 실시간 주간 랭킹 시스템

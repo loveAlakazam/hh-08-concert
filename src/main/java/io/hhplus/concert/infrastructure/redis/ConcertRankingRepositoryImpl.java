@@ -84,16 +84,21 @@ public class ConcertRankingRepositoryImpl implements ConcertRankingRepository {
 		return cacheStore.zRangeWithScores(key, 0, -1);
 	}
 
-	public static String extractConcertIdInRankingMember(String member) {
+	public static String[] decomposeRankingMember(String member) {
 		// member = "concert:1:2025-05-17"
+		// parts[0] = concert 		- 불필요
+		// parts[1] = 1 			- concertId
+		// parts[2] = "2025-05-17" 	- 콘서트날짜
 		String[] parts = member.split(":");
 		if(parts.length < 3) throw new IllegalArgumentException("Invalid member format: " + member);
-		return "concert:" + parts[1];
+		return parts;
 	}
+
 
 	public static void accumulateConcertCount(List<SortedSetEntry> entries,  Map<String, Integer> countMap) {
 		for(SortedSetEntry entry: entries) {
-			String memberKey = extractConcertIdInRankingMember(entry.getValue().toString()); // concert:1
+			String[] parts = decomposeRankingMember(entry.getValue().toString());
+			String memberKey = parts[1];
 
 			// value가 처음 등장했다면 value의 값을 1 으로 저장
 			// value가 여러번 나왔다면, 이미 존재하므로, 기존값에 1 을 더한다.

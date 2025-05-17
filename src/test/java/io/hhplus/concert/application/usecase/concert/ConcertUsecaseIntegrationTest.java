@@ -8,13 +8,11 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -61,6 +59,7 @@ import io.hhplus.concert.infrastructure.containers.TestcontainersConfiguration;
 })
 @Sql(statements = {
 	"SET FOREIGN_KEY_CHECKS=0",
+	"TRUNCATE TABLE redis_ranking_snapshots",
 	"TRUNCATE TABLE payments",
 	"TRUNCATE TABLE reservations",
 	"TRUNCATE TABLE concert_seats",
@@ -195,36 +194,76 @@ public class ConcertUsecaseIntegrationTest {
 			String expectMember2 =  String.format("concert:%s:%s", concert2.getId(), concertDate2.getProgressDate());
 
 			// when
-			Set<Object> result = concertUsecase.dailyFamousConcertRanking();
+			List<DailyFamousConcertRankingDto> result = concertUsecase.dailyFamousConcertRanking();
 
 			// then
-			// ZADD된 두개의 콘서트일정이 ZRANGE로 조회되어야함을 검증
+			// 2개의 콘서트 일정이 DTO로 반환되는지 검증
 			assertThat(result).hasSize(2);
+			assertThat(result).extracting(DailyFamousConcertRankingDto::name)
+				.containsExactly(concert1.getName(), concert2.getName());
 
-			// result는 Set(LinkedHashSet) 이므로 리스트로 변환시켜서 순서검사
-			List<Object> sortedList = new ArrayList<>(result);
+			assertThat(result).extracting(DailyFamousConcertRankingDto::artistName)
+				.containsExactly(concert1.getArtistName(), concert2.getArtistName());
 
-			// 1. 멤버 포함 여부 검증
-			assertThat(sortedList).containsExactlyInAnyOrder(expectMember1, expectMember2);
+			assertThat(result).extracting(DailyFamousConcertRankingDto::concertDate)
+				.containsExactly(
+					concertDate1.getProgressDate().toString(),
+					concertDate2.getProgressDate().toString()
+				);
+		}
+		@Test
+		void 일간랭킹_인기콘서트_top3_조회에_성공한다(){
+			// given
+			Concert concert1 = Concert.create("콘서트1", "아티스트1", LocalDate.now().plusDays(1), "콘서트 장소1", 2000);
+			Concert concert2 = Concert.create("콘서트2", "아티스트2", LocalDate.now().plusDays(2), "콘서트 장소2", 2500);
+			Concert concert3 = Concert.create("콘서트3", "아티스트3", LocalDate.now().plusDays(3), "콘서트 장소3", 3000);
+			concertRepository.saveOrUpdate(concert1);
+			concertRepository.saveOrUpdate(concert2);
+			concertRepository.saveOrUpdate(concert3);
 
-			// 2. 순서검증
-			// Redis에 저장된 score 까지 확인
-			List<SortedSetEntry> entriesWithScores = cacheStore.zRangeWithScores(expectKey, 0, -1);
+			ConcertDate date1 = concert1.getDates().get(0);
+			ConcertDate date2 = concert2.getDates().get(0);
+			ConcertDate date3 = concert3.getDates().get(0);
 
-			// score가 낮은 순으로 정렬되었는지 검증
-			assertThat(entriesWithScores).hasSize(2);
+			// 매진처리
+			for(ConcertSeat seat: date1.getSeats()) {
+				User user = userRepository.save(User.of("user1-" + seat.getNumber()));
+				Reservation reservation = Reservation.of(user, concert1, date1, seat);
+				reservation.temporaryReserve();
+				reservation.confirm();
+				reservationRepository.saveOrUpdate(reservation);
+			}
+			concertUsecase.soldOutConcertDate(ConcertCriteria.SoldOutConcertDate.of(concert1.getId(), date1.getId()));
 
-			SortedSetEntry entry1 = entriesWithScores.get(0);
-			SortedSetEntry entry2 = entriesWithScores.get(1);
-			log.info("entry1: {}", entry1);
-			log.info("entry2: {}", entry2);
+			for(ConcertSeat seat: date2.getSeats()) {
+				User user = userRepository.save(User.of("user2-" + seat.getNumber()));
+				Reservation reservation = Reservation.of(user, concert2, date2, seat);
+				reservation.temporaryReserve();
+				reservation.confirm();
+				reservationRepository.saveOrUpdate(reservation);
+			}
+			concertUsecase.soldOutConcertDate(ConcertCriteria.SoldOutConcertDate.of(concert2.getId(), date2.getId()));
 
-			// 3. 실제 정렬 순서가 매진 타이밍에 따라 맞는지 확인
-			assertThat(List.of(entry1.getValue(), entry2.getValue()))
-				.containsExactly(expectMember1, expectMember2);
+			for(ConcertSeat seat: date3.getSeats()) {
+				User user = userRepository.save(User.of("user3-" + seat.getNumber()));
+				Reservation reservation = Reservation.of(user, concert3, date3, seat);
+				reservation.temporaryReserve();
+				reservation.confirm();
+				reservationRepository.saveOrUpdate(reservation);
+			}
+			concertUsecase.soldOutConcertDate(ConcertCriteria.SoldOutConcertDate.of(concert3.getId(), date3.getId()));
 
-			// 4. score 비교로 정렬기준 확인
-			assertThat(entry1.getScore()).isLessThan(entry2.getScore());
+			// when
+			List<DailyFamousConcertRankingDto> ranking = concertUsecase.dailyFamousConcertRanking(3);
+			// then
+			assertThat(ranking).hasSize(3);
+			assertThat(ranking).extracting(DailyFamousConcertRankingDto::name).containsExactly("콘서트1", "콘서트2", "콘서트3");
+			assertThat(ranking).extracting(DailyFamousConcertRankingDto::artistName).containsExactly("아티스트1", "아티스트2", "아티스트3");
+			assertThat(ranking).extracting(DailyFamousConcertRankingDto::concertDate).containsExactly(
+				date1.getProgressDate().toString(),
+				date2.getProgressDate().toString(),
+				date3.getProgressDate().toString()
+			);
 		}
 	}
 	@Order(3)
