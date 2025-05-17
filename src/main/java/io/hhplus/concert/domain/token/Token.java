@@ -15,6 +15,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -127,5 +128,11 @@ public class Token extends BaseEntity {
     // 비즈니스 정책
     public static final int VALID_TOKEN_DURATION_MINUTE_UNIT = 5; // 5분 - 토큰 유효기간 분단위
     public static final int VALID_TOKEN_DURATION_SECOND_UNIT = 60 * VALID_TOKEN_DURATION_MINUTE_UNIT; // 토큰 유효기간 초단위
+
+    /**
+     * Redis Key 이름
+     */
+    public static final String TOKEN_CACHE_KEY= "token:";
+    public static final Duration TOKEN_CACHE_TTL = Duration.ofMinutes(5);
 
 }

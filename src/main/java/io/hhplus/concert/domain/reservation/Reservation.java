@@ -208,6 +208,10 @@ public class Reservation extends BaseEntity {
 		if(!DateValidator.isPastDateTime(expiredAt))
 			throw new InvalidValidationException(EXPIRED_DATE_SHOULD_BE_PAST_DATETIME);
 		this.tempReservationExpiredAt = expiredAt;
-
 	}
+
+	/**
+	 * Redis Key
+	 */
+	public static final String TEMPORARY_RESERVE_KEY = "'concertSeat:' + #command.concertSeat().id + ':temporaryReserve'";
 }

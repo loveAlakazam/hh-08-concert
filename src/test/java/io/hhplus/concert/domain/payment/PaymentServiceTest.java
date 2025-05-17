@@ -18,6 +18,7 @@ import io.hhplus.concert.domain.concert.Concert;
 import io.hhplus.concert.domain.concert.ConcertDate;
 import io.hhplus.concert.domain.concert.ConcertSeat;
 import io.hhplus.concert.domain.reservation.Reservation;
+import io.hhplus.concert.domain.reservation.ReservationRepository;
 import io.hhplus.concert.domain.user.User;
 import io.hhplus.concert.interfaces.api.common.BusinessException;
 
@@ -28,10 +29,12 @@ public class PaymentServiceTest {
 	private PaymentService paymentService;
 	@Mock
 	private PaymentRepository paymentRepository;
+	@Mock
+	private ReservationRepository reservationRepository;
 
 	@BeforeEach
 	void setUp() {
-		paymentService = new PaymentService(paymentRepository);
+		paymentService = new PaymentService(paymentRepository, reservationRepository);
 	}
 
 
@@ -59,6 +62,7 @@ public class PaymentServiceTest {
 		);
 		assertEquals(NOT_VALID_STATUS_FOR_PAYMENT.getMessage(), ex.getMessage());
 		verify(paymentRepository, never()).saveOrUpdate(any());
+		verify(reservationRepository, never()).saveOrUpdate(any());
 	}
 	@Test
 	void 예약확정처리되어_결제내역생성에_성공한다() {
@@ -83,6 +87,7 @@ public class PaymentServiceTest {
 			() -> paymentService.create(PaymentCommand.CreatePayment.of(reservation))
 		);
 		verify(paymentRepository, times(1)).saveOrUpdate(any());
+		verify(reservationRepository, times(1)).saveOrUpdate(any());
 	}
 
 }

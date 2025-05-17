@@ -10,6 +10,7 @@ import io.hhplus.concert.domain.concert.ConcertDate;
 public interface ConcertDateRepository {
 	ConcertInfo.GetConcertDateList findAllAvailable(long concertId);
 	ConcertDate findConcertDateById(long id);
+	ConcertDate findConcertDateByIdAndNotDeleted(long id);
 
 	List<Long> findFinishedConcertDateIds();
 	void deleteConcertDate(long concertDateId);

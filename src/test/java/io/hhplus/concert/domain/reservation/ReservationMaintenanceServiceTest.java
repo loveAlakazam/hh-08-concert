@@ -5,6 +5,7 @@ import io.hhplus.concert.domain.concert.ConcertDate;
 import io.hhplus.concert.domain.concert.ConcertInfo;
 import io.hhplus.concert.domain.concert.ConcertSeat;
 import io.hhplus.concert.domain.concert.ConcertSeatRepository;
+import io.hhplus.concert.domain.support.CacheStore;
 import io.hhplus.concert.domain.user.User;
 import io.hhplus.concert.interfaces.api.common.validators.DateValidator;
 import org.junit.jupiter.api.BeforeEach;
@@ -24,6 +25,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import static io.hhplus.concert.domain.concert.Concert.*;
 import static io.hhplus.concert.domain.concert.ConcertService.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -39,11 +41,7 @@ public class ReservationMaintenanceServiceTest {
     @Mock
     private ConcertSeatRepository concertSeatRepository;
     @Mock
-    private RedisTemplate<String, Object> redisTemplate;
-    @Mock
-    private ValueOperations<String, Object> valueOps;
-    @Mock
-    private ObjectMapper objectMapper;
+    private CacheStore cacheStore;
 
 
     @BeforeEach
@@ -51,8 +49,7 @@ public class ReservationMaintenanceServiceTest {
         reservationMaintenanceService = new ReservationMaintenanceService(
             reservationRepository,
             concertSeatRepository,
-            redisTemplate,
-            objectMapper
+            cacheStore
         );
     }
     private static final Logger log = LoggerFactory.getLogger(ReservationMaintenanceServiceTest.class);
@@ -70,26 +67,23 @@ public class ReservationMaintenanceServiceTest {
         ConcertDate concertDate = concert.getDates().get(0);
         ConcertSeat concertSeat = concertDate.getSeats().get(0);
 
-        Reservation reservation = Reservation.of(user,concert, concertDate, concertSeat);
-        reservation.temporaryReserve(); // 임시에약상태로 변경
-        reservation.expireTemporaryReserve(LocalDateTime.now().minusSeconds(1)); // 임시예약상태를 만료
-        List<Reservation> expiredReservations = List.of(reservation);
-
+        // id 설정
         ReflectionTestUtils.setField(user, "id", userId); // user 아이디 수동설정
         ReflectionTestUtils.setField(concert, "id", concertId); // concert 아이디 수동설정
         ReflectionTestUtils.setField(concertDate, "id", concertDateId); // concertDate 아이디 수동설정
         ReflectionTestUtils.setField(concertSeat, "id", concertSeatId); // concertSeat 아이디 수동설정
+
+        // 예약만료
+        Reservation reservation = Reservation.of(user,concert, concertDate, concertSeat);
+        reservation.temporaryReserve(); // 임시에약상태로 변경
+        reservation.expireTemporaryReserve(LocalDateTime.now().minusSeconds(1)); // 임시예약상태를 만료
+        List<Reservation> expiredReservations = List.of(reservation);
 
         when(reservationRepository.findExpiredTempReservations()).thenReturn(expiredReservations); // 임시예약유효일자가 만료된 예약은 1개
         doAnswer(invocation -> {
             reservation.cancel();
             return reservation;
         }).when(reservationRepository).updateCanceledExpiredTempReservations(); // 예약상태를 '취소'로 변경
-
-        when(redisTemplate.opsForValue()).thenReturn(valueOps);
-        when(concertSeatRepository.findConcertSeats(concertId, concertDateId)).thenReturn(
-            ConcertInfo.GetConcertSeatList.from(concertDate.getSeats())
-        );
 
         //when
         reservationMaintenanceService.cancel();
@@ -103,7 +97,7 @@ public class ReservationMaintenanceServiceTest {
         assertTrue(reservation.getConcertSeat().isAvailable(), "좌석은 다시 예약이 가능하다");
 
         String cacheKey = CONCERT_SEAT_LIST_CACHE_KEY + "-" + "concert_id:" + concertId +"-" + "concert_date_id:" + concertDateId;
-        verify(valueOps).set(eq(cacheKey), any(ConcertInfo.GetConcertSeatList.class), any());
+        verify(cacheStore).evict(eq(cacheKey)); // 캐시삭제 검증
 
     }
 

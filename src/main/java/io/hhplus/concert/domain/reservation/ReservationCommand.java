@@ -34,4 +34,9 @@ public class ReservationCommand {
 			return new Get(reservationId);
 		}
 	}
+	public record CountConfirmedSeats(long concertId, long concertDateId) {
+		public static CountConfirmedSeats of(long concertId, long concertDateId) {
+			return new CountConfirmedSeats(concertId, concertDateId);
+		}
+	}
 }

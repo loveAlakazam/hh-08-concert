@@ -2,9 +2,13 @@ package io.hhplus.concert.application.usecase.payment;
 
 import static io.hhplus.concert.interfaces.api.payment.PaymentErrorCode.*;
 
+import java.time.LocalDate;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import io.hhplus.concert.application.usecase.concert.ConcertCriteria;
+import io.hhplus.concert.application.usecase.concert.ConcertUsecase;
 import io.hhplus.concert.domain.concert.ConcertCommand;
 import io.hhplus.concert.domain.concert.ConcertInfo;
 import io.hhplus.concert.domain.concert.ConcertService;
@@ -33,6 +37,7 @@ public class PaymentUsecase {
 	private final UserService userService;
 	private final ReservationService reservationService;
 	private final PaymentService paymentService;
+	private final ConcertUsecase concertUsecase;
 
 	/**
 	 * 임시예약 상태(5분간 좌석예약) 에서 결제 요청 유즈케이스<br><br>
@@ -53,6 +58,8 @@ public class PaymentUsecase {
 		ReservationInfo.Get reservationInfo = reservationService.get(ReservationCommand.Get.of(criteria.reservationId()));
 		Reservation reservation = reservationInfo.reservation();
 		long concertSeatPrice = reservation.getConcertSeat().getPrice();
+		long concertId = reservation.getConcert().getId();
+		long concertDateId = reservation.getConcertDate().getId();
 
 		// 임시예약상태일 경우에 결제 가능
 		if(reservation.isTemporary()) {
@@ -64,6 +71,9 @@ public class PaymentUsecase {
 
 			// 결제처리 및 결제정보 반환
 			PaymentInfo.CreatePayment paymentInfo = paymentService.create(PaymentCommand.CreatePayment.of(reservation));
+
+			// 매진 확인 및 매진처리
+			concertUsecase.soldOutConcertDate(ConcertCriteria.SoldOutConcertDate.of(concertId, concertDateId));
 			return PaymentResult.PayAndConfirm.of(paymentInfo);
 		}
 		throw new BusinessException(NOT_VALID_STATUS_FOR_PAYMENT);

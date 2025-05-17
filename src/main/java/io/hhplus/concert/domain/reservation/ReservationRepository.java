@@ -14,4 +14,6 @@ public interface ReservationRepository {
 	void updateCanceledExpiredTempReservations();
 
 	List<Long> findConfirmedConcertSeatIds();
+
+	long countConfirmedReservations(long concertId, long concertDateId);
 }

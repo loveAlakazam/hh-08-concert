@@ -28,6 +28,11 @@ public class ConcertDateRepositoryImpl implements ConcertDateRepository {
     }
 
     @Override
+    public ConcertDate findConcertDateByIdAndNotDeleted(long id) {
+        return concertDateJpaRepository.findByIdAndNotDeleted(id).orElse(null);
+    }
+
+    @Override
     public List<Long> findFinishedConcertDateIds() {
         return concertDateJpaRepository.findFinishedConcertDateIds(LocalDate.now());
     }

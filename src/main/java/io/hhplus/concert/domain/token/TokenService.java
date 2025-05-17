@@ -1,5 +1,6 @@
 package io.hhplus.concert.domain.token;
 
+import static io.hhplus.concert.domain.token.Token.*;
 import static io.hhplus.concert.interfaces.api.token.TokenErrorCode.*;
 
 import java.time.Duration;
@@ -24,9 +25,6 @@ public class TokenService {
     private final WaitingQueue waitingQueue;
     private final RedisTemplate<String, Object> redisTemplate;
     private final ObjectMapper objectMapper;
-
-    private static final String TOKEN_CACHE_KEY= "token:";
-    private static final Duration TOKEN_CACHE_TTL = Duration.ofMinutes(5);
 
 
     public TokenInfo.GetTokenByUUID getTokenByUUID(TokenCommand.GetTokenByUUID command) {

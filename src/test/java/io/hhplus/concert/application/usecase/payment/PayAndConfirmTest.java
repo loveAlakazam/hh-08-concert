@@ -15,7 +15,9 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.test.util.ReflectionTestUtils;
 
+import io.hhplus.concert.application.usecase.concert.ConcertUsecase;
 import io.hhplus.concert.application.usecase.reservation.ReserveConcertSeatTest;
 import io.hhplus.concert.domain.concert.Concert;
 import io.hhplus.concert.domain.concert.ConcertDate;
@@ -48,10 +50,12 @@ public class PayAndConfirmTest {
 	private ReservationService reservationService;
 	@Mock
 	private PaymentService paymentService;
+	@Mock
+	private ConcertUsecase concertUsecase;
 
 	@BeforeEach
 	void setUp() {
-		paymentUsecase = new PaymentUsecase(userService, reservationService, paymentService);
+		paymentUsecase = new PaymentUsecase(userService, reservationService, paymentService, concertUsecase);
 	}
 	private static final Logger log = LoggerFactory.getLogger(PayAndConfirmTest.class);
 
@@ -103,11 +107,17 @@ public class PayAndConfirmTest {
 	@Test
 	void 임시예약이_만료되어_취소된_상태에서_결제처리를_요청할경우_BusinessException_예외를_발생시킨다() throws InterruptedException {
 		// given
-		log.info("유저와 유저포인트 50000원 보유 목데이터 생성");
 		long userId = 1L;
+		long concertId = 1L;
+		long concertDateId = 1L;
+		long concertSeatId = 1L;
+		long reservationId = 1L;
+
+		log.info("유저와 유저포인트 50000원 보유 목데이터 생성");
 		User user = User.of("테스트유저");
 		UserPoint userPoint = UserPoint.of(user);
 		userPoint.charge(50000); // 5만원 충전
+		ReflectionTestUtils.setField(user, "id", userId);
 		UserPointCommand.GetUserPoint getUserPointCommand = UserPointCommand.GetUserPoint.of(userId);
 		when(userService.getUserPoint(getUserPointCommand)).thenReturn(UserInfo.GetUserPoint.of(userPoint));
 
@@ -116,7 +126,10 @@ public class PayAndConfirmTest {
 		ConcertDate concertDate = concert.getDates().get(0);
 		ConcertSeat concertSeat = concertDate.getSeats().get(0); // 예약좌석
 
-		long reservationId = 1L;
+		ReflectionTestUtils.setField(concert, "id", concertId);
+		ReflectionTestUtils.setField(concertDate, "id", concertDateId);
+		ReflectionTestUtils.setField(concertSeat, "id", concertSeatId);
+
 		Reservation reservation = Reservation.of(user,concert,concertDate, concertSeat);
 		// 임시예약상태
 		reservation.temporaryReserve();
@@ -124,6 +137,7 @@ public class PayAndConfirmTest {
 		reservation.expireTemporaryReserve(LocalDateTime.now().minusSeconds(1));
 
 		reservation.cancel(); // 취소처리
+		ReflectionTestUtils.setField(reservation, "id", reservationId);
 		ReservationCommand.Get getReservationCommand = ReservationCommand.Get.of(reservationId);
 		when(reservationService.get(getReservationCommand)).thenReturn(ReservationInfo.Get.from(reservation));
 
@@ -152,11 +166,19 @@ public class PayAndConfirmTest {
 	@Test
 	void 임시예약상태에서_5분내로_결제를완료하면_결제처리_및_예약확정에_성공한다() {
 		// given
-		log.info("유저와 유저포인트 50000원 보유 목데이터 생성");
 		long userId = 1L;
+		long concertId = 1L;
+		long concertDateId = 1L;
+		long concertSeatId = 1L;
+		long reservationId = 1L;
+		long paymentId = 1L;
+
+		log.info("유저와 유저포인트 50000원 보유 목데이터 생성");
 		User user = User.of("테스트유저");
 		UserPoint userPoint = UserPoint.of(user);
 		userPoint.charge(50000); // 5만원 충전
+		ReflectionTestUtils.setField(user, "id", userId);
+
 		UserPointCommand.GetUserPoint getUserPointCommand = UserPointCommand.GetUserPoint.of(userId);
 		when(userService.getUserPoint(getUserPointCommand)).thenReturn(UserInfo.GetUserPoint.of(userPoint));
 
@@ -164,10 +186,13 @@ public class PayAndConfirmTest {
 		Concert concert = Concert.create("테스트 콘서트입니다", "테스트 아티스트", LocalDate.now(), "테스트 장소", 10000L);
 		ConcertDate concertDate = concert.getDates().get(0);
 		ConcertSeat concertSeat = concertDate.getSeats().get(0); // 예약좌석
+		ReflectionTestUtils.setField(concert, "id", concertId);
+		ReflectionTestUtils.setField(concertDate, "id", concertDateId);
+		ReflectionTestUtils.setField(concertSeat, "id", concertSeatId);
 
-		long reservationId = 1L;
 		Reservation reservation = Reservation.of(user,concert,concertDate, concertSeat);
 		reservation.temporaryReserve(); // 임시예약상태
+		ReflectionTestUtils.setField(reservation, "id", reservationId);
 		ReservationCommand.Get getReservationCommand = ReservationCommand.Get.of(reservationId);
 		when(reservationService.get(getReservationCommand)).thenReturn(ReservationInfo.Get.from(reservation));
 
@@ -177,6 +202,7 @@ public class PayAndConfirmTest {
 		when(userService.usePoint(usePointCommand)).thenReturn(UserInfo.UsePoint.of(userPoint.getPoint()));
 
 		Payment payment = Payment.of(reservation);
+		ReflectionTestUtils.setField(payment, "id", paymentId);
 		PaymentCommand.CreatePayment createPaymentCommand = PaymentCommand.CreatePayment.of(reservation);
 		when(paymentService.create(createPaymentCommand)).thenReturn(PaymentInfo.CreatePayment.of(payment));
 
@@ -199,6 +225,5 @@ public class PayAndConfirmTest {
 		verify(reservationService,times(1)).get(getReservationCommand);
 		verify(paymentService,times(1)).create(createPaymentCommand);
 	}
-
 
 }

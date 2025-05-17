@@ -1,5 +1,6 @@
 package io.hhplus.concert.domain.concert;
 
+import static io.hhplus.concert.domain.concert.Concert.*;
 import static io.hhplus.concert.interfaces.api.concert.ConcertErrorCode.*;
 
 import java.time.Duration;
@@ -23,18 +24,6 @@ public class ConcertService {
     private final ConcertDateRepository concertDateRepository;
     private final ConcertSeatRepository concertSeatRepository;
 
-    private final RedisTemplate<String, Object> redisTemplate;
-    private final ObjectMapper objectMapper;
-
-    public static final String CONCERT_LIST_CACHE_KEY = "concert:list";
-    private static final Duration CONCERT_LIST_CACHE_TTL = Duration.ofHours(1);
-
-    public static final String CONCERT_DATE_LIST_CACHE_KEY= "concert_date:list";
-    private static final Duration CONCERT_DATE_LIST_CACHE_TTL = Duration.ofMinutes(30);
-
-    public static final String CONCERT_SEAT_LIST_CACHE_KEY= "concert_seat:list";
-    public static final Duration CONCERT_SEAT_LIST_CACHE_TTL= Duration.ofMinutes(5);
-
     /**
      * 콘서트 목록조회
      * - 레디스키: concert:list
@@ -42,16 +31,7 @@ public class ConcertService {
      */
     @Transactional(readOnly = true)
     public ConcertInfo.GetConcertList getConcertList() {
-        // 캐시조회
-        Object cachedRaw = redisTemplate.opsForValue().get(CONCERT_LIST_CACHE_KEY);
-        if(cachedRaw != null) {
-			return objectMapper.convertValue(cachedRaw, ConcertInfo.GetConcertList.class);
-        }
-
-        // 캐시미스일 경우 - 데이터베이스로부터 리스트결과를 가져온후에 캐시에 저장한다.
-        ConcertInfo.GetConcertList concerts = concertRepository.findAll();
-        redisTemplate.opsForValue().set(CONCERT_LIST_CACHE_KEY, concerts, CONCERT_LIST_CACHE_TTL);
-        return concerts;
+		return concertRepository.findAll();
     }
     /**
      * 예약가능한 콘서트 날짜 목록 조회
@@ -63,17 +43,8 @@ public class ConcertService {
      *
      */
     public ConcertInfo.GetConcertDateList getConcertDateList(ConcertCommand.GetConcertDateList command) {
-        // 캐시 조회
-        String cacheKey = CONCERT_DATE_LIST_CACHE_KEY + "-" + "concert_id:" + command.concertId();
-        Object cachedRaw = redisTemplate.opsForValue().get(cacheKey);
-        if(cachedRaw != null) {
-            return objectMapper.convertValue(cachedRaw, ConcertInfo.GetConcertDateList.class);
-        }
-
         // 캐시미스일 경우 - 데이터베이스로부터 리스트결과를 가져온후에 캐시에 저장한다.
-        ConcertInfo.GetConcertDateList concertDates =  concertDateRepository.findAllAvailable(command.concertId());
-        redisTemplate.opsForValue().set(cacheKey, concertDates, CONCERT_DATE_LIST_CACHE_TTL);
-        return concertDates;
+		return concertDateRepository.findAllAvailable(command.concertId());
     }
     /**
      * 콘서트 좌석 목록 조회
@@ -84,20 +55,10 @@ public class ConcertService {
      * @return ConcertInfo.GetConcertSeatList
      */
     public ConcertInfo.GetConcertSeatList getConcertSeatList(ConcertCommand.GetConcertSeatList command) {
-        // 캐시조회
-        String cacheKey = CONCERT_SEAT_LIST_CACHE_KEY + "-" + "concert_id:" + command.concertId() +"-" + "concert_date_id:" + command.concertDateId();
-        Object cachedRaw = redisTemplate.opsForValue().get(cacheKey);
-        if(cachedRaw != null) {
-            return objectMapper.convertValue(cachedRaw, ConcertInfo.GetConcertSeatList.class);
-        }
-
-        // 캐시 미스일경우 - 데이터베이스로부터 리스트결과를 가져온후에 캐시에 저장한다.
-        ConcertInfo.GetConcertSeatList concertSeats = concertSeatRepository.findConcertSeats(
-            command.concertId(),
-            command.concertDateId()
-        );
-        redisTemplate.opsForValue().set(cacheKey, concertSeats, CONCERT_SEAT_LIST_CACHE_TTL);
-        return concertSeats;
+		return concertSeatRepository.findConcertSeats(
+			command.concertId(),
+			command.concertDateId()
+		);
     }
     /**
      * 콘서트 좌석 세부 정보 조회
@@ -143,6 +104,28 @@ public class ConcertService {
 
     public ConcertSeat saveOrUpdate(ConcertSeat concertSeat) {
         return concertSeatRepository.saveOrUpdate(concertSeat);
+    }
+
+
+    public long countTotalSeats(ConcertCommand.CountTotalSeats command) {
+        long concertId = command.concertId();
+        long concertDateId = command.concertDateId();
+        // 콘서트일정 조회
+        ConcertDate concertDate =concertDateRepository.findConcertDateById(concertDateId);
+        if(concertDate == null) throw new BusinessException(CONCERT_DATE_NOT_FOUND);
+
+        // 콘서트 좌석의 전체 개수를 구한다.
+        ConcertInfo.GetConcertSeatList info = concertSeatRepository.findConcertSeats(concertId, concertDateId);
+        long total = info.concertSeatList().size();
+        if(total == 0) throw new BusinessException(CONCERT_SEAT_NOT_FOUND);
+        return total;
+    }
+    public ConcertDate soldOut(long concertDateId) {
+        ConcertDate concertDate = concertDateRepository.findConcertDateById(concertDateId);
+        if(concertDate == null) throw new BusinessException(CONCERT_DATE_NOT_FOUND);
+
+        concertDate.soldOut(); // 상태변경
+        return concertDateRepository.save(concertDate);
     }
 
 }

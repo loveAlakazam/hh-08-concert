@@ -98,4 +98,10 @@ public class ConcertCommand {
 			return new AddConcertDate(id, progressDate, place, price);
 		}
 	}
+	public record CountTotalSeats(long concertId, long concertDateId) {
+		public static CountTotalSeats of(long concertId, long concertDateId) {
+			return new CountTotalSeats(concertId, concertDateId);
+		}
+
+	}
 }

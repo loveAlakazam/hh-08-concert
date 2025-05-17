@@ -4,6 +4,7 @@ import static io.hhplus.concert.domain.concert.ConcertSeat.*;
 import static io.hhplus.concert.interfaces.api.concert.ConcertErrorCode.*;
 import static io.hhplus.concert.interfaces.api.user.CommonErrorCode.*;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -71,17 +72,14 @@ public class Concert extends BaseEntity {
 	 */
 	// 콘서트:콘서트날짜 = 1:N
 	@OneToMany(mappedBy = "concert", cascade = CascadeType.ALL, orphanRemoval = true )
-	@JsonIgnore
 	private List<ConcertDate> dates = new ArrayList<>();
 
 	// 콘서트:콘서트좌석 = 1:N
 	@OneToMany(mappedBy = "concert", cascade = CascadeType.ALL, orphanRemoval = true )
-	@JsonIgnore
 	private List<ConcertSeat> seats = new ArrayList<>();
 
 	// 콘서트:예약 = 1:N
 	@OneToMany(mappedBy = "concert")
-	@JsonIgnore
 	private List<Reservation> reservations = new ArrayList<>();
 
 	/**
@@ -146,4 +144,22 @@ public class Concert extends BaseEntity {
 	public static int MINIMUM_LENGTH_OF_PLACE_NAME = 2;
 	public static int MAXIMUM_LENGTH_OF_PLACE_NAME= 100;
 
+	/**
+	 * 콘서트 관련 키
+	 */
+	public static final String CONCERT_LIST_CACHE_KEY = "concert:list";
+	public static final Duration CONCERT_LIST_CACHE_TTL = Duration.ofHours(1);
+
+	public static final String CONCERT_DATE_LIST_CACHE_KEY= "concert_date:list";
+	public static final Duration CONCERT_DATE_LIST_CACHE_TTL = Duration.ofMinutes(30);
+
+	public static final String CONCERT_SEAT_LIST_CACHE_KEY= "concert_seat:list";
+	public static final Duration CONCERT_SEAT_LIST_CACHE_TTL= Duration.ofMinutes(5);
+
+	// 일간 인기콘서트 랭킹
+	public static final String DAILY_FAMOUS_CONCERT_RANK_KEY = "soldout:daily_rank:";
+	public static final Duration DAILY_FAMOUS_CONCERT_RANK_TTL = Duration.ofHours(25);
+	// 주간 인기콘서트 랭킹
+	public static final String WEEKLY_FAMOUS_CONCERT_RANK_KEY = "soldout:weekly_rank:";
+	public static final Duration WEEKLY_FAMOUS_CONCERT_RANK_TTL = Duration.ofHours(25);
 }

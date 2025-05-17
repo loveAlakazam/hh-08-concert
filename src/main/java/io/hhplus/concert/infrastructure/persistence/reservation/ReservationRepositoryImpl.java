@@ -59,4 +59,11 @@ public class ReservationRepositoryImpl implements ReservationRepository {
             ReservationStatus.CONFIRMED
         );
     }
+
+    @Override
+    public long countConfirmedReservations(long concertId, long concertDateId) {
+        return reservationJpaRepository.countConfirmedReservations(
+            concertId, concertDateId, ReservationStatus.CONFIRMED
+        );
+    }
 }

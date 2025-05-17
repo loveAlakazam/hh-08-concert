@@ -20,16 +20,21 @@ public class RedisConfig {
 	public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory factory) {
 		RedisTemplate<String, Object> template = new RedisTemplate<>();
 		template.setConnectionFactory(factory);
-
 		template.setKeySerializer(new StringRedisSerializer());
 
 		// ObjectMapper with JavaTimeModule
-		ObjectMapper objectMapper = new ObjectMapper();
-		objectMapper.registerModule(new JavaTimeModule());
-		objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS); // ISO-8601 로 출력
+		ObjectMapper objectMapper = new ObjectMapper()
+			.registerModule(new JavaTimeModule())
+			.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS); // ISO-8601 로 출력
 
 		// Redis value serializer
-		template.setValueSerializer(new GenericJackson2JsonRedisSerializer(objectMapper));
+		GenericJackson2JsonRedisSerializer serializer = new GenericJackson2JsonRedisSerializer(objectMapper);
+		template.setKeySerializer(new StringRedisSerializer());
+		template.setValueSerializer(serializer);
+		template.setHashKeySerializer(new StringRedisSerializer());
+		template.setHashValueSerializer(serializer);
+
+		template.afterPropertiesSet();
 		return template;
 	}
 }

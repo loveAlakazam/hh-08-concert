@@ -16,7 +16,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
 
-import io.hhplus.concert.TestcontainersConfiguration;
+import io.hhplus.concert.infrastructure.containers.TestcontainersConfiguration;
 import io.hhplus.concert.domain.token.Token;
 import io.hhplus.concert.domain.token.TokenRepository;
 import io.hhplus.concert.domain.token.TokenService;

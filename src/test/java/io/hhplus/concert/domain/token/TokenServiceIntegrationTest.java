@@ -26,7 +26,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
 
-import io.hhplus.concert.TestcontainersConfiguration;
+import io.hhplus.concert.infrastructure.containers.TestcontainersConfiguration;
 import io.hhplus.concert.domain.user.User;
 import io.hhplus.concert.domain.user.UserRepository;
 import io.hhplus.concert.interfaces.api.common.BusinessException;

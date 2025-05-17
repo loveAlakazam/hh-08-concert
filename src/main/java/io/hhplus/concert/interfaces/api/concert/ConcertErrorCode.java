@@ -34,6 +34,7 @@ public enum ConcertErrorCode implements BusinessErrorCode {
 	 */
 	AVAILABLE_SEAT_NOT_FOUND( HttpStatus.NOT_FOUND,  "예약가능한 좌석이 존재하지 않습니다."),
 	ALL_SEAT_RESERVED( HttpStatus.NOT_ACCEPTABLE,"모든 좌석이 예약되었습니다."),
+	CONCERT_DATE_NOT_FOUND(HttpStatus.NOT_FOUND, "콘서트 일정이 존재하지 않습니다."),
 	// place
 	 LENGTH_OF_PLACE_SHOULD_BE_MORE_THAN_MINIMUM_LENGTH( HttpStatus.BAD_REQUEST,  "장소명은 최소 "+MINIMUM_LENGTH_OF_PLACE_NAME+"자 이상이어야 합니다."),
 	 LENGTH_OF_PLACE_SHOULD_BE_LESS_THAN_MAXIMUM_LENGTH( HttpStatus.BAD_REQUEST,  "장소명은 최대 "+MAXIMUM_LENGTH_OF_PLACE_NAME+"자 입니다."),

@@ -7,6 +7,7 @@ import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import io.hhplus.concert.domain.concert.ConcertSeat;
+import io.hhplus.concert.domain.reservation.ReservationStatus;
 
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -21,11 +22,11 @@ public interface ConcertSeatJpaRepository extends JpaRepository<ConcertSeat, Lon
 			JOIN FETCH cs.concert c
 			JOIN FETCH cs.concertDate cd
 		WHERE  
-			c.deleted = false
+			c.id = :concertId
+			AND cd.id = :concertDateId 
+			AND c.deleted = false
 			AND cd.deleted = false
 			AND cs.deleted = false
-			AND c.id = :concertId
-			AND cd.id = :concertDateId 
 		"""
 	)
 	List<ConcertSeat> findAllSeats(@Param("concertId") Long concertId, @Param("concertDateId") Long concertDateId);
@@ -44,12 +45,21 @@ public interface ConcertSeatJpaRepository extends JpaRepository<ConcertSeat, Lon
 	Optional<ConcertSeat> getConcertSeatInfo(@Param("concertSeatId") Long concertSeatId);
 
 	@Modifying
-	@Query("""
-		UPDATE ConcertSeat cs
-		SET cs.deleted = true
-		WHERE cs.deleted = false
-			AND cs.concertDate.deleted = false
-			AND cs.concertDate.id = :id
-	""")
+	@Query(value = """
+		UPDATE concert_seats cs
+		JOIN concert_dates cd ON cd.id = cs.concert_date_id
+		SET cs.deleted = 1
+		WHERE cs.deleted = 0
+			AND cd.deleted = 0
+			AND cd.id = :id
+	""", nativeQuery = true)
 	void softDeleteConcertSeat(@Param("id") long concertDateId);
+
+	@Query("""
+		SELECT cs
+		FROM ConcertSeat cs
+		WHERE cs.deleted = false
+			AND cs.concertDate.id = :concertDateId
+	""")
+	List<ConcertSeat> findConcertSeatsByConcertDateId(@Param("concertDateId") long pastConcertDateId);
 }
