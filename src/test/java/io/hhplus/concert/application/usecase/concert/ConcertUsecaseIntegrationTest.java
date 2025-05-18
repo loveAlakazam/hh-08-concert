@@ -274,21 +274,82 @@ public class ConcertUsecaseIntegrationTest {
 			// given
 			LocalDate today = LocalDate.now(ZoneId.of(ASIA_TIMEZONE_ID));
 
+			/**
+			 *  콘서트아이디: 2 (콘서트1)
+			 *  콘서트날짜:  오늘 -1일
+			 *  콘서트날짜:  오늘 -2일
+			 *  콘서트날짜:  오늘 -3일
+			 *  콘서트날짜:  오늘 -4일
+			 *  콘서트날짜:  오늘 -5일
+			 *  콘서트날짜:  오늘 -6일
+			 *  콘서트날짜:  오늘 +1일
+			 *  콘서트날짜:  오늘 +4일
+			 */
+			Concert concert1 = Concert.create("콘서트1", "아티스트1", LocalDate.now().plusDays(1), "콘서트 장소1", 2000);
+
+			/**
+			 *  콘서트아이디: 3 (콘서트2)
+			 *  콘서트날짜:  오늘 -1일
+			 *  콘서트날짜:  오늘 -2일
+			 *  콘서트날짜:  오늘 -3일
+			 *  콘서트날짜:  오늘 -4일
+			 *  콘서트날짜:  오늘 -5일
+			 *  콘서트날짜:  오늘 -6일
+			 */
+			Concert concert2 = Concert.create("콘서트2", "아티스트2", LocalDate.now().plusDays(1), "콘서트 장소2", 2500);
+			/**
+			 *  콘서트아이디: 4 (콘서트3)
+			 *  콘서트날짜:  오늘 +4일
+			 */
+			Concert concert3 = Concert.create("콘서트3", "아티스트3", LocalDate.now().plusDays(4), "콘서트 장소3", 3000);
+
+			concert1.addConcertDate(LocalDate.now().plusDays(4), "콘서트 장소1", 2000);
+			for(int i=1; i<=5; i++) {
+				LocalDate date = LocalDate.now().minusDays(i);
+				concert1.addConcertDate(date, "콘서트 장소1", 2000);
+				concert2.addConcertDate(date, "콘서트 장소2", 2500);
+			}
+			concertRepository.saveOrUpdate(concert1);
+			concertRepository.saveOrUpdate(concert2);
+			concertRepository.saveOrUpdate(concert3);
+
+
 			// 6일치 스냅샷 DB에 저장
+			/**
+			 * (1일전) 콘서트 매진현황
+			 * - 콘서트아이디: 2, 콘서트날짜: 오늘
+			 * - 콘서트아이디: 3, 콘서트날짜: 오늘
+			 * (2일전) 콘서트 매진현황
+			 * - 콘서트아이디: 2, 콘서트날짜: 오늘 -1일
+			 * - 콘서트아이디: 3, 콘서트날짜: 오늘 -1일
+			 * (3일전) 콘서트 매진현황
+			 * - 콘서트아이디: 2, 콘서트날짜: 오늘 -2일
+			 * - 콘서트아이디: 3, 콘서트날짜: 오늘 -2일
+			 * (4일전) 콘서트 매진현황
+			 * - 콘서트아이디: 2, 콘서트날짜: 오늘 -3일
+			 * - 콘서트아이디: 3, 콘서트날짜: 오늘 -3일
+			 * (5일전) 콘서트 매진현황
+			 * - 콘서트아이디: 2, 콘서트날짜: 오늘 -4일
+			 * - 콘서트아이디: 3, 콘서트날짜: 오늘 -4일
+			 * (6일전) 콘서트 매진현황
+			 * - 콘서트아이디: 2, 콘서트날짜: 오늘 -5일
+			 * - 콘서트아이디: 3, 콘서트날짜: 오늘 -5일
+			 * - 콘서트아이디: 2, 콘서트날짜: 오늘 +1일
+			 */
 			for(int i=1; i<=6; i++) {
 				LocalDate snapshotDate = today.minusDays(i);
 
 				List<SortedSetEntry> entries;
 				if(i==6) {
 					entries = List.of(
-						new SortedSetEntry(String.format("concert:1:%s", snapshotDate.plusDays(1)), 1715590000.0),
-						new SortedSetEntry(String.format("concert:2:%s", snapshotDate.plusDays(1)), 1715591111.0),
-						new SortedSetEntry(String.format("concert:1:%s", snapshotDate.plusWeeks(1)), 1715591234.0)
+						new SortedSetEntry(String.format("concert:2:%s", snapshotDate.plusDays(1)), 1715590000.0),
+						new SortedSetEntry(String.format("concert:3:%s", snapshotDate.plusDays(1)), 1715591111.0),
+						new SortedSetEntry(String.format("concert:2:%s", snapshotDate.plusWeeks(1)), 1715591234.0)
 					);
 				} else {
 					entries = List.of(
-						new SortedSetEntry(String.format("concert:1:%s", snapshotDate.plusDays(1)), 1715590000.0),
-						new SortedSetEntry(String.format("concert:2:%s", snapshotDate.plusDays(1)), 1715591111.0)
+						new SortedSetEntry(String.format("concert:2:%s", snapshotDate.plusDays(1)), 1715590000.0),
+						new SortedSetEntry(String.format("concert:3:%s", snapshotDate.plusDays(1)), 1715591111.0)
 					);
 				}
 
@@ -297,30 +358,25 @@ public class ConcertUsecaseIntegrationTest {
 			}
 
 			// 오늘 실시간 랭킹 Redis에 저장
-			concertRankingRepository.recordDailyFamousConcertRanking("1", today.plusDays(4).toString());
-			concertRankingRepository.recordDailyFamousConcertRanking("3", today.plusDays(4).toString());
+			/**
+			 * (현재 실시간 랭킹)
+			 * concertId: 2, 콘서트날짜: 오늘 +4일
+			 * concertId: 4, 콘서트날짜: 오늘 +4일
+			 */
+			concertRankingRepository.recordDailyFamousConcertRanking("2", today.plusDays(4).toString());
+			concertRankingRepository.recordDailyFamousConcertRanking("4", today.plusDays(4).toString());
 
 			// when
-			List<SortedSetEntry> result = concertUsecase.weeklyFamousConcertRanking();
+			List<WeeklyFamousConcertRankingDto> result = concertUsecase.weeklyFamousConcertRanking();
 
 			// then
-			// concert:1 -> (6일치) 7회 + (오늘) 1회 => 8회
-			// concert:2 -> (6일치) 6회
-			// concert:3 -> (오늘)  1회
 			assertThat(result).hasSize(3);
-
-			Map<Object, Double> resultMap = result.stream()
-				.collect(
-					Collectors.toMap(SortedSetEntry::getValue, SortedSetEntry::getScore)
-				);
-			assertThat(resultMap.get("concert:1")).isEqualTo(8);
-			assertThat(resultMap.get("concert:2")).isEqualTo(6);
-			assertThat(resultMap.get("concert:3")).isEqualTo(1);
-
-			// 정렬순서 검증
-			assertThat(result.get(0).getValue()).isEqualTo("concert:1");
-			assertThat(result.get(1).getValue()).isEqualTo("concert:2");
-			assertThat(result.get(2).getValue()).isEqualTo("concert:3");
+			assertThat(result).extracting(WeeklyFamousConcertRankingDto::id)
+				.containsExactly(2L, 3L, 4L);
+			assertThat(result).extracting(WeeklyFamousConcertRankingDto::name)
+				.containsExactly("콘서트1", "콘서트2", "콘서트3");
+			assertThat(result).extracting(WeeklyFamousConcertRankingDto::artistName)
+				.containsExactly("아티스트1", "아티스트2", "아티스트3");
 		}
 
 	}
