@@ -138,11 +138,10 @@ public class ConcertMaintenanceServiceIntegrationTest {
 		@Test
 		void 스냅샷데이터베이스로부터_이전_6일치_데이터를_모두_불러올때_6일치모두있음(){
 			// given
+			// 6일치 스냅샷데이터를 데이터베이스에 저장
 			LocalDate today = LocalDate.now(ZoneId.of(ASIA_TIMEZONE_ID));
 			for(int i=1; i<=6; i++) {
 				LocalDate snapshotDate = today.minusDays(i);
-
-				// 6일치 스냅샷 DB에 저장
 				List<SortedSetEntry> entries;
 				if(i==6) {
 					entries = List.of(
@@ -165,8 +164,8 @@ public class ConcertMaintenanceServiceIntegrationTest {
 			Map<String, Integer> result = concertMaintenanceService.loadWeeklyBaseRankingFromSnapshots();
 
 			// then
-			assertThat(result.get("concert:1")).isEqualTo(7);
-			assertThat(result.get("concert:2")).isEqualTo(6);
+			assertThat(result.get("1")).isEqualTo(7);
+			assertThat(result.get("2")).isEqualTo(6);
 
 			String redisKey = WEEKLY_FAMOUS_CONCERT_RANK_KEY + today;
 			List<SortedSetEntry> redisResult = cacheStore.zRangeWithScores(redisKey, 0, -1);
@@ -189,13 +188,13 @@ public class ConcertMaintenanceServiceIntegrationTest {
 			Map<String, Integer> result = concertMaintenanceService.loadWeeklyBaseRankingFromSnapshots();
 
 			// then
-			assertThat(result.get("concert:1")).isEqualTo(1);
-			assertThat(result.get("concert:2")).isNull();
+			assertThat(result.get("1")).isEqualTo(1);
+			assertThat(result.get("2")).isNull();
 
 			String redisKey = WEEKLY_FAMOUS_CONCERT_RANK_KEY + today;
 			List<SortedSetEntry> redisResult = cacheStore.zRangeWithScores(redisKey, 0, -1);
 			assertThat(redisResult).hasSize(1);
-			assertThat(redisResult.get(0).getValue()).isEqualTo("concert:1");
+			assertThat(redisResult.get(0).getValue()).isEqualTo("1");
 			assertThat(redisResult.get(0).getScore()).isEqualTo(1.0);
 		}
 	}

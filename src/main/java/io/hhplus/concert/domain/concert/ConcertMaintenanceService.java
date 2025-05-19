@@ -68,10 +68,12 @@ public class ConcertMaintenanceService {
 		LocalDate to = today.minusDays(1);
 		Map<String, Integer> concertCountMap = new HashMap<>();
 
-		// 6일치: (현재기준) 6일전 ~ 1일전 스냅샷데이터 누적
+		// 6일치 누적된 스냅샷데이터를 데이터베이스로부터 꺼내온다
 		List<RedisRankingSnapshot> snapshots = snapshotRepository.findByDateBetween(from, to);
 		for(RedisRankingSnapshot snapshot : snapshots) {
+			// 자바의 객체로 역직렬화를 한다
 			List<SortedSetEntry> entries = jsonSerializer.fromJsonList(snapshot.getJsonData(), SortedSetEntry.class);
+			// 역직렬화한 member를 파싱후에 concertId의 등장횟수를 카운트한다
 			accumulateConcertCount(entries, concertCountMap);
 		}
 
