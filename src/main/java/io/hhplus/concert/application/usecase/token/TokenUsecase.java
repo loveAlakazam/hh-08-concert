@@ -2,8 +2,6 @@ package io.hhplus.concert.application.usecase.token;
 
 import static io.hhplus.concert.interfaces.api.token.TokenErrorCode.*;
 
-import java.util.UUID;
-
 import org.springframework.stereotype.Service;
 
 import io.hhplus.concert.domain.token.Token;

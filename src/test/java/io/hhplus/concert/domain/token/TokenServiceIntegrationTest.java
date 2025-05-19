@@ -179,6 +179,33 @@ public class TokenServiceIntegrationTest {
 	/**
 	 * activateToken 테스트
 	 */
+	@Test
+	void 토큰100개_활성화를_성공한다() {
+		long start = System.currentTimeMillis();
+		// given
+		List<User> users = new ArrayList<>();
+		List<Token> waitingTokens = new ArrayList<>();
+		for(int i=1; i<=100; i++) {
+			User user = userRepository.save(User.of("테스트유저"+i));
+			users.add(user);
+			TokenInfo.IssueWaitingToken waitingTokenInfo = tokenService.issueWaitingToken(TokenCommand.IssueWaitingToken.from(user));
+			waitingTokens.add(waitingTokenInfo.token());
+		}
+		// when
+		int success = 0;
+		for(int i=0; i<waitingTokens.size(); i++) {
+			Token token = waitingTokens.get(i);
+			UUID uuid = token.getUuid();
+			TokenInfo.ActivateToken info =tokenService.activateToken(TokenCommand.ActivateToken.of(uuid));
+			if(info.token().getStatus() == TokenStatus.ACTIVE) success++;
+		}
+		// then
+		assertEquals(100, success);
+		assertEquals(0, waitingQueue.size()); // 대기열큐에 없음
+
+		long end = System.currentTimeMillis();
+		log.info("⏰ 실행시간: {}ms", (end-start));
+	}
 	@Order(6)
 	@Test
 	void 캐시저장소에서_토큰이_캐시히트일때_대기상태_토큰을_활성화_시키는데_성공한다() {
