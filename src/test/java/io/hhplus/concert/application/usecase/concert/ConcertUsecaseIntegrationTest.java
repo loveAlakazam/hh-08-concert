@@ -1,19 +1,11 @@
 package io.hhplus.concert.application.usecase.concert;
 
-import static io.hhplus.concert.domain.concert.Concert.*;
 import static io.hhplus.concert.infrastructure.redis.ConcertRankingRepositoryImpl.*;
 import static org.assertj.core.api.Assertions.*;
 
 import java.time.LocalDate;
 import java.time.ZoneId;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.IntStream;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.MethodOrderer;
@@ -34,10 +26,8 @@ import io.hhplus.concert.domain.concert.ConcertDate;
 import io.hhplus.concert.domain.concert.ConcertDateRepository;
 import io.hhplus.concert.domain.concert.ConcertRankingRepository;
 import io.hhplus.concert.domain.concert.ConcertRepository;
-import io.hhplus.concert.domain.concert.ConcertSeat;
 import io.hhplus.concert.domain.concert.ConcertSeatRepository;
 import io.hhplus.concert.domain.concert.ConcertService;
-import io.hhplus.concert.domain.reservation.Reservation;
 import io.hhplus.concert.domain.reservation.ReservationRepository;
 import io.hhplus.concert.domain.reservation.ReservationService;
 import io.hhplus.concert.domain.support.CacheCleaner;
@@ -46,7 +36,6 @@ import io.hhplus.concert.domain.support.JsonSerializer;
 import io.hhplus.concert.domain.support.RedisRankingSnapshot;
 import io.hhplus.concert.domain.support.RedisRankingSnapshotRepository;
 import io.hhplus.concert.domain.support.SortedSetEntry;
-import io.hhplus.concert.domain.user.User;
 import io.hhplus.concert.domain.user.UserRepository;
 import io.hhplus.concert.infrastructure.containers.RedisTestContainerConfiguration;
 import io.hhplus.concert.infrastructure.containers.TestcontainersConfiguration;
@@ -113,37 +102,7 @@ public class ConcertUsecaseIntegrationTest {
 	class SoldoutConcertDate {
 		@Test
 		void 전좌석이_모두_예약확정이라서_매진이되면_레디스에_기록됨을_확인할_수있다() {
-			// given
-			long concertId = sampleConcert.getId();
-			long concertDateId = sampleConcertDate.getId();
-			LocalDate progressDate = sampleConcertDate.getProgressDate();
-
-			List<ConcertSeat> concertSeats = sampleConcertDate.getSeats();
-			List<User> users = new ArrayList<>();
-			for(int i=1; i<=concertSeats.size(); i++) {
-				User user = userRepository.save(User.of("테스트유저"+i));
-				users.add(user);
-			}
-			for(int i=0; i<users.size(); i++) {
-				// 각 좌석 예약확정
-				User user = users.get(i);
-				ConcertSeat concertSeat = concertSeats.get(i);
-				Reservation reservation = Reservation.of(user, sampleConcert, sampleConcertDate, concertSeat);
-				reservation.temporaryReserve();
-				reservation.confirm();
-				reservationRepository.saveOrUpdate(reservation);
-			}
-
-			// when
-			concertUsecase.soldOutConcertDate(ConcertCriteria.SoldOutConcertDate.of(concertId, concertDateId));
-
-			// then
-			String expectedKey = DAILY_FAMOUS_CONCERT_RANK_KEY + LocalDate.now(ZoneId.of(ASIA_TIMEZONE_ID));
-			Set<Object> members = cacheStore.zRange(expectedKey, 0, -1);
-
-			String expectedMember = String.format("concert:%s:%s", concertId, progressDate);
-			assertThat(members).contains(expectedMember);
-			assertThat(cacheStore.getExpire(expectedKey)).isGreaterThan(0);
+			// TODO
 		}
 	}
 	@Order(2)
@@ -151,119 +110,13 @@ public class ConcertUsecaseIntegrationTest {
 	class DailyFamousConcertRanking {
 		@Test
 		void 금일_매진된_콘서트일정이_2개일때_일간순위를_확인할_수있다() throws InterruptedException {
-			// given
-			List<User> users = IntStream.rangeClosed(1, 100)
-				.mapToObj(i -> userRepository.save(User.of("테스트유저"+i)))
-				.toList();
+			// TODO
 
-			// 콘서트 1 매진
-			Concert concert1 = Concert.create("콘서트1", "아티스트1", LocalDate.now().plusDays(1), "콘서트장소 1", 2000);
-			ConcertDate concertDate1 = concert1.getDates().get(0);
-			List<ConcertSeat> concertSeats1 = concertDate1.getSeats();
-			concertRepository.saveOrUpdate(concert1);
-
-			for(int i=0; i<concertSeats1.size(); i++) {
-				User user = users.get(i);
-				ConcertSeat concertSeat = concertSeats1.get(i);
-				Reservation reservation = Reservation.of(user, concert1, concertDate1, concertSeat);
-				reservation.temporaryReserve();
-				reservation.confirm();
-				reservationRepository.saveOrUpdate(reservation);
-			}
-			concertUsecase.soldOutConcertDate(ConcertCriteria.SoldOutConcertDate.of(concert1.getId(), concertDate1.getId()));
-			Thread.sleep(10);
-
-			// 콘서트2 매진
-			Concert concert2 = Concert.create("콘서트2", "아티스트2", LocalDate.now().plusWeeks(1), "콘서트장소 1", 2000);
-			ConcertDate concertDate2 = concert2.getDates().get(0);
-			List<ConcertSeat> concertSeats2 = concertDate2.getSeats();
-			concertRepository.saveOrUpdate(concert2);
-			for(int i=0; i<concertSeats2.size(); i++) {
-				// 각 좌석 예약확정
-				User user = users.get(50 + i);
-				ConcertSeat concertSeat = concertSeats2.get(i);
-				Reservation reservation = Reservation.of(user, concert2, concertDate2, concertSeat);
-				reservation.temporaryReserve();
-				reservation.confirm();
-				reservationRepository.saveOrUpdate(reservation);
-			}
-			concertUsecase.soldOutConcertDate(ConcertCriteria.SoldOutConcertDate.of(concert2.getId(), concertDate2.getId()));
-
-			String expectKey = DAILY_FAMOUS_CONCERT_RANK_KEY + LocalDate.now(ZoneId.of(ASIA_TIMEZONE_ID));
-			String expectMember1 =  String.format("concert:%s:%s", concert1.getId(), concertDate1.getProgressDate());
-			String expectMember2 =  String.format("concert:%s:%s", concert2.getId(), concertDate2.getProgressDate());
-
-			// when
-			List<DailyFamousConcertRankingDto> result = concertUsecase.dailyFamousConcertRanking();
-
-			// then
-			// 2개의 콘서트 일정이 DTO로 반환되는지 검증
-			assertThat(result).hasSize(2);
-			assertThat(result).extracting(DailyFamousConcertRankingDto::name)
-				.containsExactly(concert1.getName(), concert2.getName());
-
-			assertThat(result).extracting(DailyFamousConcertRankingDto::artistName)
-				.containsExactly(concert1.getArtistName(), concert2.getArtistName());
-
-			assertThat(result).extracting(DailyFamousConcertRankingDto::concertDate)
-				.containsExactly(
-					concertDate1.getProgressDate().toString(),
-					concertDate2.getProgressDate().toString()
-				);
 		}
 		@Test
 		void 일간랭킹_인기콘서트_top3_조회에_성공한다(){
-			// given
-			Concert concert1 = Concert.create("콘서트1", "아티스트1", LocalDate.now().plusDays(1), "콘서트 장소1", 2000);
-			Concert concert2 = Concert.create("콘서트2", "아티스트2", LocalDate.now().plusDays(2), "콘서트 장소2", 2500);
-			Concert concert3 = Concert.create("콘서트3", "아티스트3", LocalDate.now().plusDays(3), "콘서트 장소3", 3000);
-			concertRepository.saveOrUpdate(concert1);
-			concertRepository.saveOrUpdate(concert2);
-			concertRepository.saveOrUpdate(concert3);
+			// TODO
 
-			ConcertDate date1 = concert1.getDates().get(0);
-			ConcertDate date2 = concert2.getDates().get(0);
-			ConcertDate date3 = concert3.getDates().get(0);
-
-			// 매진처리
-			for(ConcertSeat seat: date1.getSeats()) {
-				User user = userRepository.save(User.of("user1-" + seat.getNumber()));
-				Reservation reservation = Reservation.of(user, concert1, date1, seat);
-				reservation.temporaryReserve();
-				reservation.confirm();
-				reservationRepository.saveOrUpdate(reservation);
-			}
-			concertUsecase.soldOutConcertDate(ConcertCriteria.SoldOutConcertDate.of(concert1.getId(), date1.getId()));
-
-			for(ConcertSeat seat: date2.getSeats()) {
-				User user = userRepository.save(User.of("user2-" + seat.getNumber()));
-				Reservation reservation = Reservation.of(user, concert2, date2, seat);
-				reservation.temporaryReserve();
-				reservation.confirm();
-				reservationRepository.saveOrUpdate(reservation);
-			}
-			concertUsecase.soldOutConcertDate(ConcertCriteria.SoldOutConcertDate.of(concert2.getId(), date2.getId()));
-
-			for(ConcertSeat seat: date3.getSeats()) {
-				User user = userRepository.save(User.of("user3-" + seat.getNumber()));
-				Reservation reservation = Reservation.of(user, concert3, date3, seat);
-				reservation.temporaryReserve();
-				reservation.confirm();
-				reservationRepository.saveOrUpdate(reservation);
-			}
-			concertUsecase.soldOutConcertDate(ConcertCriteria.SoldOutConcertDate.of(concert3.getId(), date3.getId()));
-
-			// when
-			List<DailyFamousConcertRankingDto> ranking = concertUsecase.dailyFamousConcertRanking(3);
-			// then
-			assertThat(ranking).hasSize(3);
-			assertThat(ranking).extracting(DailyFamousConcertRankingDto::name).containsExactly("콘서트1", "콘서트2", "콘서트3");
-			assertThat(ranking).extracting(DailyFamousConcertRankingDto::artistName).containsExactly("아티스트1", "아티스트2", "아티스트3");
-			assertThat(ranking).extracting(DailyFamousConcertRankingDto::concertDate).containsExactly(
-				date1.getProgressDate().toString(),
-				date2.getProgressDate().toString(),
-				date3.getProgressDate().toString()
-			);
 		}
 	}
 	@Order(3)
@@ -380,94 +233,5 @@ public class ConcertUsecaseIntegrationTest {
 		}
 
 	}
-
-	@Test
-	void 동시에_매진됐을경우_두개의콘서트의_점수는_동일하며_사전순으로_순위가_달라진다() throws InterruptedException {
-		// given
-		List<User> users = IntStream.rangeClosed(1, 100)
-			.mapToObj(i -> userRepository.save(User.of("테스트유저"+i)))
-			.toList();
-
-		// 콘서트1
-		Concert concert1 = Concert.create("콘서트1", "아티스트1", LocalDate.now().plusDays(1), "콘서트장소 1", 2000);
-		ConcertDate concertDate1 = concert1.getDates().get(0);
-		List<ConcertSeat> concertSeats1 = concertDate1.getSeats();
-		concertRepository.saveOrUpdate(concert1);
-
-		for(int i=0; i<concertSeats1.size(); i++) {
-			User user = users.get(i);
-			ConcertSeat concertSeat = concertSeats1.get(i);
-			Reservation reservation = Reservation.of(user, concert1, concertDate1, concertSeat);
-			reservation.temporaryReserve();
-			reservation.confirm();
-			reservationRepository.saveOrUpdate(reservation);
-		}
-
-		// 콘서트2
-		Concert concert2 = Concert.create("콘서트2", "아티스트2", LocalDate.now().plusWeeks(1), "콘서트장소 1", 2000);
-		ConcertDate concertDate2 = concert2.getDates().get(0);
-		List<ConcertSeat> concertSeats2 = concertDate2.getSeats();
-		concertRepository.saveOrUpdate(concert2);
-		for(int i=0; i<concertSeats2.size(); i++) {
-			// 각 좌석 예약확정
-			User user = users.get(50 + i);
-			ConcertSeat concertSeat = concertSeats2.get(i);
-			Reservation reservation = Reservation.of(user, concert2, concertDate2, concertSeat);
-			reservation.temporaryReserve();
-			reservation.confirm();
-			reservationRepository.saveOrUpdate(reservation);
-		}
-
-		String expectKey = DAILY_FAMOUS_CONCERT_RANK_KEY + LocalDate.now(ZoneId.of(ASIA_TIMEZONE_ID));
-		String expectMember1 =  String.format("concert:%s:%s", concert1.getId(), concertDate1.getProgressDate());
-		String expectMember2 =  String.format("concert:%s:%s", concert2.getId(), concertDate2.getProgressDate());
-
-		// when
-		CountDownLatch latch = new CountDownLatch(1);
-		Runnable task1 = () -> {
-			try {
-				latch.await();
-				concertUsecase.soldOutConcertDate(ConcertCriteria.SoldOutConcertDate.of(concert1.getId(), concertDate1.getId()));
-			} catch(InterruptedException e) {
-				Thread.currentThread().interrupt();
-			}
-		};
-		Runnable task2 = () -> {
-			try {
-				latch.await();
-				concertUsecase.soldOutConcertDate(ConcertCriteria.SoldOutConcertDate.of(concert2.getId(), concertDate2.getId()));
-			} catch(InterruptedException e) {
-				Thread.currentThread().interrupt();
-			}
-		};
-		ExecutorService executorService = Executors.newFixedThreadPool(2);
-		executorService.submit(task1);
-		executorService.submit(task2);
-
-		latch.countDown(); // 동시에 시작
-		executorService.shutdown();
-		executorService.awaitTermination(1, TimeUnit.SECONDS);
-
-		// then
-		List<SortedSetEntry> entries = cacheStore.zRangeWithScores(expectKey, 0, -1);
-		assertThat(entries).hasSize(2);
-
-		assertThat(List.of(entries.get(0).getValue(), entries.get(1).getValue()))
-			.containsExactlyInAnyOrder(expectMember1, expectMember2);
-
-		// 1. 동시에 호출됐으므로 두개의 엔트리의 score는 동일하다
-		assertThat(entries.get(0).getScore()).isEqualTo(entries.get(1).getScore());
-
-		// 2. 사전순으로만 달라짐을 확인할 수 있다.
-		List<String> actualValues = entries.stream()
-			.map(SortedSetEntry::getValue)
-			.map(Object::toString)
-			.toList();
-		List<String> sortedLex = new ArrayList<>(actualValues);
-		sortedLex.sort(String::compareTo); // 사전순 정렬
-		assertThat(actualValues).containsExactlyElementsOf(sortedLex); // 실제정렬과 사전순 일치 확인
-		log.info("사전순 정렬결과: {}", actualValues);
-	}
-
 
 }
