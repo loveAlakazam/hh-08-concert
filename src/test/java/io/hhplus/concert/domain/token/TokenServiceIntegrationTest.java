@@ -1,6 +1,6 @@
 package io.hhplus.concert.domain.token;
 
-import static io.hhplus.concert.domain.token.TokenRedisRepository.*;
+import static io.hhplus.concert.domain.token.TokenRedisKeys.*;
 import static io.hhplus.concert.interfaces.api.token.TokenErrorCode.*;
 import static org.assertj.core.api.AssertionsForClassTypes.*;
 import static org.junit.jupiter.api.Assertions.*;
