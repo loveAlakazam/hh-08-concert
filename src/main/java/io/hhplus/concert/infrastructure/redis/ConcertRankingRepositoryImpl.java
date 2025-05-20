@@ -5,7 +5,6 @@ import static io.hhplus.concert.domain.concert.Concert.*;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
@@ -13,14 +12,14 @@ import java.util.Set;
 
 import org.springframework.stereotype.Component;
 
-import io.hhplus.concert.domain.concert.ConcertRedisRepository;
+import io.hhplus.concert.domain.concert.ConcertRankingRepository;
 import io.hhplus.concert.domain.support.CacheStore;
 import io.hhplus.concert.domain.support.SortedSetEntry;
 import lombok.RequiredArgsConstructor;
 
 @Component
 @RequiredArgsConstructor
-public class ConcertRedisRepositoryImpl implements ConcertRedisRepository {
+public class ConcertRankingRepositoryImpl implements ConcertRankingRepository {
 	private final CacheStore cacheStore;
 	public static final String ASIA_TIMEZONE_ID = "Asia/Seoul";
 

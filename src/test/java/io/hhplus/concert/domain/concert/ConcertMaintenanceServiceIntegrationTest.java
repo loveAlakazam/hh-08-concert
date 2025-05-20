@@ -1,7 +1,7 @@
 package io.hhplus.concert.domain.concert;
 
 import static io.hhplus.concert.domain.concert.Concert.*;
-import static io.hhplus.concert.infrastructure.redis.ConcertRedisRepositoryImpl.*;
+import static io.hhplus.concert.infrastructure.redis.ConcertRankingRepositoryImpl.*;
 import static org.assertj.core.api.Assertions.*;
 
 import java.time.LocalDate;
@@ -51,7 +51,7 @@ public class ConcertMaintenanceServiceIntegrationTest {
 	@Autowired private ConcertMaintenanceService concertMaintenanceService;
 	@Autowired private ConcertDateRepository concertDateRepository;
 	@Autowired private ConcertSeatRepository concertSeatRepository;
-	@Autowired private ConcertRedisRepository concertRedisRepository;
+	@Autowired private ConcertRankingRepository concertRankingRepository;
 	@Autowired private JsonSerializer jsonSerializer;
 	@Autowired private RedisRankingSnapshotRepository snapshotRepository;
 
@@ -128,7 +128,7 @@ public class ConcertMaintenanceServiceIntegrationTest {
 			RedisRankingSnapshot snapshot = snapshotRepository.findByDate(yesterday);
 			assertThat(snapshot).isNull();
 
-			List<SortedSetEntry> ranking = concertRedisRepository.getRankingWithScore(key);
+			List<SortedSetEntry> ranking = concertRankingRepository.getRankingWithScore(key);
 			assertThat(ranking).isEmpty();
 		}
 	}

@@ -1,8 +1,7 @@
 package io.hhplus.concert.application.usecase.concert;
 
 import static io.hhplus.concert.domain.concert.Concert.*;
-import static io.hhplus.concert.infrastructure.redis.ConcertRedisRepositoryImpl.*;
-import static java.util.Map.Entry.*;
+import static io.hhplus.concert.infrastructure.redis.ConcertRankingRepositoryImpl.*;
 
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -18,7 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 import io.hhplus.concert.domain.concert.ConcertCommand;
 import io.hhplus.concert.domain.concert.ConcertDate;
 import io.hhplus.concert.domain.concert.ConcertMaintenanceService;
-import io.hhplus.concert.domain.concert.ConcertRedisRepository;
+import io.hhplus.concert.domain.concert.ConcertRankingRepository;
 import io.hhplus.concert.domain.concert.ConcertService;
 import io.hhplus.concert.domain.reservation.ReservationCommand;
 import io.hhplus.concert.domain.reservation.ReservationService;
@@ -31,7 +30,7 @@ public class ConcertUsecase {
 	private final ConcertService concertService;
 	private final ReservationService reservationService;
 	private final ConcertMaintenanceService concertMaintenanceService;
-	private final ConcertRedisRepository concertRedisRepository;
+	private final ConcertRankingRepository concertRankingRepository;
 
 	/**
 	 * 콘서트 일정이 매진됐는지 확인
@@ -54,7 +53,7 @@ public class ConcertUsecase {
 		ConcertDate soldOutConcertDate = concertService.soldOut(concertDateId);
 
 		// 매진됐다면, 매진시점에 일간 인기콘서트 에 넣는다.
-		concertRedisRepository.recordDailyFamousConcertRanking(concertId.toString(), soldOutConcertDate.getProgressDate().toString());
+		concertRankingRepository.recordDailyFamousConcertRanking(concertId.toString(), soldOutConcertDate.getProgressDate().toString());
 	}
 
 	/**
@@ -63,10 +62,10 @@ public class ConcertUsecase {
 	 * - 결제해서 콘서트좌석 매진 상황이 발생했을때 -> 랭킹에 집계한다.
 	 */
 	public Set<Object> dailyFamousConcertRanking() {
-		return concertRedisRepository.getDailyFamousConcertRanking();
+		return concertRankingRepository.getDailyFamousConcertRanking();
 	}
 	public Set<Object> dailyFamousConcertRanking(int rank) {
-		return concertRedisRepository.getDailyFamousConcertRanking(rank);
+		return concertRankingRepository.getDailyFamousConcertRanking(rank);
 	}
 	/**
 	 * 실시간 주간 랭킹 시스템
@@ -77,7 +76,7 @@ public class ConcertUsecase {
 		LocalDate today = LocalDate.now(ZoneId.of(ASIA_TIMEZONE_ID));
 		String key = WEEKLY_FAMOUS_CONCERT_RANK_KEY + today;
 
-		List<SortedSetEntry> cached = concertRedisRepository.getRankingWithScore(key);
+		List<SortedSetEntry> cached = concertRankingRepository.getRankingWithScore(key);
 		Map<String, Integer> concertCountMap = new HashMap<>();
 
 		if(!cached.isEmpty()) {
@@ -89,7 +88,7 @@ public class ConcertUsecase {
 		}
 
 		// 오늘의 실시간 일간랭킹 반영
-		List<SortedSetEntry> todayRaking = concertRedisRepository.getDailyFamousConcertRankingWithScore();
+		List<SortedSetEntry> todayRaking = concertRankingRepository.getDailyFamousConcertRankingWithScore();
 		accumulateConcertCount(todayRaking, concertCountMap);
 
 		// 누적된 결과를 점수높은순으로 정렬하여 반환한다

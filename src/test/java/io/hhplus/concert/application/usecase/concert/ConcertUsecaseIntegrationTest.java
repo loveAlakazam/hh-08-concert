@@ -1,7 +1,7 @@
 package io.hhplus.concert.application.usecase.concert;
 
 import static io.hhplus.concert.domain.concert.Concert.*;
-import static io.hhplus.concert.infrastructure.redis.ConcertRedisRepositoryImpl.*;
+import static io.hhplus.concert.infrastructure.redis.ConcertRankingRepositoryImpl.*;
 import static org.assertj.core.api.Assertions.*;
 
 import java.time.LocalDate;
@@ -30,12 +30,11 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.jdbc.Sql;
-import org.testcontainers.shaded.org.checkerframework.checker.units.qual.A;
 
 import io.hhplus.concert.domain.concert.Concert;
 import io.hhplus.concert.domain.concert.ConcertDate;
 import io.hhplus.concert.domain.concert.ConcertDateRepository;
-import io.hhplus.concert.domain.concert.ConcertRedisRepository;
+import io.hhplus.concert.domain.concert.ConcertRankingRepository;
 import io.hhplus.concert.domain.concert.ConcertRepository;
 import io.hhplus.concert.domain.concert.ConcertSeat;
 import io.hhplus.concert.domain.concert.ConcertSeatRepository;
@@ -78,7 +77,7 @@ public class ConcertUsecaseIntegrationTest {
 	@Autowired private ConcertUsecase concertUsecase;
 	@Autowired private ConcertService concertService;
 	@Autowired private ReservationService reservationService;
-	@Autowired private ConcertRedisRepository concertRedisRepository;
+	@Autowired private ConcertRankingRepository concertRankingRepository;
 
 	@Autowired private ConcertRepository concertRepository;
 	@Autowired private ConcertDateRepository concertDateRepository;
@@ -259,8 +258,8 @@ public class ConcertUsecaseIntegrationTest {
 			}
 
 			// 오늘 실시간 랭킹 Redis에 저장
-			concertRedisRepository.recordDailyFamousConcertRanking("1", today.plusDays(4).toString());
-			concertRedisRepository.recordDailyFamousConcertRanking("3", today.plusDays(4).toString());
+			concertRankingRepository.recordDailyFamousConcertRanking("1", today.plusDays(4).toString());
+			concertRankingRepository.recordDailyFamousConcertRanking("3", today.plusDays(4).toString());
 
 			// when
 			List<SortedSetEntry> result = concertUsecase.weeklyFamousConcertRanking();

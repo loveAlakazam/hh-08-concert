@@ -17,19 +17,17 @@ import io.hhplus.concert.domain.concert.Concert;
 import io.hhplus.concert.domain.concert.ConcertCommand;
 import io.hhplus.concert.domain.concert.ConcertDate;
 import io.hhplus.concert.domain.concert.ConcertMaintenanceService;
-import io.hhplus.concert.domain.concert.ConcertRedisRepository;
+import io.hhplus.concert.domain.concert.ConcertRankingRepository;
 import io.hhplus.concert.domain.concert.ConcertService;
 import io.hhplus.concert.domain.reservation.ReservationCommand;
 import io.hhplus.concert.domain.reservation.ReservationService;
-import io.hhplus.concert.domain.support.JsonSerializer;
-import io.hhplus.concert.infrastructure.persistence.snapshots.RedisRankingSnapshotJpaRepository;
 
 @ExtendWith(MockitoExtension.class)
 public class SoldOutConcertDateTest {
 	@InjectMocks
 	private ConcertUsecase concertUsecase;
 	@Mock
-	private ConcertRedisRepository concertRedisRepository;
+	private ConcertRankingRepository concertRankingRepository;
 	@Mock
 	private ConcertService concertService;
 	@Mock
@@ -43,7 +41,7 @@ public class SoldOutConcertDateTest {
 			concertService,
 			reservationService,
 			concertMaintenanceService,
-			concertRedisRepository
+			concertRankingRepository
 		);
 	}
 	private static final Logger log = LoggerFactory.getLogger(SoldOutConcertDateTest.class);
@@ -67,7 +65,7 @@ public class SoldOutConcertDateTest {
 		// then
 		verify(concertService, times(1)).countTotalSeats(ConcertCommand.CountTotalSeats.of(concertId, concertDateId));
 		verify(reservationService, times(1)).countConfirmedSeats(ReservationCommand.CountConfirmedSeats.of(concertId, concertDateId));
-		verify(concertRedisRepository, times(1)).recordDailyFamousConcertRanking(any(), any());
+		verify(concertRankingRepository, times(1)).recordDailyFamousConcertRanking(any(), any());
 	}
 
 }

@@ -2,7 +2,7 @@ package io.hhplus.concert.application.usecase.payment;
 
 import static io.hhplus.concert.domain.concert.Concert.*;
 import static io.hhplus.concert.domain.reservation.ReservationStatus.*;
-import static io.hhplus.concert.infrastructure.redis.ConcertRedisRepositoryImpl.*;
+import static io.hhplus.concert.infrastructure.redis.ConcertRankingRepositoryImpl.*;
 import static io.hhplus.concert.interfaces.api.payment.PaymentErrorCode.*;
 import static io.hhplus.concert.interfaces.api.reservation.ReservationErrorCode.*;
 import static io.hhplus.concert.interfaces.api.user.CommonErrorCode.*;
@@ -29,10 +29,9 @@ import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
 
-import io.hhplus.concert.domain.concert.ConcertRedisRepository;
+import io.hhplus.concert.domain.concert.ConcertRankingRepository;
 import io.hhplus.concert.domain.support.CacheCleaner;
 import io.hhplus.concert.domain.support.CacheStore;
-import io.hhplus.concert.domain.support.SortedSetEntry;
 import io.hhplus.concert.infrastructure.containers.TestcontainersConfiguration;
 import io.hhplus.concert.domain.concert.Concert;
 import io.hhplus.concert.domain.concert.ConcertDate;
@@ -90,7 +89,7 @@ public class PaymentUsecaseIntegrationTest {
 	@Autowired private ConcertSeatRepository concertSeatRepository;
 	@Autowired private ReservationRepository reservationRepository;
 	@Autowired private PaymentRepository paymentRepository;
-	@Autowired private ConcertRedisRepository concertRedisRepository;
+	@Autowired private ConcertRankingRepository concertRankingRepository;
 	@Autowired private CacheStore cacheStore;
 
 	@Autowired private CacheCleaner cacheCleaner;
@@ -309,7 +308,7 @@ public class PaymentUsecaseIntegrationTest {
 		assertFalse(sampleConcertDate.isAvailable(), "매진상태이므로 더이상 예약할 수 없는 상태이다");
 
 		// 매진이벤트가 발생하여 레디스저장소에 매진시점을 기록했는지 확인
-		Set<Object> members = concertRedisRepository.getDailyFamousConcertRanking();
+		Set<Object> members = concertRankingRepository.getDailyFamousConcertRanking();
 		String expectedMember = String.format("concert:%s:%s", concertId, concertProgressDate);
 		assertThat(members).contains(expectedMember);
 
