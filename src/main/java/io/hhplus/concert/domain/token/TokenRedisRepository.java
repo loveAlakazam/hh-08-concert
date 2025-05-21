@@ -3,11 +3,6 @@ package io.hhplus.concert.domain.token;
 import java.util.UUID;
 
 public interface TokenRedisRepository {
-	// 대기열 sorted-set key 이름
-	String WAITING_TOKEN_QUEUE = "waiting_token_queue";
-	String WAITING_TOKEN_MEMBER_KEY = "tokens:";
-	// 토큰 hash key 이름
-	String TOKEN_HASH_KEY = "tokens:";
 
 	// 토큰 정보 조회
 	Token getTokenByUUID(UUID uuid);

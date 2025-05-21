@@ -2,33 +2,26 @@ package io.hhplus.concert.application.usecase.payment;
 
 import static io.hhplus.concert.interfaces.api.payment.PaymentErrorCode.*;
 
-import java.time.LocalDate;
-
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import io.hhplus.concert.application.usecase.concert.ConcertCriteria;
-import io.hhplus.concert.application.usecase.concert.ConcertUsecase;
 import io.hhplus.concert.domain.concert.ConcertCommand;
-import io.hhplus.concert.domain.concert.ConcertInfo;
+import io.hhplus.concert.domain.concert.ConcertDate;
+import io.hhplus.concert.domain.concert.ConcertRankingRepository;
 import io.hhplus.concert.domain.concert.ConcertService;
 import io.hhplus.concert.domain.payment.PaymentCommand;
 import io.hhplus.concert.domain.payment.PaymentInfo;
+import io.hhplus.concert.domain.payment.PaymentService;
+import io.hhplus.concert.domain.reservation.Reservation;
 import io.hhplus.concert.domain.reservation.ReservationCommand;
 import io.hhplus.concert.domain.reservation.ReservationInfo;
-import io.hhplus.concert.domain.user.UserCommand;
+import io.hhplus.concert.domain.reservation.ReservationService;
 import io.hhplus.concert.domain.user.UserInfo;
 import io.hhplus.concert.domain.user.UserPoint;
 import io.hhplus.concert.domain.user.UserPointCommand;
+import io.hhplus.concert.domain.user.UserService;
 import io.hhplus.concert.interfaces.api.common.BusinessException;
 import io.hhplus.concert.interfaces.api.common.InvalidValidationException;
-import io.hhplus.concert.domain.concert.ConcertSeat;
-import io.hhplus.concert.domain.payment.Payment;
-import io.hhplus.concert.domain.payment.PaymentService;
-import io.hhplus.concert.domain.reservation.Reservation;
-import io.hhplus.concert.domain.reservation.ReservationService;
-import io.hhplus.concert.domain.user.UserService;
-import io.hhplus.concert.interfaces.api.payment.PaymentResponse;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -37,7 +30,8 @@ public class PaymentUsecase {
 	private final UserService userService;
 	private final ReservationService reservationService;
 	private final PaymentService paymentService;
-	private final ConcertUsecase concertUsecase;
+	private final ConcertService concertService;
+	private final ConcertRankingRepository concertRankingRepository;
 
 	/**
 	 * 임시예약 상태(5분간 좌석예약) 에서 결제 요청 유즈케이스<br><br>
@@ -73,7 +67,18 @@ public class PaymentUsecase {
 			PaymentInfo.CreatePayment paymentInfo = paymentService.create(PaymentCommand.CreatePayment.of(reservation));
 
 			// 매진 확인 및 매진처리
-			concertUsecase.soldOutConcertDate(ConcertCriteria.SoldOutConcertDate.of(concertId, concertDateId));
+			// 전체 좌석의 개수를 구한다
+			long totalSeats = concertService.countTotalSeats(ConcertCommand.CountTotalSeats.of(concertId, concertDateId));
+			// 확정상태의 예약 개수를 구한다
+			long confirmedSeatsCount = reservationService.countConfirmedSeats(ReservationCommand.CountConfirmedSeats.of(concertId, concertDateId));
+
+			// 전좌석이 모두 예약확정 상태라면
+			if( totalSeats == confirmedSeatsCount) {
+				// 전좌석 예약확정이므로 해당콘서트일정은 매진상태이므로 예약불가능한 상태로 변경한다.
+				ConcertDate soldOutConcertDate = concertService.soldOut(concertDateId);
+				// 매진됐다면, 매진시점에 일간 인기콘서트 에 넣는다.
+				concertRankingRepository.recordDailyFamousConcertRanking(String.valueOf(concertId), soldOutConcertDate.getProgressDate().toString());
+			}
 			return PaymentResult.PayAndConfirm.of(paymentInfo);
 		}
 		throw new BusinessException(NOT_VALID_STATUS_FOR_PAYMENT);

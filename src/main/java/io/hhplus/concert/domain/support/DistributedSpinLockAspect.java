@@ -9,6 +9,8 @@ import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.reflect.MethodSignature;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.expression.EvaluationContext;
@@ -27,6 +29,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class DistributedSpinLockAspect {
 	private final RedissonClient redissonClient;
+	private static final Logger log = LoggerFactory.getLogger(DistributedSpinLockAspect.class);
 
 	@Around("annotation(lock)")
 	public Object around(ProceedingJoinPoint joinPoint, DistributedSpinLock lock) throws Throwable {
@@ -41,6 +44,7 @@ public class DistributedSpinLockAspect {
 		}
 
 		if(!acquired) {
+			log.warn("분산락(스핀락) 획득 실패 - key: {}", key);
 			throw new DistributedLockException("Redisson SpinLock 획득실패: "+ key);
 		}
 

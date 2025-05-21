@@ -9,6 +9,8 @@ import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.reflect.MethodSignature;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.annotation.Order;
 import org.springframework.expression.EvaluationContext;
 import org.springframework.expression.Expression;
@@ -26,6 +28,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class DistributedSimpleLockAspect {
 	private final RedissonClient redissonClient;
+	private static final Logger log = LoggerFactory.getLogger(DistributedSimpleLockAspect.class);
 
 	@Around("@annotation(distributedLock)")
 	public Object around(ProceedingJoinPoint joinPoint, DistributedSimpleLock distributedLock) throws Throwable{
@@ -36,6 +39,7 @@ public class DistributedSimpleLockAspect {
 			// 락 시도 (waitTime 0초, leaseTime = ttl)
 			isLocked =  lock.tryLock(0, distributedLock.ttlSeconds(), TimeUnit.SECONDS);
 			if(!isLocked) {
+				log.warn("분산락(심플락) 획득 실패 - key: {}", key);
 				throw new DistributedLockException("Redisson Lock failed for key: " + key);
 			}
 

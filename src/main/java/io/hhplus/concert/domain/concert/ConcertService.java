@@ -1,21 +1,14 @@
 package io.hhplus.concert.domain.concert;
 
-import static io.hhplus.concert.domain.concert.Concert.*;
 import static io.hhplus.concert.interfaces.api.concert.ConcertErrorCode.*;
 
-import java.time.Duration;
-import java.util.List;
 import java.util.Optional;
 
-import io.hhplus.concert.interfaces.api.common.BusinessException;
-import io.hhplus.concert.interfaces.api.common.InvalidValidationException;
-import lombok.RequiredArgsConstructor;
-
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import io.hhplus.concert.interfaces.api.common.BusinessException;
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
@@ -98,8 +91,11 @@ public class ConcertService {
         return ConcertInfo.AddConcertDate.from(concert);
     }
 
-    public Optional<ConcertSeat> findById(long id) {
+    public Optional<ConcertSeat> findConcertSeatById(long id) {
         return concertSeatRepository.findById(id);
+    }
+    public Concert findConcertById(long id) {
+        return concertRepository.findById(id);
     }
 
     public ConcertSeat saveOrUpdate(ConcertSeat concertSeat) {

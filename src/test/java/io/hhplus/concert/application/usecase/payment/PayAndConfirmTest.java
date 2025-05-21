@@ -8,7 +8,10 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -17,11 +20,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import io.hhplus.concert.application.usecase.concert.ConcertUsecase;
-import io.hhplus.concert.application.usecase.reservation.ReserveConcertSeatTest;
 import io.hhplus.concert.domain.concert.Concert;
+import io.hhplus.concert.domain.concert.ConcertCommand;
 import io.hhplus.concert.domain.concert.ConcertDate;
+import io.hhplus.concert.domain.concert.ConcertRankingRepository;
 import io.hhplus.concert.domain.concert.ConcertSeat;
+import io.hhplus.concert.domain.concert.ConcertService;
 import io.hhplus.concert.domain.payment.Payment;
 import io.hhplus.concert.domain.payment.PaymentCommand;
 import io.hhplus.concert.domain.payment.PaymentInfo;
@@ -32,15 +36,14 @@ import io.hhplus.concert.domain.reservation.ReservationInfo;
 import io.hhplus.concert.domain.reservation.ReservationService;
 import io.hhplus.concert.domain.reservation.ReservationStatus;
 import io.hhplus.concert.domain.user.User;
-import io.hhplus.concert.domain.user.UserCommand;
 import io.hhplus.concert.domain.user.UserInfo;
 import io.hhplus.concert.domain.user.UserPoint;
 import io.hhplus.concert.domain.user.UserPointCommand;
 import io.hhplus.concert.domain.user.UserService;
 import io.hhplus.concert.interfaces.api.common.BusinessException;
-import io.hhplus.concert.interfaces.api.payment.PaymentResponse;
 
 @ExtendWith(MockitoExtension.class)
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class PayAndConfirmTest {
 	@InjectMocks
 	private PaymentUsecase paymentUsecase;
@@ -51,14 +54,17 @@ public class PayAndConfirmTest {
 	@Mock
 	private PaymentService paymentService;
 	@Mock
-	private ConcertUsecase concertUsecase;
+	private ConcertService concertService;
+	@Mock
+	private ConcertRankingRepository concertRankingRepository;
 
 	@BeforeEach
 	void setUp() {
-		paymentUsecase = new PaymentUsecase(userService, reservationService, paymentService, concertUsecase);
+		paymentUsecase = new PaymentUsecase(userService, reservationService, paymentService, concertService, concertRankingRepository);
 	}
 	private static final Logger log = LoggerFactory.getLogger(PayAndConfirmTest.class);
 
+	@Order(1)
 	@Test
 	void 이미_예약확정된_상태에서_결제처리를_요청할경우_BusinessException_예외를_발생시킨다() {
 		// given
@@ -104,8 +110,9 @@ public class PayAndConfirmTest {
 		verify(paymentService,never()).create(any());
 
 	}
+	@Order(2)
 	@Test
-	void 임시예약이_만료되어_취소된_상태에서_결제처리를_요청할경우_BusinessException_예외를_발생시킨다() throws InterruptedException {
+	void 임시예약이_만료되어_취소된_상태에서_결제처리를_요청할경우_BusinessException_예외를_발생시킨다() {
 		// given
 		long userId = 1L;
 		long concertId = 1L;
@@ -163,6 +170,7 @@ public class PayAndConfirmTest {
 		verify(reservationService,times(1)).get(getReservationCommand);
 		verify(paymentService,never()).create(any());
 	}
+	@Order(3)
 	@Test
 	void 임시예약상태에서_5분내로_결제를완료하면_결제처리_및_예약확정에_성공한다() {
 		// given
@@ -206,6 +214,10 @@ public class PayAndConfirmTest {
 		PaymentCommand.CreatePayment createPaymentCommand = PaymentCommand.CreatePayment.of(reservation);
 		when(paymentService.create(createPaymentCommand)).thenReturn(PaymentInfo.CreatePayment.of(payment));
 
+		// 좌석결제후 매진은 일어나지않음.
+		when(concertService.countTotalSeats(ConcertCommand.CountTotalSeats.of(concertId, concertDateId))).thenReturn(50L);
+		when(reservationService.countConfirmedSeats(ReservationCommand.CountConfirmedSeats.of(concertId, concertDateId))).thenReturn(1L);
+
 		// when
 		log.info("when: 결제 및 예약확정 처리 유즈케이스 실행");
 		PaymentResult.PayAndConfirm result = assertDoesNotThrow(() -> paymentUsecase.payAndConfirm(PaymentCriteria.PayAndConfirm.of(userId, reservationId)));
@@ -224,6 +236,23 @@ public class PayAndConfirmTest {
 		verify(userService,times(1)).getUserPoint(getUserPointCommand);
 		verify(reservationService,times(1)).get(getReservationCommand);
 		verify(paymentService,times(1)).create(createPaymentCommand);
+		verify(concertService,never()).soldOut(concertDateId);
+		verify(concertRankingRepository,never()).recordDailyFamousConcertRanking(anyString(), anyString());
+	}
+	@Order(4)
+	@Test
+	void 좌석결제후_매진이벤트가_발생하면_일간랭킹의_sortedSet에_데이터를_추가한다(){
+		// TODO
+	}
+	@Order(5)
+	@Test
+	void 좌석결제후_매진이벤트이나_랭킹집계에서_실패가일어나도_결제는_완료상태를_둔다(){
+		// TODO
+	}
+	@Order(6)
+	@Test
+	void 좌석결제후_매진이벤트이나_랭킹집계에서_실패가_일어나면_에러리포팅함수를_호출한다(){
+		// TODO
 	}
 
 }

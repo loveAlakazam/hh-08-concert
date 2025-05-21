@@ -1,7 +1,7 @@
 package io.hhplus.concert.domain.concert;
 
 import static io.hhplus.concert.domain.concert.Concert.*;
-import static io.hhplus.concert.infrastructure.redis.ConcertRedisRepositoryImpl.*;
+import static io.hhplus.concert.infrastructure.redis.ConcertRankingRepositoryImpl.*;
 
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -12,12 +12,10 @@ import java.util.Map;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import io.hhplus.concert.domain.support.CacheStore;
 import io.hhplus.concert.domain.support.JsonSerializer;
 import io.hhplus.concert.domain.support.RedisRankingSnapshot;
 import io.hhplus.concert.domain.support.SortedSetEntry;
 import io.hhplus.concert.infrastructure.persistence.snapshots.RedisRankingSnapshotJpaRepository;
-import io.hhplus.concert.interfaces.api.common.InvalidValidationException;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -25,7 +23,7 @@ import lombok.RequiredArgsConstructor;
 public class ConcertMaintenanceService {
 	private final ConcertDateRepository concertDateRepository;
 	private final ConcertSeatRepository concertSeatRepository;
-	private final ConcertRedisRepository concertRedisRepository;
+	private final ConcertRankingRepository concertRankingRepository;
 	private final JsonSerializer jsonSerializer;
 	private final RedisRankingSnapshotJpaRepository snapshotRepository;
 
@@ -51,7 +49,7 @@ public class ConcertMaintenanceService {
 		LocalDate pastDate = LocalDate.now(ZoneId.of(ASIA_TIMEZONE_ID)).minusDays(1);
 		String key = DAILY_FAMOUS_CONCERT_RANK_KEY + pastDate;
 
-		List<SortedSetEntry> ranking = concertRedisRepository.getRankingWithScore(key);
+		List<SortedSetEntry> ranking = concertRankingRepository.getRankingWithScore(key);
 		if(!ranking.isEmpty()) {
 			// DB에 저장
 			String json = jsonSerializer.toJson(ranking);
@@ -70,16 +68,18 @@ public class ConcertMaintenanceService {
 		LocalDate to = today.minusDays(1);
 		Map<String, Integer> concertCountMap = new HashMap<>();
 
-		// 6일치: (현재기준) 6일전 ~ 1일전 스냅샷데이터 누적
+		// 6일치 누적된 스냅샷데이터를 데이터베이스로부터 꺼내온다
 		List<RedisRankingSnapshot> snapshots = snapshotRepository.findByDateBetween(from, to);
 		for(RedisRankingSnapshot snapshot : snapshots) {
+			// 자바의 객체로 역직렬화를 한다
 			List<SortedSetEntry> entries = jsonSerializer.fromJsonList(snapshot.getJsonData(), SortedSetEntry.class);
+			// 역직렬화한 member를 파싱후에 concertId의 등장횟수를 카운트한다
 			accumulateConcertCount(entries, concertCountMap);
 		}
 
 		String todayKey = WEEKLY_FAMOUS_CONCERT_RANK_KEY + today;
 		for(Map.Entry<String, Integer> entry : concertCountMap.entrySet()) {
-			concertRedisRepository.recordWeeklyFamousConcertRanking(todayKey, entry.getKey(), entry.getValue());
+			concertRankingRepository.recordWeeklyFamousConcertRanking(todayKey, entry.getKey(), entry.getValue());
 		}
 		return concertCountMap;
 	}
