@@ -1,6 +1,7 @@
 package io.hhplus.concert.application.usecase.payment;
 
 import static org.assertj.core.api.AssertionsForClassTypes.*;
+import static org.mockito.Mockito.*;
 
 import java.time.LocalDate;
 import java.util.concurrent.CompletableFuture;
@@ -17,9 +18,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
+import org.springframework.test.context.event.ApplicationEvents;
+import org.springframework.test.context.event.RecordApplicationEvents;
 import org.springframework.test.context.jdbc.Sql;
 
-import io.hhplus.concert.infrastructure.containers.TestcontainersConfiguration;
 import io.hhplus.concert.domain.concert.Concert;
 import io.hhplus.concert.domain.concert.ConcertDate;
 import io.hhplus.concert.domain.concert.ConcertDateRepository;
@@ -28,6 +31,8 @@ import io.hhplus.concert.domain.concert.ConcertSeat;
 import io.hhplus.concert.domain.concert.ConcertSeatRepository;
 import io.hhplus.concert.domain.payment.PaymentRepository;
 import io.hhplus.concert.domain.payment.PaymentService;
+import io.hhplus.concert.domain.payment.PaymentSuccessEvent;
+import io.hhplus.concert.domain.payment.PaymentSuccessEventPublisher;
 import io.hhplus.concert.domain.reservation.Reservation;
 import io.hhplus.concert.domain.reservation.ReservationCommand;
 import io.hhplus.concert.domain.reservation.ReservationInfo;
@@ -41,10 +46,13 @@ import io.hhplus.concert.domain.user.UserPointCommand;
 import io.hhplus.concert.domain.user.UserPointRepository;
 import io.hhplus.concert.domain.user.UserRepository;
 import io.hhplus.concert.domain.user.UserService;
+import io.hhplus.concert.infrastructure.containers.TestcontainersConfiguration;
+import io.hhplus.concert.interfaces.events.PaymentSuccessEventListener;
 
 @ActiveProfiles("test")
 @SpringBootTest
 @Import(TestcontainersConfiguration.class)
+@RecordApplicationEvents
 @Sql(statements = {
 	"SET FOREIGN_KEY_CHECKS=0",
 	"TRUNCATE TABLE payments",
@@ -72,16 +80,14 @@ public class PaymentAndConfirmConcurrencyIntegrationTest {
 	@Autowired private ConcertRepository concertRepository;
 	@Autowired private ConcertDateRepository concertDateRepository;
 	@Autowired private ConcertSeatRepository concertSeatRepository;
+
+	@MockitoSpyBean
+	private PaymentSuccessEventPublisher paymentSuccessEventPublisher;
+	@MockitoSpyBean
+	private PaymentSuccessEventListener paymentSuccessEventListener;
+
 	private static final Logger log = LoggerFactory.getLogger(PaymentAndConfirmConcurrencyIntegrationTest.class);
 
-
-	/**
-	 * [동시성테스트] 동일한 회원이 여러개의 예약좌석 확정 및 결제를 동시에 진행한다.
-	 * (일정A, 좌석1번, 15000원), (일정B, 좌석11번, 10000원) => 둘다 임시예약상태(임시5분동안 좌석은 점유됨)
-	 * 여기서 공유자원은 무엇일까? => 회원의 포인트
-	 * - 좌석은 여러가지이고 상태값외로는 데이터변경자체가 없는편이다. 각 좌석은 낙관적락을 사용하고있고
-	 * - 포인트 충전/사용의 경우에는 비관적락(x-lock)을 사용함. 왜냐면 포인트는 의도적인 변경에 민감하며, 돈과 직결되므로 데이터의 정합성이 우선시함.
-	 */
 	User sampleUser;
 	UserPoint sampleUserPoint;
 
@@ -132,7 +138,7 @@ public class PaymentAndConfirmConcurrencyIntegrationTest {
 	@Sql(statements = {
 		"SET SESSION innodb_lock_wait_timeout=50"
 	}, executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD)
-	void 회원이_동시에_여러개의_임시예약을_결제한다() throws ExecutionException, InterruptedException {
+	void 회원이_동시에_여러개의_임시예약을_결제한다(ApplicationEvents events) throws ExecutionException, InterruptedException {
 		// given
 		long userId = sampleUser.getId();
 		// 먼저 2만원 충전
@@ -175,5 +181,12 @@ public class PaymentAndConfirmConcurrencyIntegrationTest {
 		// 포인트가 정상차감됐는지 확인: 20,000원 - (10,000원 + 5,000원) = 5,000원
 		UserInfo.GetUserPoint userPointInfo = userService.getUserPoint(UserPointCommand.GetUserPoint.of(userId));
 		assertThat(userPointInfo.userPoint().getPoint()).isEqualTo(5_000L);
+
+		// 이벤트 발행 검증: 두개의 결제트랜잭션이 성공후에 각각 결제성공이벤트가 발행됐는지 확인
+		verify(paymentSuccessEventPublisher, times(1)).publishEvent(reservationId1, sampleConcert1.getId(), sampleConcertDate1.getId());
+		verify(paymentSuccessEventPublisher, times(1)).publishEvent(reservationId2, sampleConcert2.getId(), sampleConcertDate2.getId());
+
+		// 이벤트 수신후 이벤트 핸들러 handleSoldOutConcertDate 가 수행했는지 확인
+		verify(paymentSuccessEventListener, times(2)).handleSoldOutConcertDate(any(PaymentSuccessEvent.class));
 	}
 }

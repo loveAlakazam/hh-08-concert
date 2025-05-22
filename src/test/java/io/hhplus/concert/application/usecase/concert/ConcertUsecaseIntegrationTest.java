@@ -6,6 +6,8 @@ import static org.assertj.core.api.Assertions.*;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.IntStream;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.MethodOrderer;
@@ -19,15 +21,23 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.event.ApplicationEvents;
+import org.springframework.test.context.event.RecordApplicationEvents;
 import org.springframework.test.context.jdbc.Sql;
 
+import io.hhplus.concert.application.usecase.payment.PaymentCriteria;
+import io.hhplus.concert.application.usecase.payment.PaymentUsecase;
 import io.hhplus.concert.domain.concert.Concert;
 import io.hhplus.concert.domain.concert.ConcertDate;
 import io.hhplus.concert.domain.concert.ConcertDateRepository;
 import io.hhplus.concert.domain.concert.ConcertRankingRepository;
 import io.hhplus.concert.domain.concert.ConcertRepository;
+import io.hhplus.concert.domain.concert.ConcertSeat;
 import io.hhplus.concert.domain.concert.ConcertSeatRepository;
 import io.hhplus.concert.domain.concert.ConcertService;
+import io.hhplus.concert.domain.payment.PaymentSuccessEvent;
+import io.hhplus.concert.domain.payment.PaymentSuccessEventPublisher;
+import io.hhplus.concert.domain.reservation.Reservation;
 import io.hhplus.concert.domain.reservation.ReservationRepository;
 import io.hhplus.concert.domain.reservation.ReservationService;
 import io.hhplus.concert.domain.support.CacheCleaner;
@@ -36,9 +46,16 @@ import io.hhplus.concert.domain.support.JsonSerializer;
 import io.hhplus.concert.domain.support.RedisRankingSnapshot;
 import io.hhplus.concert.domain.support.RedisRankingSnapshotRepository;
 import io.hhplus.concert.domain.support.SortedSetEntry;
+import io.hhplus.concert.domain.user.User;
+import io.hhplus.concert.domain.user.UserPoint;
+import io.hhplus.concert.domain.user.UserPointCommand;
+import io.hhplus.concert.domain.user.UserPointRepository;
 import io.hhplus.concert.domain.user.UserRepository;
+import io.hhplus.concert.domain.user.UserService;
 import io.hhplus.concert.infrastructure.containers.RedisTestContainerConfiguration;
 import io.hhplus.concert.infrastructure.containers.TestcontainersConfiguration;
+import io.hhplus.concert.interfaces.events.PaymentSuccessEventListener;
+import jakarta.persistence.EntityManager;
 
 @ActiveProfiles("test")
 @SpringBootTest
@@ -46,6 +63,7 @@ import io.hhplus.concert.infrastructure.containers.TestcontainersConfiguration;
 	TestcontainersConfiguration.class,
 	RedisTestContainerConfiguration.class
 })
+@RecordApplicationEvents
 @Sql(statements = {
 	"SET FOREIGN_KEY_CHECKS=0",
 	"TRUNCATE TABLE redis_ranking_snapshots",
@@ -61,7 +79,6 @@ import io.hhplus.concert.infrastructure.containers.TestcontainersConfiguration;
 }, executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class ConcertUsecaseIntegrationTest {
-	private static final Logger log = LoggerFactory.getLogger(ConcertUsecaseIntegrationTest.class);
 	@Autowired private ConcertUsecase concertUsecase;
 	@Autowired private ConcertService concertService;
 	@Autowired private ReservationService reservationService;
@@ -74,10 +91,20 @@ public class ConcertUsecaseIntegrationTest {
 	@Autowired private ReservationRepository reservationRepository;
 	@Autowired private CacheCleaner cacheCleaner;
 
+	@Autowired private UserService userService;
 	@Autowired private UserRepository userRepository;
+	@Autowired private UserPointRepository userPointRepository;
+
 	@Autowired private CacheStore cacheStore;
 	@Autowired private JsonSerializer jsonSerializer;
 	@Autowired private RedisRankingSnapshotRepository snapshotRepository;
+	@Autowired private PaymentUsecase paymentUsecase;
+	@Autowired private EntityManager entityManager;
+
+	@Autowired private PaymentSuccessEventPublisher paymentSuccessEventPublisher;
+	@Autowired private PaymentSuccessEventListener paymentSuccessEventListener;
+
+	private static final Logger log = LoggerFactory.getLogger(ConcertUsecaseIntegrationTest.class);
 
 	Concert sampleConcert;
 	ConcertDate sampleConcertDate;
@@ -96,30 +123,139 @@ public class ConcertUsecaseIntegrationTest {
 		cacheCleaner.cleanAll();
 	}
 
-
 	@Order(1)
-	@Nested
-	class SoldoutConcertDate {
-		@Test
-		void 전좌석이_모두_예약확정이라서_매진이되면_레디스에_기록됨을_확인할_수있다() {
-			// TODO
-		}
-	}
-	@Order(2)
 	@Nested
 	class DailyFamousConcertRanking {
 		@Test
-		void 금일_매진된_콘서트일정이_2개일때_일간순위를_확인할_수있다() throws InterruptedException {
-			// TODO
+		void 금일_매진된_콘서트일정이_2개일때_일간순위를_확인할_수있다(ApplicationEvents events) throws InterruptedException {
+			// given
+			List<User> users = IntStream.rangeClosed(1, 100)
+				.mapToObj(
+					i -> {
+						User user = userRepository.save(User.of("테스트유저" + i));
+						userPointRepository.save(UserPoint.of(user));
+						userService.chargePoint(UserPointCommand.ChargePoint.of(user.getId(), 10000));
+						return user;
+					}
+				)
+				.toList();
 
+			// 콘서트 1
+			Concert concert1 = Concert.create("콘서트1", "아티스트1", LocalDate.now().plusDays(1), "콘서트장소 1", 2000);
+			ConcertDate concertDate1 = concert1.getDates().get(0);
+			concert1 =concertRepository.saveOrUpdate(concert1);
+			concertDate1 = concertDateRepository.save(concertDate1);
+
+			List<ConcertSeat> concertSeats1 = concertDate1.getSeats();
+			for(int i=0; i<concertSeats1.size(); i++) {
+				User user = users.get(i);
+				ConcertSeat concertSeat = concertSeats1.get(i);
+				Reservation reservation = Reservation.of(user, concert1, concertDate1, concertSeat);
+
+				reservation.temporaryReserve();
+				if(i < concertSeats1.size() -1) reservation.confirm();
+				concertSeatRepository.saveOrUpdate(concertSeat);
+				reservationRepository.saveOrUpdate(reservation);
+			}
+			// 콘서트1의 마지막좌석 결제완료하여 매진
+			long userId1 = 50L;
+			long reservationId1 = 50L;
+			paymentUsecase.payAndConfirm(PaymentCriteria.PayAndConfirm.of(userId1, reservationId1));
+
+			Thread.sleep(10);
+
+			// 콘서트2
+			Concert concert2 = Concert.create("콘서트2", "아티스트2", LocalDate.now().plusWeeks(1), "콘서트장소 2", 3000);
+			ConcertDate concertDate2 = concert2.getDates().get(0);
+			concert2 = concertRepository.saveOrUpdate(concert2);
+			concertDate2 = concertDateRepository.save(concertDate2);
+
+			List<ConcertSeat> concertSeats2 = concertDate2.getSeats();
+			for(int i=0; i<concertSeats2.size(); i++) {
+				User user = users.get(50 + i);
+				ConcertSeat concertSeat = concertSeats2.get(i);
+				Reservation reservation = Reservation.of(user, concert2, concertDate2, concertSeat);
+
+				reservation.temporaryReserve();
+				if ( i < concertSeats2.size() -1 ) reservation.confirm();
+
+				concertSeatRepository.saveOrUpdate(concertSeat);
+				reservationRepository.saveOrUpdate(reservation);
+			}
+			// 콘서트2 마지막좌석 결제완료하여 매진
+			long userId2 = 100L;
+			long reservationId2 = 100L;
+			paymentUsecase.payAndConfirm(PaymentCriteria.PayAndConfirm.of(userId2, reservationId2));
+
+			// when
+			List<DailyFamousConcertRankingDto> result = concertUsecase.dailyFamousConcertRanking();
+
+			// then
+			// 결제성공 이벤트가 발행됐는지 검증
+			assertThat(events.stream(PaymentSuccessEvent.class).count()).isEqualTo(2);
+
+			// 실제로 레디스의 일간랭킹에 2개의 매진된 콘서트 데이터가 들어있는지 확인
+			String expectMember1 =  String.format("concert:%s:%s", concert1.getId(), concertDate1.getProgressDate());
+			String expectMember2 =  String.format("concert:%s:%s", concert2.getId(), concertDate2.getProgressDate());
+			Set<Object> members = concertRankingRepository.getDailyFamousConcertRanking();
+			assertThat(members).contains(expectMember1, expectMember2);
+
+
+			// 일정 랭킹에서 2개의 매진된 콘서트 일정이 DTO로 반환되는지 검증
+			assertThat(result).hasSize(2);
+			assertThat(result).extracting(DailyFamousConcertRankingDto::name)
+				.containsExactly(
+					concert1.getName(),
+					concert2.getName()
+				);
+
+			assertThat(result).extracting(DailyFamousConcertRankingDto::artistName)
+				.containsExactly(
+					concert1.getArtistName(),
+					concert2.getArtistName()
+				);
+
+			assertThat(result).extracting(DailyFamousConcertRankingDto::concertDate)
+				.containsExactly(
+					concertDate1.getProgressDate().toString(),
+					concertDate2.getProgressDate().toString()
+				);
 		}
 		@Test
 		void 일간랭킹_인기콘서트_top3_조회에_성공한다(){
-			// TODO
+			// given
+			LocalDate today = LocalDate.now(ZoneId.of(ASIA_TIMEZONE_ID));
+			Concert concert1 = concertRepository.saveOrUpdate(Concert.create("콘서트1", "아티스트1", today, "장소1", 1000));
+			Concert concert2 = concertRepository.saveOrUpdate(Concert.create("콘서트2", "아티스트2", today, "장소2", 1000));
+			Concert concert3 = concertRepository.saveOrUpdate(Concert.create("콘서트3", "아티스트3", today, "장소3", 1000));
+
+			ConcertDate date1 = concert1.getDates().get(0);
+			ConcertDate date2 = concert2.getDates().get(0);
+			ConcertDate date3 = concert3.getDates().get(0);
+
+			concertRankingRepository.recordDailyFamousConcertRanking(String.valueOf(concert1.getId()), date1.getProgressDate().toString());
+			concertRankingRepository.recordDailyFamousConcertRanking(String.valueOf(concert2.getId()), date2.getProgressDate().toString());
+			concertRankingRepository.recordDailyFamousConcertRanking(String.valueOf(concert3.getId()), date3.getProgressDate().toString());
+
+			// when
+			List<DailyFamousConcertRankingDto> result = concertUsecase.dailyFamousConcertRanking(3);
+
+			// then
+			assertThat(result).hasSize(3);
+			assertThat(result).extracting(DailyFamousConcertRankingDto::name)
+				.containsExactly("콘서트1", "콘서트2", "콘서트3");
+			assertThat(result).extracting(DailyFamousConcertRankingDto::artistName)
+				.containsExactly("아티스트1", "아티스트2", "아티스트3");
+			assertThat(result).extracting(DailyFamousConcertRankingDto::concertDate)
+				.containsExactly(
+					date1.getProgressDate().toString(),
+					date2.getProgressDate().toString(),
+					date3.getProgressDate().toString()
+				);
 
 		}
 	}
-	@Order(3)
+	@Order(2)
 	@Nested
 	class WeeklyFamousConcertRanking {
 		@Test
