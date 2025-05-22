@@ -1,5 +1,7 @@
 package io.hhplus.concert.interfaces.events;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
@@ -15,9 +17,8 @@ import io.hhplus.concert.domain.reservation.ReservationCommand;
 import io.hhplus.concert.domain.reservation.ReservationService;
 import io.hhplus.concert.interfaces.api.common.BusinessException;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 
-@Slf4j
+
 @Component
 @RequiredArgsConstructor
 public class PaymentSuccessEventListener {
@@ -25,14 +26,17 @@ public class PaymentSuccessEventListener {
 	private final ReservationService reservationService;
 	private final ConcertRankingRepository concertRankingRepository;
 	private final SoldOutConcertDateFailEventPublisher soldOutConcertDateFailEventPublisher;
+	private static final Logger log = LoggerFactory.getLogger(PaymentSuccessEventListener.class);
 
 	// 결제 성공후 매진확인 및 콘서트날짜 매진 처리 로직
 	@Async
 	@TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
 	public void handleSoldOutConcertDate(PaymentSuccessEvent event) {
+		long reservationId = event.reservationId();
 		long concertId = event.concertId();
 		long concertDateId = event.concertDateId();
 
+		log.info("[PaymentSuccessEventListener] 예약 ID: {} 결제완료", reservationId);
 		try {
 			// 전체 좌석의 개수를 구한다
 			long totalSeats = concertService.countTotalSeats(ConcertCommand.CountTotalSeats.of(concertId, concertDateId));
