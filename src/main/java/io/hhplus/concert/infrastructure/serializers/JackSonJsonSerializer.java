@@ -8,7 +8,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import io.hhplus.concert.domain.support.JsonSerializer;
+import io.hhplus.concert.domain.snapshot.JsonSerializer;
 import lombok.RequiredArgsConstructor;
 
 @Component

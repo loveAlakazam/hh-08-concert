@@ -13,8 +13,8 @@ import java.util.List;
 
 import static org.mockito.Mockito.*;
 
-import io.hhplus.concert.domain.support.JsonSerializer;
-import io.hhplus.concert.infrastructure.persistence.snapshots.RedisRankingSnapshotJpaRepository;
+import io.hhplus.concert.domain.snapshot.JsonSerializer;
+import io.hhplus.concert.infrastructure.persistence.snapshots.RankingSnapshotJpaRepository;
 
 @ExtendWith(MockitoExtension.class)
 public class ConcertMaintenanceServiceTest {
@@ -29,7 +29,7 @@ public class ConcertMaintenanceServiceTest {
     @Mock
     private JsonSerializer jsonSerializer;
     @Mock
-    private RedisRankingSnapshotJpaRepository snapshotRepository;
+    private RankingSnapshotJpaRepository snapshotRepository;
 
 
     @BeforeEach

@@ -1,4 +1,4 @@
-package io.hhplus.concert.domain.support;
+package io.hhplus.concert.domain.snapshot;
 
 import java.util.List;
 

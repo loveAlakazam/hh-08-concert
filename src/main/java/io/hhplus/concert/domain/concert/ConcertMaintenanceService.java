@@ -12,10 +12,10 @@ import java.util.Map;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import io.hhplus.concert.domain.support.JsonSerializer;
-import io.hhplus.concert.domain.support.RedisRankingSnapshot;
+import io.hhplus.concert.domain.snapshot.JsonSerializer;
+import io.hhplus.concert.domain.snapshot.RankingSnapshot;
 import io.hhplus.concert.domain.support.SortedSetEntry;
-import io.hhplus.concert.infrastructure.persistence.snapshots.RedisRankingSnapshotJpaRepository;
+import io.hhplus.concert.infrastructure.persistence.snapshots.RankingSnapshotJpaRepository;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -25,7 +25,7 @@ public class ConcertMaintenanceService {
 	private final ConcertSeatRepository concertSeatRepository;
 	private final ConcertRankingRepository concertRankingRepository;
 	private final JsonSerializer jsonSerializer;
-	private final RedisRankingSnapshotJpaRepository snapshotRepository;
+	private final RankingSnapshotJpaRepository snapshotRepository;
 
 	/**
 	 * 현재기준으로 콘서트일정이 이미 지난날짜이면 soft-delete 한다.
@@ -53,7 +53,7 @@ public class ConcertMaintenanceService {
 		if(!ranking.isEmpty()) {
 			// DB에 저장
 			String json = jsonSerializer.toJson(ranking);
-			snapshotRepository.save(RedisRankingSnapshot.of(pastDate, json));
+			snapshotRepository.save(RankingSnapshot.of(pastDate, json));
 		}
 	}
 
@@ -69,8 +69,8 @@ public class ConcertMaintenanceService {
 		Map<String, Integer> concertCountMap = new HashMap<>();
 
 		// 6일치 누적된 스냅샷데이터를 데이터베이스로부터 꺼내온다
-		List<RedisRankingSnapshot> snapshots = snapshotRepository.findByDateBetween(from, to);
-		for(RedisRankingSnapshot snapshot : snapshots) {
+		List<RankingSnapshot> snapshots = snapshotRepository.findByDateBetween(from, to);
+		for(RankingSnapshot snapshot : snapshots) {
 			// 자바의 객체로 역직렬화를 한다
 			List<SortedSetEntry> entries = jsonSerializer.fromJsonList(snapshot.getJsonData(), SortedSetEntry.class);
 			// 역직렬화한 member를 파싱후에 concertId의 등장횟수를 카운트한다

@@ -42,9 +42,9 @@ import io.hhplus.concert.domain.reservation.ReservationRepository;
 import io.hhplus.concert.domain.reservation.ReservationService;
 import io.hhplus.concert.domain.support.CacheCleaner;
 import io.hhplus.concert.domain.support.CacheStore;
-import io.hhplus.concert.domain.support.JsonSerializer;
-import io.hhplus.concert.domain.support.RedisRankingSnapshot;
-import io.hhplus.concert.domain.support.RedisRankingSnapshotRepository;
+import io.hhplus.concert.domain.snapshot.JsonSerializer;
+import io.hhplus.concert.domain.snapshot.RankingSnapshot;
+import io.hhplus.concert.domain.snapshot.RankingSnapshotRepository;
 import io.hhplus.concert.domain.support.SortedSetEntry;
 import io.hhplus.concert.domain.user.User;
 import io.hhplus.concert.domain.user.UserPoint;
@@ -97,7 +97,7 @@ public class ConcertUsecaseIntegrationTest {
 
 	@Autowired private CacheStore cacheStore;
 	@Autowired private JsonSerializer jsonSerializer;
-	@Autowired private RedisRankingSnapshotRepository snapshotRepository;
+	@Autowired private RankingSnapshotRepository snapshotRepository;
 	@Autowired private PaymentUsecase paymentUsecase;
 	@Autowired private EntityManager entityManager;
 
@@ -343,7 +343,7 @@ public class ConcertUsecaseIntegrationTest {
 				}
 
 				String json = jsonSerializer.toJson(entries);
-				snapshotRepository.save(RedisRankingSnapshot.of(snapshotDate, json));
+				snapshotRepository.save(RankingSnapshot.of(snapshotDate, json));
 			}
 
 			// 오늘 실시간 랭킹 Redis에 저장

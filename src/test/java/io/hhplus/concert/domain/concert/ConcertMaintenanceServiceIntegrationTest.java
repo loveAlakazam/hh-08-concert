@@ -25,9 +25,9 @@ import org.springframework.test.context.jdbc.Sql;
 
 import io.hhplus.concert.domain.support.CacheCleaner;
 import io.hhplus.concert.domain.support.CacheStore;
-import io.hhplus.concert.domain.support.JsonSerializer;
-import io.hhplus.concert.domain.support.RedisRankingSnapshot;
-import io.hhplus.concert.domain.support.RedisRankingSnapshotRepository;
+import io.hhplus.concert.domain.snapshot.JsonSerializer;
+import io.hhplus.concert.domain.snapshot.RankingSnapshot;
+import io.hhplus.concert.domain.snapshot.RankingSnapshotRepository;
 import io.hhplus.concert.domain.support.SortedSetEntry;
 import io.hhplus.concert.infrastructure.containers.RedisTestContainerConfiguration;
 import io.hhplus.concert.infrastructure.containers.TestcontainersConfiguration;
@@ -53,7 +53,7 @@ public class ConcertMaintenanceServiceIntegrationTest {
 	@Autowired private ConcertSeatRepository concertSeatRepository;
 	@Autowired private ConcertRankingRepository concertRankingRepository;
 	@Autowired private JsonSerializer jsonSerializer;
-	@Autowired private RedisRankingSnapshotRepository snapshotRepository;
+	@Autowired private RankingSnapshotRepository snapshotRepository;
 
 	@Autowired private CacheCleaner cacheCleaner;
 	@Autowired private ConcertRepository concertRepository;
@@ -110,7 +110,7 @@ public class ConcertMaintenanceServiceIntegrationTest {
 			concertMaintenanceService.saveDailySnapshot();
 
 			// then
-			RedisRankingSnapshot snapshot = snapshotRepository.findByDate(yesterday);
+			RankingSnapshot snapshot = snapshotRepository.findByDate(yesterday);
 			assertThat(snapshot).isNotNull();
 			assertThat(snapshot.getDate()).isEqualTo(yesterday);
 			assertThat(snapshot.getJsonData()).contains(member);
@@ -125,7 +125,7 @@ public class ConcertMaintenanceServiceIntegrationTest {
 			concertMaintenanceService.saveDailySnapshot();
 
 			// then
-			RedisRankingSnapshot snapshot = snapshotRepository.findByDate(yesterday);
+			RankingSnapshot snapshot = snapshotRepository.findByDate(yesterday);
 			assertThat(snapshot).isNull();
 
 			List<SortedSetEntry> ranking = concertRankingRepository.getRankingWithScore(key);
@@ -157,7 +157,7 @@ public class ConcertMaintenanceServiceIntegrationTest {
 				}
 
 				String json = jsonSerializer.toJson(entries);
-				snapshotRepository.save(RedisRankingSnapshot.of(snapshotDate, json));
+				snapshotRepository.save(RankingSnapshot.of(snapshotDate, json));
 			}
 
 			// when
@@ -182,7 +182,7 @@ public class ConcertMaintenanceServiceIntegrationTest {
 				new SortedSetEntry("concert:1:2025-05-17", 1715590000.0)
 			);
 			String json = jsonSerializer.toJson(entries);
-			snapshotRepository.save(RedisRankingSnapshot.of(snapshotDate, json));
+			snapshotRepository.save(RankingSnapshot.of(snapshotDate, json));
 
 			// when
 			Map<String, Integer> result = concertMaintenanceService.loadWeeklyBaseRankingFromSnapshots();
