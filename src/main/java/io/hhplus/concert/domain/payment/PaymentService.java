@@ -2,19 +2,18 @@ package io.hhplus.concert.domain.payment;
 
 import static io.hhplus.concert.interfaces.api.payment.PaymentErrorCode.*;
 
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import io.hhplus.concert.domain.reservation.Reservation;
-import io.hhplus.concert.domain.reservation.ReservationRepository;
 import io.hhplus.concert.domain.reservation.ReservationStatus;
 import io.hhplus.concert.interfaces.api.common.BusinessException;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
 public class PaymentService {
     private final PaymentRepository paymentRepository;
-    private final ReservationRepository reservationRepository;
 
     @Transactional
     public PaymentInfo.CreatePayment create(PaymentCommand.CreatePayment command) {
@@ -23,7 +22,6 @@ public class PaymentService {
         if(reservation.getStatus() != ReservationStatus.CONFIRMED)
             throw new BusinessException(NOT_VALID_STATUS_FOR_PAYMENT);
 
-        reservationRepository.saveOrUpdate(reservation);
         Payment payment = paymentRepository.saveOrUpdate(Payment.of(command.reservation()));
         return PaymentInfo.CreatePayment.of(payment);
     }
