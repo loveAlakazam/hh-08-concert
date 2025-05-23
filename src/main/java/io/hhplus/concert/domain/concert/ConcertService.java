@@ -71,6 +71,7 @@ public class ConcertService {
      * @param command
      * @return
      */
+    @Transactional
     public ConcertInfo.CreateConcert create(ConcertCommand.CreateConcert command) {
         Concert concert = Concert.create(
             command.name(),
@@ -97,7 +98,6 @@ public class ConcertService {
     public Concert findConcertById(long id) {
         return concertRepository.findById(id);
     }
-
     public ConcertSeat saveOrUpdate(ConcertSeat concertSeat) {
         return concertSeatRepository.saveOrUpdate(concertSeat);
     }
@@ -122,6 +122,10 @@ public class ConcertService {
 
         concertDate.soldOut(); // 상태변경
         return concertDateRepository.save(concertDate);
+    }
+    public void cancelSeat(ConcertSeat concertSeat) {
+        concertSeat.cancel();
+        concertSeatRepository.saveOrUpdate(concertSeat);
     }
 
 }
