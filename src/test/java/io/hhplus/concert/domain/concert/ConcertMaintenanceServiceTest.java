@@ -9,15 +9,12 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-import io.hhplus.concert.domain.support.JsonSerializer;
-import io.hhplus.concert.infrastructure.persistence.snapshots.RedisRankingSnapshotJpaRepository;
+import io.hhplus.concert.domain.snapshot.JsonSerializer;
+import io.hhplus.concert.infrastructure.persistence.snapshots.RankingSnapshotJpaRepository;
 
 @ExtendWith(MockitoExtension.class)
 public class ConcertMaintenanceServiceTest {
@@ -28,11 +25,11 @@ public class ConcertMaintenanceServiceTest {
     @Mock
     private ConcertSeatRepository concertSeatRepository;
     @Mock
-    private ConcertRedisRepository concertRedisRepository;
+    private ConcertRankingRepository concertRankingRepository;
     @Mock
     private JsonSerializer jsonSerializer;
     @Mock
-    private RedisRankingSnapshotJpaRepository snapshotRepository;
+    private RankingSnapshotJpaRepository snapshotRepository;
 
 
     @BeforeEach
@@ -40,7 +37,7 @@ public class ConcertMaintenanceServiceTest {
         concertMaintenanceService = new ConcertMaintenanceService(
             concertDateRepository,
             concertSeatRepository,
-            concertRedisRepository,
+            concertRankingRepository,
             jsonSerializer,
             snapshotRepository
         );

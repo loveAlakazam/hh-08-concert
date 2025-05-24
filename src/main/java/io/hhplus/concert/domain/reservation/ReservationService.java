@@ -1,31 +1,27 @@
 package io.hhplus.concert.domain.reservation;
 
 import static io.hhplus.concert.domain.concert.Concert.*;
-import static io.hhplus.concert.domain.concert.ConcertService.*;
 import static io.hhplus.concert.domain.reservation.Reservation.*;
 import static io.hhplus.concert.interfaces.api.reservation.ReservationErrorCode.*;
 
-import io.hhplus.concert.domain.concert.Concert;
-import io.hhplus.concert.domain.concert.ConcertDate;
-import io.hhplus.concert.domain.concert.ConcertInfo;
-import io.hhplus.concert.domain.concert.ConcertSeatRepository;
-import io.hhplus.concert.domain.support.CacheStore;
-import io.hhplus.concert.domain.support.DistributedSimpleLock;
-import io.hhplus.concert.interfaces.api.common.BusinessException;
-import io.hhplus.concert.domain.concert.ConcertSeat;
-import io.hhplus.concert.domain.user.User;
-
-import io.hhplus.concert.interfaces.api.common.DistributedLockException;
-import jakarta.persistence.OptimisticLockException;
-import lombok.RequiredArgsConstructor;
+import java.util.List;
 
 import org.redisson.api.RedissonClient;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import io.hhplus.concert.domain.concert.Concert;
+import io.hhplus.concert.domain.concert.ConcertDate;
+import io.hhplus.concert.domain.concert.ConcertSeat;
+import io.hhplus.concert.domain.concert.ConcertSeatRepository;
+import io.hhplus.concert.domain.support.CacheStore;
+import io.hhplus.concert.domain.support.DistributedSimpleLock;
+import io.hhplus.concert.domain.user.User;
+import io.hhplus.concert.interfaces.api.common.BusinessException;
+import io.hhplus.concert.interfaces.api.common.DistributedLockException;
+import jakarta.persistence.OptimisticLockException;
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
@@ -142,5 +138,14 @@ public class ReservationService {
     }
     public long countConfirmedSeats(ReservationCommand.CountConfirmedSeats command) {
         return reservationRepository.countConfirmedReservations(command.concertId(), command.concertDateId());
+    }
+    public List<Reservation> expiredReservations () {
+        return reservationRepository.findExpiredTempReservations();
+    }
+    public void cancelExpiredTempReservations() {
+        reservationRepository.updateCanceledExpiredTempReservations();
+    }
+    public void deleteCanceledReservations() {
+        reservationRepository.deleteCanceledReservations();
     }
 }

@@ -1,4 +1,4 @@
-package io.hhplus.concert.domain.support;
+package io.hhplus.concert.domain.snapshot;
 
 import java.time.LocalDate;
 
@@ -18,7 +18,7 @@ import lombok.Getter;
 	name = "redis_ranking_snapshots",
 	uniqueConstraints = @UniqueConstraint(columnNames = {"date"}) // 날짜별 1건 제한
 )
-public class RedisRankingSnapshot {
+public class RankingSnapshot {
 	@Id @GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
@@ -29,8 +29,8 @@ public class RedisRankingSnapshot {
 	@Column(nullable = false)
 	private String jsonData;
 
-	public static RedisRankingSnapshot of(LocalDate date,  String jsonData) {
-		RedisRankingSnapshot snapshot = new RedisRankingSnapshot();
+	public static RankingSnapshot of(LocalDate date,  String jsonData) {
+		RankingSnapshot snapshot = new RankingSnapshot();
 		snapshot.date = date;
 		snapshot.jsonData = jsonData;
 		return snapshot;

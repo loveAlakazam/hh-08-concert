@@ -1,5 +1,7 @@
 package io.hhplus.concert.infrastructure.persistence.token;
 
+import static io.hhplus.concert.domain.token.TokenRedisKeys.*;
+
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;

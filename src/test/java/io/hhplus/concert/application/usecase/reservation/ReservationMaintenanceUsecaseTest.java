@@ -1,58 +1,56 @@
-package io.hhplus.concert.domain.reservation;
+package io.hhplus.concert.application.usecase.reservation;
 
-import io.hhplus.concert.domain.concert.Concert;
-import io.hhplus.concert.domain.concert.ConcertDate;
-import io.hhplus.concert.domain.concert.ConcertInfo;
-import io.hhplus.concert.domain.concert.ConcertSeat;
-import io.hhplus.concert.domain.concert.ConcertSeatRepository;
-import io.hhplus.concert.domain.support.CacheStore;
-import io.hhplus.concert.domain.user.User;
-import io.hhplus.concert.interfaces.api.common.validators.DateValidator;
+import static io.hhplus.concert.domain.concert.Concert.*;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.List;
+
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.slf4j.LoggerFactory;
 import org.slf4j.Logger;
-import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.core.ValueOperations;
+import org.slf4j.LoggerFactory;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-
-import static io.hhplus.concert.domain.concert.Concert.*;
-import static io.hhplus.concert.domain.concert.ConcertService.*;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
+import io.hhplus.concert.domain.concert.Concert;
+import io.hhplus.concert.domain.concert.ConcertDate;
+import io.hhplus.concert.domain.concert.ConcertSeat;
+import io.hhplus.concert.domain.concert.ConcertService;
+import io.hhplus.concert.domain.reservation.Reservation;
+import io.hhplus.concert.domain.reservation.ReservationService;
+import io.hhplus.concert.domain.reservation.ReservationStatus;
+import io.hhplus.concert.domain.support.CacheStore;
+import io.hhplus.concert.domain.user.User;
+import io.hhplus.concert.interfaces.api.common.validators.DateValidator;
 
 @ExtendWith(MockitoExtension.class)
-public class ReservationMaintenanceServiceTest {
+public class ReservationMaintenanceUsecaseTest {
     @InjectMocks
-    private ReservationMaintenanceService reservationMaintenanceService;
+    private ReservationMaintenanceUsecase reservationMaintenanceUsecase;
     @Mock
-    private ReservationRepository reservationRepository;
+    private ReservationService reservationService;
     @Mock
-    private ConcertSeatRepository concertSeatRepository;
+    private ConcertService concertService;
     @Mock
     private CacheStore cacheStore;
 
 
     @BeforeEach
     void setUp() {
-        reservationMaintenanceService = new ReservationMaintenanceService(
-            reservationRepository,
-            concertSeatRepository,
+        reservationMaintenanceUsecase = new ReservationMaintenanceUsecase(
+            reservationService,
+            concertService,
             cacheStore
         );
     }
-    private static final Logger log = LoggerFactory.getLogger(ReservationMaintenanceServiceTest.class);
+    private static final Logger log = LoggerFactory.getLogger(ReservationMaintenanceUsecaseTest.class);
 
     @Test
     void 임시예약날짜가_만료되면_예약상태는_취소상태로_변경되며_좌석도_예약가능으로_변경된다() {
@@ -79,18 +77,18 @@ public class ReservationMaintenanceServiceTest {
         reservation.expireTemporaryReserve(LocalDateTime.now().minusSeconds(1)); // 임시예약상태를 만료
         List<Reservation> expiredReservations = List.of(reservation);
 
-        when(reservationRepository.findExpiredTempReservations()).thenReturn(expiredReservations); // 임시예약유효일자가 만료된 예약은 1개
+        when(reservationService.expiredReservations()).thenReturn(expiredReservations); // 임시예약유효일자가 만료된 예약은 1개
         doAnswer(invocation -> {
             reservation.cancel();
             return reservation;
-        }).when(reservationRepository).updateCanceledExpiredTempReservations(); // 예약상태를 '취소'로 변경
+        }).when(reservationService).cancelExpiredTempReservations(); // 예약상태를 '취소'로 변경
 
         //when
-        reservationMaintenanceService.cancel();
+        reservationMaintenanceUsecase.cancel();
 
         // then
-        verify(reservationRepository, times(1)).updateCanceledExpiredTempReservations();
-        assertEquals(ReservationStatus.CANCELED, reservation.getStatus(), "예약상태는 취소상태이다");
+        verify(reservationService, times(1)).cancelExpiredTempReservations();
+        Assertions.assertEquals(ReservationStatus.CANCELED, reservation.getStatus(), "예약상태는 취소상태이다");
         assertFalse(reservation.isTemporary(), "취소상태로 변경됐으므로 임시예약상태가 아니다");
         assertTrue(DateValidator.isPastDateTime(reservation.getTempReservationExpiredAt()), "만료일자는 현재보다 이전이어야한다.");
         assertNull( reservation.getReservedAt(), "예약확정일은 없어야한다");
@@ -104,9 +102,9 @@ public class ReservationMaintenanceServiceTest {
     @Test
     void 임시예약이_취소되면_soft_delete_처리() {
         // when
-        reservationMaintenanceService.deleteCanceledReservations();
+        reservationMaintenanceUsecase.deleteCanceledReservations();
 
         // then
-        verify(reservationRepository, times(1)).deleteCanceledReservations();
+        verify(reservationService, times(1)).deleteCanceledReservations();
     }
 }
