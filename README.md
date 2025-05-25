@@ -42,3 +42,8 @@
 
 👉[ 이벤트 기반으로 트랜잭션 분리와 MSA 설계 보고서](https://github.com/loveAlakazam/hh-08-concert/wiki/11_%ED%8A%B8%EB%9E%9C%EC%9E%AD%EC%85%98%EB%B6%84%EB%A6%AC_&_%EC%9D%B4%EB%B2%A4%ED%8A%B8%EA%B8%B0%EB%B0%98%EC%84%A4%EA%B3%84)
 
+
+## 10. Kafka 이해와 콘서트시나리오에서의 Kafka 적용
+
+👉[ Kafka 이해와 콘서트시나리오에서의 Kafka 적용](https://github.com/loveAlakazam/hh-08-concert/wiki/12_kafka_%EB%B9%84%EB%8F%99%EA%B8%B0%EB%A9%94%EC%8B%9C%EC%A7%80%ED%81%90%EB%A5%BC_%ED%99%9C%EC%9A%A9%ED%95%9C_%EC%84%A4%EA%B3%84)
+
