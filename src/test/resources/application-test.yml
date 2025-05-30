@@ -9,6 +9,33 @@ spring:
     properties:
       hibernate:
         format-sql: true
+  # Kafka 테스트 설정
+  kafka:
+    bootstrap-servers: localhost:9092,localhost:9093
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      acks: all
+      retries: 0  # 테스트에서는 빠른 실패
+      batch-size: 1
+      linger-ms: 0
+      enable-idempotence: false  # 테스트 단순화
+    consumer:
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      group-id: hhplus-concert-test-group
+      auto-offset-reset: earliest
+      enable-auto-commit: true  # 테스트에서는 자동 커밋으로 단순화
+      max-poll-records: 10
+      properties:
+        spring.json.trusted.packages: "com.hhplus.concert.domain.event"
+        session.timeout.ms: 10000
+        heartbeat.interval.ms: 3000
+    listener:
+      ack-mode: batch  # 테스트에서는 배치 커밋
+      concurrency: 1  # 테스트에서는 단일 스레드
+      poll-timeout: 1000
+      missing-topics-fatal: false
 redisson:
   config:
     singleServerConfig:
