@@ -20,6 +20,42 @@ spring:
     properties:
       hibernate.timezone.default_storage: NORMALIZE_UTC
       hibernate.jdbc.time_zone: UTC
+  # kafka
+  kafka:
+    bootstrap-servers: localhost:9092,localhost:9093
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      acks: all  # 모든 replica에서 확인 후 응답
+      retries: 3
+      batch-size: 16384
+      linger-ms: 5
+      buffer-memory: 33554432
+      enable-idempotence: true  # 중복 방지
+      properties:
+        max.in.flight.requests.per.connection: 5
+        retry.backoff.ms: 100
+        delivery.timeout.ms: 120000
+        request.timeout.ms: 30000
+    consumer:
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      group-id: hhplus-concert-group
+      auto-offset-reset: earliest
+      enable-auto-commit: false  # 수동 커밋으로 안정성 확보
+      max-poll-records: 100
+      fetch-min-size: 1
+      fetch-max-wait: 500
+      properties:
+        spring.json.trusted.packages: "com.hhplus.concert.domain.event"
+        session.timeout.ms: 30000
+        heartbeat.interval.ms: 3000
+        max.poll.interval.ms: 300000
+    listener:
+      ack-mode: manual_immediate  # 메시지 처리 후 즉시 커밋
+      concurrency: 3  # 컨슈머 스레드 수
+      poll-timeout: 3000
+      missing-topics-fatal: false
 redisson:
   config:
     singleServerConfig:
