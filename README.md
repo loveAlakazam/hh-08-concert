@@ -47,3 +47,6 @@
 
 👉[ Kafka 이해와 콘서트시나리오에서의 Kafka 적용](https://github.com/loveAlakazam/hh-08-concert/wiki/12_kafka_%EB%B9%84%EB%8F%99%EA%B8%B0%EB%A9%94%EC%8B%9C%EC%A7%80%ED%81%90%EB%A5%BC_%ED%99%9C%EC%9A%A9%ED%95%9C_%EC%84%A4%EA%B3%84)
 
+## 11. 장애대응 보고서
+
+👉[ 장애대응 보고서](https://github.com/loveAlakazam/hh-08-concert/wiki/13_%EC%9E%A5%EC%95%A0%EB%8C%80%EC%9D%91%EB%B3%B4%EA%B3%A0%EC%84%9C)
