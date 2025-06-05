@@ -61,6 +61,31 @@ redisson:
     singleServerConfig:
       address: "redis://localhost:6379"
     
+server:
+  port: 8080
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+      endpoint:
+        health:
+          show-details: always
+        metrics:
+          enabled: true
+        prometheus:
+          enabled: true
+      metrics:
+        export:
+          prometheus:
+            enabled: true
+        distribution:
+          percentiles-histogram:
+            http.server.requests: true
+          percentiles:
+            http.server.requests: 0.5, 0.95, 0.99
+        tags:
+          application: ${spring.application.name:concert-app}
 
 ---
 spring:
@@ -71,6 +96,9 @@ spring:
   redis:
     host: localhost
     port: 6379
+  application:
+    name: concert-app
+
 springdoc:
   api-docs:
     path: /v3/api-docs
