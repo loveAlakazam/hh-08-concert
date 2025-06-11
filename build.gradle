@@ -3,6 +3,7 @@ plugins {
 	id 'org.springframework.boot' version '3.4.4'
 	id 'io.spring.dependency-management' version '1.1.7'
 	id 'org.asciidoctor.jvm.convert' version '3.3.2'
+	id 'jacoco'
 }
 
 group = 'io.hhplus'
@@ -35,6 +36,10 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 	implementation 'org.springframework.boot:spring-boot-starter-aop'
 
+	// 모니터링 메트릭
+	implementation 'io.micrometer:micrometer-registry-prometheus'
+	implementation 'io.micrometer:micrometer-core'
+
 	// Swagger UI
 	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.0.2'
 
@@ -64,6 +69,204 @@ dependencies {
 	testImplementation 'com.redis:testcontainers-redis:2.2.2'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
+
+// 테스트 실행시 메트릭 수집
+tasks.named('test') {
+	useJUnitPlatform()
+
+	testLogging {
+		events "passed", "skipped", "failed"
+		exceptionFormat "full"
+	}
+
+	afterSuite { description, result ->
+		if (!description.parent) {
+			logger.lifecycle """
+Test Results:
+- Tests: ${result.testCount}
+- Passed: ${result.successfulTestCount}
+- Failed: ${result.failedTestCount}
+- Skipped: ${result.skippedTestCount}
+- Duration: ${result.endTime - result.startTime} ms
+"""
+		}
+	}
+
+	finalizedBy tasks.named('jacocoTestReport')
+	finalizedBy tasks.named('generateTestMetrics')
+}
+
+
+tasks.register('generateTestMetrics') {
+	group = 'verification'
+	description = "Generate test metrics in Prometheus format"
+	dependsOn tasks.named('test')
+
+	doLast {
+		def testResultsDir = layout.buildDirectory.dir("test-results/test").get().asFile
+		def metricsFile = layout.buildDirectory.file("test-results.txt").get().asFile
+
+		// 테스트 결과 XML 파일들 분석
+		def testResults = parseTestResults(testResultsDir)
+
+		// Prometheus 형식으로 메트릭 생성
+		metricsFile.text = generatePrometheusMetrics(testResults)
+		logger.lifecycle("Test metrics generated: ${metricsFile.absolutePath}")
+	}
+}
+
+// 현대적인 Exec task 정의
+tasks.register('sendTestMetrics', Exec.class) {
+	group = 'verification'
+	description = 'Send test metrics to Prometheus Push Gateway'
+
+	dependsOn tasks.named('generateTestMetrics')
+
+	// Push Gateway가 실행 중인지 확인
+	doFirst {
+		try {
+			def process = "curl -s http://localhost:9091/api/v1/status".execute()
+			process.waitFor()
+			if (process.exitValue() != 0) {
+				throw new GradleException("Prometheus Push Gateway is not running on localhost:9091")
+			}
+		} catch (Exception e) {
+			logger.warn("Could not connect to Push Gateway: ${e.message}")
+			throw new GradleException("Push Gateway connection failed")
+		}
+	}
+
+	commandLine 'curl', '-X', 'POST',
+			'http://localhost:9091/metrics/job/gradle_tests',
+			'--data-binary', "@${layout.buildDirectory.file("test-results.txt").get().asFile.absolutePath}"
+
+	// 성공/실패 처리
+	doLast {
+		if (executionResult.get().exitValue == 0) {
+			logger.lifecycle("Test metrics successfully sent to Prometheus Push Gateway")
+		} else {
+			logger.error("Failed to send test metrics to Push Gateway")
+		}
+	}
+}
+
+// JaCoCo 설정
+jacoco {
+	toolVersion = "0.8.8"
+}
+
+tasks.named('jacocoTestReport') {
+	dependsOn tasks.named('test')
+
+	reports {
+		xml.required = true
+		html.required = true
+		csv.required = false
+	}
+
+	finalizedBy tasks.named('jacocoTestCoverageVerification')
+}
+
+tasks.named('jacocoTestCoverageVerification') {
+	violationRules {
+		rule {
+			limit {
+				minimum = 0.70 // 70% 이상 커버리지 요구
+			}
+		}
+	}
+}
+
+// 헬퍼 함수들 정의
+def parseTestResults(File testResultsDir) {
+	def results = [
+			total: 0,
+			passed: 0,
+			failed: 0,
+			skipped: 0,
+			duration: 0
+	]
+
+	if (!testResultsDir.exists()) {
+		logger.warn("Test results directory not found: ${testResultsDir}")
+		return results
+	}
+
+	testResultsDir.listFiles().findAll { it.name.startsWith('TEST-') && it.name.endsWith('.xml') }.each { file ->
+		try {
+			def xml = new XmlSlurper().parse(file)
+			results.total += xml.@tests as Integer
+			results.failed += xml.@failures as Integer
+			results.skipped += xml.@skipped as Integer
+			results.duration += xml.@time as Double
+		} catch (Exception e) {
+			logger.warn("Could not parse test result file: ${file.name}, error: ${e.message}")
+		}
+	}
+
+	results.passed = results.total - results.failed - results.skipped
+	return results
+}
+
+def getCoveragePercentage() {
+	def jacocoReport = layout.buildDirectory.file("reports/jacoco/test/jacocoTestReport.xml").get().asFile
+
+	if (!jacocoReport.exists()) {
+		return 0.0
+	}
+
+	try {
+		def xml = new XmlSlurper().parse(jacocoReport)
+		def instruction = xml.counter.find { it.@type == 'INSTRUCTION' }
+		if (instruction) {
+			def covered = instruction.@covered as Double
+			def missed = instruction.@missed as Double
+			return covered / (covered + missed) * 100
+		}
+	} catch (Exception e) {
+		logger.warn("Could not parse JaCoCo report: ${e.message}")
+	}
+
+	return 0.0
+}
+
+def generatePrometheusMetrics(Map testResults) {
+	def coverage = getCoveragePercentage()
+	def timestamp = System.currentTimeMillis()
+
+	return """# HELP gradle_test_total Total number of tests executed
+# TYPE gradle_test_total counter
+gradle_test_total{status="passed"} ${testResults.passed} ${timestamp}
+gradle_test_total{status="failed"} ${testResults.failed} ${timestamp}
+gradle_test_total{status="skipped"} ${testResults.skipped} ${timestamp}
+
+# HELP gradle_test_duration_seconds Test execution duration in seconds
+# TYPE gradle_test_duration_seconds gauge
+gradle_test_duration_seconds ${testResults.duration} ${timestamp}
+
+# HELP gradle_test_coverage_percent Code coverage percentage
+# TYPE gradle_test_coverage_percent gauge
+gradle_test_coverage_percent ${coverage} ${timestamp}
+
+# HELP gradle_test_timestamp Test execution timestamp
+# TYPE gradle_test_timestamp gauge
+gradle_test_timestamp ${timestamp} ${timestamp}
+
+# HELP gradle_test_success_rate Test success rate percentage
+# TYPE gradle_test_success_rate gauge
+gradle_test_success_rate ${testResults.total > 0 ? (testResults.passed / testResults.total * 100) : 0} ${timestamp}
+"""
+}
+
+// 편의를 위한 복합 태스크
+tasks.register('testWithMetrics') {
+	group = 'verification'
+	description = 'Run tests and send metrics to Prometheus'
+
+	dependsOn tasks.named('test')
+	finalizedBy tasks.named('sendTestMetrics')
+}
+
 
 tasks.named('test') {
 	outputs.dir snippetsDir

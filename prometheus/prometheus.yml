@@ -1,0 +1,32 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+# 단순 모니터링에서는 필요없음..
+# 자동알림, 복잡한 계산식 미리 정의, 대규모 운영환경에서 체계적관리가 필요할때 사용
+rule_files:
+# - "first_rules.yml"
+# - "second_rules.yml"
+
+scrape_configs:
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  - job_name: 'spring-boot-app'
+    metrics_path: '/actuator/prometheus'
+    scrape_interval: 5s
+    static_configs:
+      - targets: ['host.docker.internal:8080']  # Docker for Mac/Windows
+      # - targets: ['172.17.0.1:8080']          # Docker for Linux
+    scrape_timeout: 10s
+
+  # K6 메트릭 수집 (Prometheus Remote Write 사용시)
+  - job_name: 'k6'
+    static_configs:
+      - targets: ['localhost:6565']
+
+  - job_name: 'pushgateway'
+    static_configs:
+      - targets: ['pushgateway:9091']
+    honor_labels: true
